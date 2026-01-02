@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Bus Tracking</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: linear-gradient(to right, #fff3b0, #ffd60a);
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 15px;
+}
+
+h2, h3 {
+    text-align: center;
+    color: #3a2f00;
+}
+
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 6px;
+    border: none;
+}
+
+button {
+    background: #ffb703;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.track-btn { background: #2a9d8f; color: white; }
+.admin-btn { background: #fb8500; color: white; }
+.delete-btn { background: #d00000; color: white; }
+
+.card {
+    background: #fff8dc;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 12px 0;
+    box-shadow: 0 0 8px rgba(0,0,0,0.2);
+}
+
+.hidden { display: none; }
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    width: 95%;
+    height: 90%;
+    border-radius: 10px;
+}
+
+iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>🚌 Smart Bus Tracking</h2>
+
+<input type="text" id="search" placeholder="Search by travel / city" onkeyup="render()">
+
+<div id="busList"></div>
+
+<hr>
+
+<h3>🔐 Admin Login</h3>
+
+<div id="loginBox">
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+</div>
+
+<div id="adminPanel" class="hidden">
+    <h3>Admin Panel</h3>
+
+    <input id="travel" placeholder="Travels Name">
+    <input id="from" placeholder="From">
+    <input id="to" placeholder="To">
+    <input id="departure" placeholder="Departure Time (e.g 03:35 PM)">
+    <input id="drop" placeholder="Dropping Time (e.g 07:00 AM)">
+    <input id="link" placeholder="Tracking Link">
+
+    <button onclick="saveBus()">Save</button>
+
+    <hr>
+    <button onclick="logout()">Logout</button>
+</div>
+
+</div>
+
+<!-- Tracking -->
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <button onclick="closeTrack()">Close</button>
+        <iframe id="frame"></iframe>
+    </div>
+</div>
+
+<script>
+const ADMIN_USER = "admin";
+if (!localStorage.getItem("adminPass")) {
+    localStorage.setItem("adminPass", "1234");
+}
+
+let isAdmin = false;
+let editIndex = -1;
+
+let data = JSON.parse(localStorage.getItem("busData")) || [
+    {
+        travel: "TMV Travels",
+        from: "Chennai",
+        to: "Trivandrum",
+        depart: "03:35 PM",
+        drop: "07:00 AM",
+        link: "https://reports.yourbus.in/trackbus/TMVCHENNAI-TRIVANDRUM-0335PM"
+    }
+];
+
+function timeToMinutes(t) {
+    let [time, mod] = t.split(" ");
+    let [h, m] = time.split(":").map(Number);
+    if (mod === "PM" && h !== 12) h += 12;
+    if (mod === "AM" && h === 12) h = 0;
+    return h * 60 + m;
+}
+
+function calcDuration(start, end) {
+    let s = timeToMinutes(start);
+    let e = timeToMinutes(end);
+    if (e < s) e += 1440;
+    let diff = e - s;
+    let h = Math.floor(diff / 60);
+    let m = diff % 60;
+    return `${h}h ${m}m`;
+}
+
+function render() {
+    const list = document.getElementById("busList");
+    const search = document.getElementById("search").value.toLowerCase();
+    list.innerHTML = "";
+
+    let grouped = {};
+
+    data.forEach(bus => {
+        if (
+            bus.travel.toLowerCase().includes(search) ||
+            bus.from.toLowerCase().includes(search) ||
+            bus.to.toLowerCase().includes(search)
+        ) {
+            if (!grouped[bus.travel]) grouped[bus.travel] = {};
+            if (!grouped[bus.travel][bus.from]) grouped[bus.travel][bus.from] = [];
+            grouped[bus.travel][bus.from].push(bus);
+        }
+    });
+
+    for (let travel in grouped) {
+        let card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `<h3>🚌 ${travel}</h3>`;
+
+        for (let from in grouped[travel]) {
+            card.innerHTML += `<b>📍 From: ${from}</b><br>`;
+
+            grouped[travel][from].forEach(bus => {
+                let duration = calcDuration(bus.depart, bus.drop);
+
+                card.innerHTML += `
+                <div style="margin-left:15px;">
+                    ⏰ <b>${bus.depart}</b> → <b>${bus.to}</b><br>
+                    🕓 Drop: ${bus.drop} | ⏳ Duration: <b>${duration}</b><br><br>
+
+                    <button class="track-btn" onclick="openTrack('${bus.link}')">Track</button>
+                    ${isAdmin ? `
+                        <button class="admin-btn" onclick="editBus(${data.indexOf(bus)})">Edit</button>
+                        <button class="delete-btn" onclick="deleteBus(${data.indexOf(bus)})">Delete</button>
+                    ` : ""}
+                </div><br>`;
+            });
+
+            card.innerHTML += `<hr>`;
+        }
+
+        list.appendChild(card);
+    }
+}
+
+function login() {
+    if (username.value === ADMIN_USER &&
+        password.value === localStorage.getItem("adminPass")) {
+        isAdmin = true;
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+        render();
+    } else alert("Invalid login");
+}
+
+function logout() {
+    isAdmin = false;
+    document.getElementById("adminPanel").classList.add("hidden");
+    document.getElementById("loginBox").classList.remove("hidden");
+    render();
+}
+
+function saveBus() {
+    let bus = {
+        travel: travel.value,
+        from: from.value,
+        to: to.value,
+        depart: departure.value,
+        drop: drop.value,
+        link: link.value
+    };
+
+    if (editIndex >= 0) {
+        data[editIndex] = bus;
+        editIndex = -1;
+    } else {
+        data.push(bus);
+    }
+
+    localStorage.setItem("busData", JSON.stringify(data));
+    render();
+    alert("Saved successfully");
+}
+
+function editBus(i) {
+    let b = data[i];
+    travel.value = b.travel;
+    from.value = b.from;
+    to.value = b.to;
+    departure.value = b.depart;
+    drop.value = b.drop;
+    link.value = b.link;
+    editIndex = i;
+}
+
+function deleteBus(i) {
+    if (confirm("Delete this bus?")) {
+        data.splice(i, 1);
+        localStorage.setItem("busData", JSON.stringify(data));
+        render();
+    }
+}
+
+function openTrack(link) {
+    document.getElementById("frame").src = link;
+    document.getElementById("modal").style.display = "flex";
+}
+
+function closeTrack() {
+    document.getElementById("modal").style.display = "none";
+    document.getElementById("frame").src = "";
+}
+
+render();
+</script>
+
+</body>
+</html>
