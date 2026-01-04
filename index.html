@@ -29,6 +29,7 @@ input, button {
     font-size: 16px;
 }
 button { font-weight: bold; cursor: pointer; }
+
 .track-btn { background: #2a9d8f; color: white; }
 .admin-btn { background: #fb8500; color: white; }
 .delete-btn { background: #d00000; color: white; }
@@ -44,10 +45,45 @@ button { font-weight: bold; cursor: pointer; }
 .hidden { display: none; }
 .row { display: flex; gap: 10px; }
 .row input { flex: 1; }
+
 .route-summary {
     font-weight: bold;
     color: #555;
     margin-bottom: 6px;
+}
+
+/* travels chips */
+#travelsBar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 0;
+}
+.chip {
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: #e5e5e5;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    border: none;
+}
+.chip.active {
+    background: #023047;
+    color: white;
+}
+
+/* NEXT DEPARTURE */
+#nextDeparture {
+    background: #fff;
+    border-left: 6px solid #2a9d8f;
+    padding: 12px;
+    margin: 12px 0;
+    border-radius: 8px;
+}
+#countdown {
+    font-weight: bold;
+    margin-top: 6px;
 }
 </style>
 </head>
@@ -57,8 +93,13 @@ button { font-weight: bold; cursor: pointer; }
 
 <h2>🚌 Smart Bus Tracking</h2>
 
-<input id="search" placeholder="Search city or travels name"
-onkeyup="activeSearch=this.value.toLowerCase(); render()">
+<input id="search" placeholder="Search city or travels"
+onkeyup="activeSearch=this.value.toLowerCase(); renderAll()">
+
+<div id="travelsBar"></div>
+
+<!-- 🔥 NEXT DEPARTURE -->
+<div id="nextDeparture" class="hidden"></div>
 
 <button class="sort-btn" id="sortBtn" onclick="toggleSort()">⏰ Earliest First</button>
 
@@ -105,7 +146,7 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 </div>
 
 <script type="module">
-/* ========= FIREBASE ========= */
+/* ================= FIREBASE ================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
@@ -125,14 +166,16 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/* ========= STATE ========= */
+/* ================= STATE ================= */
 let data = [];
 let editIndex = -1;
 let isAdmin = false;
 let sortOrder = "asc";
+let activeTravel = "";
 window.activeSearch = "";
+let countdownTimer = null;
 
-/* ========= HELPERS ========= */
+/* ================= HELPERS ================= */
 function timeToMinutes(t) {
     let [time, mod] = t.split(" ");
     let [h, m] = time.split(":").map(Number);
@@ -141,51 +184,115 @@ function timeToMinutes(t) {
     return h * 60 + m;
 }
 
-function calcDuration(route) {
-    let start = timeToMinutes(route[0].time);
-    let end = timeToMinutes(route[route.length - 1].time);
-    if (end < start) end += 1440;
-    let diff = end - start;
-    return `${Math.floor(diff / 60)}h ${diff % 60}m`;
+function getDepartureTimestamp(time) {
+    const now = new Date();
+    let [h, m] = timeToMinutes(time).toString().split(".");
+    const d = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        Math.floor(timeToMinutes(time) / 60),
+        timeToMinutes(time) % 60,
+        0
+    );
+    return d.getTime();
 }
 
-function getBoardingInfo(route, search) {
-    if (!search) return "";
-    for (let i = 0; i < route.length; i++) {
-        if (route[i].city.toLowerCase().includes(search)) {
-            return i === route.length - 1
-                ? `🔴 Dropping at ${route[i].city} – ${route[i].time}`
-                : `🟢 Boarding at ${route[i].city} – ${route[i].time}`;
+/* ================= TRAVELS CHIPS ================= */
+function renderTravelsChips() {
+    const bar = document.getElementById("travelsBar");
+    bar.innerHTML = "";
+
+    const travels = [...new Set(data.map(b => b.travel))];
+
+    const allChip = document.createElement("button");
+    allChip.className = "chip " + (activeTravel === "" ? "active" : "");
+    allChip.innerText = "All";
+    allChip.onclick = () => { activeTravel = ""; renderAll(); };
+    bar.appendChild(allChip);
+
+    travels.forEach(t => {
+        const chip = document.createElement("button");
+        chip.className = "chip " + (activeTravel === t ? "active" : "");
+        chip.innerText = t;
+        chip.onclick = () => { activeTravel = t; renderAll(); };
+        bar.appendChild(chip);
+    });
+}
+
+/* ================= NEXT DEPARTURE ================= */
+function renderNextDeparture(filtered) {
+    const box = document.getElementById("nextDeparture");
+    if (countdownTimer) clearInterval(countdownTimer);
+
+    const now = Date.now();
+
+    const valid = filtered.map(bus => {
+        const dep = getDepartureTimestamp(bus.route[0].time);
+        return { bus, dep };
+    }).filter(o => now <= o.dep + 5 * 60 * 1000);
+
+    if (!valid.length) {
+        box.classList.remove("hidden");
+        box.innerHTML = "<b>🚨 NEXT DEPARTURE</b><br>No upcoming buses";
+        return;
+    }
+
+    valid.sort((a, b) => a.dep - b.dep);
+    const next = valid[0];
+
+    function update() {
+        const diff = next.dep - Date.now();
+        let text = "";
+
+        if (diff > 0) {
+            const s = Math.floor(diff / 1000);
+            text = `⏳ Departs in ${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s`;
+        } else {
+            const s = Math.floor(Math.abs(diff) / 1000);
+            text = s > 300 ? "" : `⏳ Departed ${Math.floor(s/60)}m ${s%60}s ago`;
+        }
+
+        box.innerHTML = `
+            <b>🚨 NEXT DEPARTURE</b><br><br>
+            🚌 ${next.bus.travel}<br>
+            📍 ${next.bus.route[0].city} → ${next.bus.route[next.bus.route.length - 1].city}<br>
+            ⏰ ${next.bus.route[0].time}<br>
+            <div id="countdown">${text}</div>
+        `;
+
+        if (diff < -300000) {
+            clearInterval(countdownTimer);
+            renderAll();
         }
     }
-    return "";
+
+    box.classList.remove("hidden");
+    update();
+    countdownTimer = setInterval(update, 1000);
 }
 
-/* ========= FIRESTORE SYNC ========= */
-onSnapshot(collection(db, "buses"), snap => {
-    data = [];
-    snap.forEach(d => data.push({ id: d.id, ...d.data() }));
-    render();
-});
+/* ================= RENDER ALL ================= */
+function renderAll() {
+    renderTravelsChips();
+    renderList();
+}
 
-/* ========= AUTH ========= */
-onAuthStateChanged(auth, user => {
-    isAdmin = !!user;
-    loginBox.classList.toggle("hidden", isAdmin);
-    adminPanel.classList.toggle("hidden", !isAdmin);
-    render();
-});
-
-/* ========= RENDER ========= */
-window.render = function () {
+/* ================= LIST ================= */
+function renderList() {
     const list = document.getElementById("busList");
     list.innerHTML = "";
 
-    let filtered = data.filter(bus =>
-        !activeSearch ||
-        bus.travel.toLowerCase().includes(activeSearch) ||
-        bus.route.some(r => r.city.toLowerCase().includes(activeSearch))
+    const filtered = data.filter(bus =>
+        (!activeTravel || bus.travel === activeTravel) &&
+        (
+            !activeSearch ||
+            bus.travel.toLowerCase().includes(activeSearch) ||
+            bus.route.some(r => r.city.toLowerCase().includes(activeSearch))
+        )
     );
+
+    renderNextDeparture(filtered);
 
     filtered.sort((a, b) => {
         let ta = timeToMinutes(a.route[0].time);
@@ -194,43 +301,39 @@ window.render = function () {
     });
 
     filtered.forEach((bus, i) => {
-        let route = bus.route;
-        let duration = calcDuration(route);
-        let boarding = getBoardingInfo(route, activeSearch);
-
-        let routeHtml = route.map((r, idx) => {
-            if (idx === 0) return `📍 ${r.city} ${r.time}`;
-            if (idx === route.length - 1) return `🏁 ${r.city} ${r.time}`;
-            return `➡ ${r.city} ${r.time}`;
-        }).join("<br>");
-
-        let card = document.createElement("div");
+        const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
             <h3>🚌 ${bus.travel}</h3>
-            <div class="route-summary">${route[0].city} → ${route[route.length - 1].city}</div>
-            <div style="line-height:1.6">${routeHtml}</div><br>
-            ⏳ Duration: <b>${duration}</b>
-            ${boarding ? `<br><br><b>${boarding}</b>` : ""}
-            <br><br>
+            <div class="route-summary">${bus.route[0].city} → ${bus.route[bus.route.length - 1].city}</div>
             <button class="track-btn" onclick="window.location.href='${bus.link}'">Track</button>
-            ${isAdmin ? `
-                <button class="admin-btn" onclick="editBus(${i})">Edit</button>
-                <button class="delete-btn" onclick="deleteBus(${i})">Delete</button>
-            ` : ""}
         `;
         list.appendChild(card);
     });
-};
+}
 
-/* ========= AUTH ACTIONS ========= */
-window.login = async () => {
-    await signInWithEmailAndPassword(auth, username.value, password.value)
-        .catch(err => alert(err.message));
-};
-window.logout = async () => await signOut(auth);
+/* ================= FIRESTORE ================= */
+onSnapshot(collection(db, "buses"), snap => {
+    data = [];
+    snap.forEach(d => data.push({ id: d.id, ...d.data() }));
+    renderAll();
+});
 
-/* ========= CRUD ========= */
+/* ================= AUTH ================= */
+onAuthStateChanged(auth, u => {
+    isAdmin = !!u;
+    loginBox.classList.toggle("hidden", isAdmin);
+    adminPanel.classList.toggle("hidden", !isAdmin);
+});
+
+/* ================= AUTH ACTIONS ================= */
+window.login = async () =>
+    signInWithEmailAndPassword(auth, username.value, password.value)
+        .catch(e => alert(e.message));
+
+window.logout = async () => signOut(auth);
+
+/* ================= CRUD ================= */
 window.saveBus = async () => {
     let route = [{ city: fromCity.value, time: fromTime.value }];
     for (let i = 1; i <= 6; i++) {
@@ -249,35 +352,15 @@ window.saveBus = async () => {
     cancelEdit();
 };
 
-window.editBus = i => {
-    editIndex = i;
-    let b = data[i];
-    document.querySelectorAll("#adminPanel input").forEach(el => el.value = "");
-    travel.value = b.travel;
-    link.value = b.link;
-    fromCity.value = b.route[0].city;
-    fromTime.value = b.route[0].time;
-    toCity.value = b.route[b.route.length - 1].city;
-    toTime.value = b.route[b.route.length - 1].time;
-    adminTitle.innerText = "Edit Bus ✏️";
-};
-
 window.cancelEdit = () => {
     editIndex = -1;
-    adminTitle.innerText = "Admin Panel";
-    document.querySelectorAll("#adminPanel input").forEach(el => el.value = "");
-};
-
-window.deleteBus = async i => {
-    if (confirm("Delete bus?")) {
-        await deleteDoc(doc(db, "buses", data[i].id));
-    }
+    document.querySelectorAll("#adminPanel input").forEach(i => i.value = "");
 };
 
 window.toggleSort = () => {
     sortOrder = sortOrder === "asc" ? "desc" : "asc";
     sortBtn.innerText = sortOrder === "asc" ? "⏰ Earliest First" : "⏰ Latest First";
-    render();
+    renderAll();
 };
 </script>
 
