@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-
-<!-- ✅ REQUIRED FOR MOBILE -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Smart Bus Tracking</title>
 
 <style>
@@ -32,11 +29,10 @@ input, button {
     margin: 8px 0;
     border-radius: 8px;
     border: none;
-    font-size: 16px; /* prevents mobile zoom */
+    font-size: 16px;
 }
 
 button {
-    background: #ffb703;
     font-weight: bold;
     cursor: pointer;
 }
@@ -44,6 +40,7 @@ button {
 .track-btn { background: #2a9d8f; color: white; }
 .admin-btn { background: #fb8500; color: white; }
 .delete-btn { background: #d00000; color: white; }
+.sort-btn { background: #023047; color: white; }
 
 .card {
     background: #fff8dc;
@@ -51,26 +48,23 @@ button {
     border-radius: 10px;
     margin: 12px 0;
     box-shadow: 0 0 8px rgba(0,0,0,0.2);
-    animation: fadeIn 0.4s ease-in;
 }
 
 .hidden { display: none; }
 
-/* ===== MODAL ===== */
+/* Modal */
 .modal {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.85);
     display: none;
-    justify-content: center;
-    align-items: center;
     z-index: 999;
 }
 
 .modal-content {
-    background: white;
     width: 100%;
     height: 100%;
+    background: white;
     display: flex;
     flex-direction: column;
 }
@@ -88,12 +82,6 @@ iframe {
     height: 100%;
     border: none;
 }
-
-/* ===== ANIMATION ===== */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
 </style>
 </head>
 
@@ -103,7 +91,10 @@ iframe {
 
 <h2>🚌 Smart Bus Tracking</h2>
 
-<input type="text" id="search" placeholder="Search by travel / city" onkeyup="render()">
+<input type="text" id="search" placeholder="Search city (Udankudi / Thoothukudi...)"
+onkeyup="activeSearch=this.value.toLowerCase(); render()">
+
+<button class="sort-btn" id="sortBtn" onclick="toggleSort()">⏰ Earliest First</button>
 
 <div id="busList"></div>
 
@@ -121,21 +112,21 @@ iframe {
     <h3>Admin Panel</h3>
 
     <input id="travel" placeholder="Travels Name">
-    <input id="from" placeholder="From">
-    <input id="to" placeholder="To">
-    <input id="departure" placeholder="Departure Time (03:35 PM)">
-    <input id="drop" placeholder="Dropping Time (07:00 AM)">
+    <input id="routeTime" placeholder="City-Time (comma separated)">
+    <small>
+        Example:<br>
+        Udankudi-05:30 PM, Thiruchendur-06:15 PM, Thoothukudi-07:00 PM, Madurai-11:30 PM, Chennai-07:00 AM
+    </small>
+
     <input id="link" placeholder="Tracking Link">
 
     <button onclick="saveBus()">Save</button>
-
-    <hr>
     <button onclick="logout()">Logout</button>
 </div>
 
 </div>
 
-<!-- ===== TRACKING MODAL ===== -->
+<!-- Tracking Modal -->
 <div class="modal" id="modal">
     <div class="modal-content">
         <button class="modal-close" onclick="closeTrack()">✖ Close Tracking</button>
@@ -149,21 +140,22 @@ if (!localStorage.getItem("adminPass")) {
     localStorage.setItem("adminPass", "1234");
 }
 
-let isAdmin = false;
-let editIndex = -1;
-
 let data = JSON.parse(localStorage.getItem("busData")) || [
     {
         travel: "TMV Travels",
-        from: "Chennai",
-        to: "Trivandrum",
-        depart: "03:35 PM",
-        drop: "07:00 AM",
+        routeTime: "Udankudi-05:30 PM, Thiruchendur-06:15 PM, Thoothukudi-07:00 PM, Madurai-11:30 PM, Chennai-07:00 AM",
         link: "https://reports.yourbus.in/trackbus/TMVCHENNAI-TRIVANDRUM-0335PM"
     }
 ];
 
+let isAdmin = false;
+let editIndex = -1;
+let sortOrder = "asc";
+let activeSearch = "";
+
+/* Time helpers */
 function timeToMinutes(t) {
+    if (!t) return 99999;
     let [time, mod] = t.split(" ");
     let [h, m] = time.split(":").map(Number);
     if (mod === "PM" && h !== 12) h += 12;
@@ -171,60 +163,64 @@ function timeToMinutes(t) {
     return h * 60 + m;
 }
 
-function calcDuration(start, end) {
-    let s = timeToMinutes(start);
-    let e = timeToMinutes(end);
-    if (e < s) e += 1440;
-    let diff = e - s;
-    return Math.floor(diff / 60) + "h " + (diff % 60) + "m";
+/* Core logic: get correct time for searched city */
+function getTimeForCity(bus, city) {
+    if (!city || !bus.routeTime) return "";
+    city = city.toLowerCase();
+
+    let routes = bus.routeTime.split(",");
+    for (let r of routes) {
+        let [c, t] = r.split("-");
+        if (!c || !t) continue;
+        if (c.trim().toLowerCase().includes(city)) {
+            return t.trim();
+        }
+    }
+    return "";
 }
 
 function render() {
     const list = document.getElementById("busList");
-    const search = document.getElementById("search").value.toLowerCase();
     list.innerHTML = "";
 
-    let grouped = {};
+    let filtered = data.filter(bus =>
+        !activeSearch || bus.routeTime.toLowerCase().includes(activeSearch)
+    );
 
-    data.forEach(bus => {
-        if (
-            bus.travel.toLowerCase().includes(search) ||
-            bus.from.toLowerCase().includes(search) ||
-            bus.to.toLowerCase().includes(search)
-        ) {
-            grouped[bus.travel] ??= {};
-            grouped[bus.travel][bus.from] ??= [];
-            grouped[bus.travel][bus.from].push(bus);
-        }
+    filtered.sort((a, b) => {
+        let ta = timeToMinutes(getTimeForCity(a, activeSearch));
+        let tb = timeToMinutes(getTimeForCity(b, activeSearch));
+        return sortOrder === "asc" ? ta - tb : tb - ta;
     });
 
-    for (let travel in grouped) {
+    filtered.forEach(bus => {
+        let time = getTimeForCity(bus, activeSearch);
+
         let card = document.createElement("div");
         card.className = "card";
-        card.innerHTML = `<h3>🚌 ${travel}</h3>`;
 
-        for (let from in grouped[travel]) {
-            card.innerHTML += `<b>📍 From: ${from}</b><br><br>`;
-
-            grouped[travel][from].forEach(bus => {
-                let duration = calcDuration(bus.depart, bus.drop);
-
-                card.innerHTML += `
-                ⏰ <b>${bus.depart}</b> → <b>${bus.to}</b><br>
-                🕓 Drop: ${bus.drop} | ⏳ <b>${duration}</b><br><br>
-
-                <button class="track-btn" onclick="openTrack('${bus.link}')">Track</button>
-                ${isAdmin ? `
-                    <button class="admin-btn" onclick="editBus(${data.indexOf(bus)})">Edit</button>
-                    <button class="delete-btn" onclick="deleteBus(${data.indexOf(bus)})">Delete</button>
-                ` : ""}
-                <hr>`;
-            });
-        }
+        card.innerHTML = `
+            <h3>🚌 ${bus.travel}</h3>
+            <b>⏰ ${time}</b><br><br>
+            🛣️ <i>${bus.routeTime}</i><br><br>
+            <button class="track-btn" onclick="openTrack('${bus.link}')">Track</button>
+            ${isAdmin ? `
+                <button class="admin-btn" onclick="editBus(${data.indexOf(bus)})">Edit</button>
+                <button class="delete-btn" onclick="deleteBus(${data.indexOf(bus)})">Delete</button>
+            ` : ""}
+        `;
         list.appendChild(card);
-    }
+    });
 }
 
+function toggleSort() {
+    sortOrder = sortOrder === "asc" ? "desc" : "asc";
+    document.getElementById("sortBtn").innerText =
+        sortOrder === "asc" ? "⏰ Earliest First" : "⏰ Latest First";
+    render();
+}
+
+/* Admin functions */
 function login() {
     if (username.value === ADMIN_USER &&
         password.value === localStorage.getItem("adminPass")) {
@@ -245,10 +241,7 @@ function logout() {
 function saveBus() {
     let bus = {
         travel: travel.value,
-        from: from.value,
-        to: to.value,
-        depart: departure.value,
-        drop: drop.value,
+        routeTime: routeTime.value,
         link: link.value
     };
 
@@ -257,34 +250,32 @@ function saveBus() {
 
     localStorage.setItem("busData", JSON.stringify(data));
     render();
-    alert("Saved successfully");
+    alert("Saved");
 }
 
 function editBus(i) {
     let b = data[i];
     travel.value = b.travel;
-    from.value = b.from;
-    to.value = b.to;
-    departure.value = b.depart;
-    drop.value = b.drop;
+    routeTime.value = b.routeTime;
     link.value = b.link;
     editIndex = i;
 }
 
 function deleteBus(i) {
-    if (confirm("Delete this bus?")) {
+    if (confirm("Delete bus?")) {
         data.splice(i, 1);
         localStorage.setItem("busData", JSON.stringify(data));
         render();
     }
 }
 
+/* Tracking */
 function openTrack(link) {
     if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
         window.location.href = link;
     } else {
         frame.src = link;
-        modal.style.display = "flex";
+        modal.style.display = "block";
     }
 }
 
