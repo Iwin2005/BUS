@@ -52,45 +52,15 @@ button {
     gap: 10px;
 }
 .row input { flex: 1; }
-
-/* modal */
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    display: none;
-    z-index: 999;
-}
-.modal-content {
-    width: 100%;
-    height: 100%;
-    background: white;
-    display: flex;
-    flex-direction: column;
-}
-.modal-close {
-    background: #d00000;
-    color: white;
-    padding: 14px;
-    font-size: 16px;
-    border: none;
-}
-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
 <h2>🚌 Smart Bus Tracking</h2>
 
-<input type="text" id="search"
-placeholder="Search city (Udankudi / Thoothukudi...)"
+<input id="search" placeholder="Search city"
 onkeyup="activeSearch=this.value.toLowerCase(); render()">
 
 <button class="sort-btn" id="sortBtn" onclick="toggleSort()">⏰ Earliest First</button>
@@ -100,7 +70,6 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 <hr>
 
 <h3>🔐 Admin Login</h3>
-
 <div id="loginBox">
     <input id="username" placeholder="Username">
     <input id="password" type="password" placeholder="Password">
@@ -114,19 +83,19 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 
     <div class="row">
         <input id="fromCity" placeholder="From City *">
-        <input id="fromTime" placeholder="Time (05:30 PM)">
+        <input id="fromTime" placeholder="05:30 PM">
     </div>
 
-    <div class="row"><input id="via1City" placeholder="Via 1 City"><input id="via1Time" placeholder="Time"></div>
-    <div class="row"><input id="via2City" placeholder="Via 2 City"><input id="via2Time" placeholder="Time"></div>
-    <div class="row"><input id="via3City" placeholder="Via 3 City"><input id="via3Time" placeholder="Time"></div>
-    <div class="row"><input id="via4City" placeholder="Via 4 City"><input id="via4Time" placeholder="Time"></div>
-    <div class="row"><input id="via5City" placeholder="Via 5 City"><input id="via5Time" placeholder="Time"></div>
-    <div class="row"><input id="via6City" placeholder="Via 6 City"><input id="via6Time" placeholder="Time"></div>
+    <div class="row"><input id="via1City"><input id="via1Time"></div>
+    <div class="row"><input id="via2City"><input id="via2Time"></div>
+    <div class="row"><input id="via3City"><input id="via3Time"></div>
+    <div class="row"><input id="via4City"><input id="via4Time"></div>
+    <div class="row"><input id="via5City"><input id="via5Time"></div>
+    <div class="row"><input id="via6City"><input id="via6Time"></div>
 
     <div class="row">
         <input id="toCity" placeholder="To City *">
-        <input id="toTime" placeholder="Time (07:00 AM)">
+        <input id="toTime" placeholder="07:00 AM">
     </div>
 
     <input id="link" placeholder="Tracking Link">
@@ -134,242 +103,151 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
     <button onclick="saveBus()">Save</button>
     <button onclick="logout()">Logout</button>
 </div>
-
 </div>
 
-<!-- Tracking Modal -->
-<div class="modal" id="modal">
-    <div class="modal-content">
-        <button class="modal-close" onclick="closeTrack()">✖ Close Tracking</button>
-        <iframe id="frame"></iframe>
-    </div>
-</div>
+<!-- 🔥 FIREBASE + APP LOGIC -->
+<script type="module">
 
-<script>
-/* ===== CONFIG ===== */
-const ADMIN_USER = "admin";
-if (!localStorage.getItem("adminPass")) {
-    localStorage.setItem("adminPass", "1234");
-}
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-/* ===== STATE ===== */
-let data = JSON.parse(localStorage.getItem("busData")) || [];
+const firebaseConfig = {
+  apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
+  authDomain: "smart-bus-tracking-2ba21.firebaseapp.com",
+  projectId: "smart-bus-tracking-2ba21",
+  storageBucket: "smart-bus-tracking-2ba21.appspot.com",
+  messagingSenderId: "356136567230",
+  appId: "1:356136567230:web:ede96211188d3d42eeb9ef"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ================= APP STATE ================= */
+let data = [];
 let isAdmin = false;
 let editIndex = -1;
 let sortOrder = "asc";
 let activeSearch = "";
 
-/* ===== HELPERS ===== */
-function timeToMinutes(t) {
-    if (!t) return 99999;
+/* ================= HELPERS ================= */
+function timeToMinutes(t){
     let [time, mod] = t.split(" ");
-    let [h, m] = time.split(":").map(Number);
-    if (mod === "PM" && h !== 12) h += 12;
-    if (mod === "AM" && h === 12) h = 0;
-    return h * 60 + m;
+    let [h,m] = time.split(":").map(Number);
+    if(mod==="PM" && h!==12) h+=12;
+    if(mod==="AM" && h===12) h=0;
+    return h*60+m;
 }
 
-function calcDuration(route) {
-    let start = timeToMinutes(route[0].time);
-    let end = timeToMinutes(route[route.length - 1].time);
-    if (end < start) end += 1440;
-    let diff = end - start;
-    return Math.floor(diff / 60) + "h " + (diff % 60) + "m";
-}
+/* ================= FIRESTORE SYNC ================= */
+onSnapshot(collection(db,"buses"), snap=>{
+    data = [];
+    snap.forEach(d=>{
+        data.push({ id:d.id, ...d.data() });
+    });
+    render();
+});
 
-function isNextDay(route) {
-    return timeToMinutes(route[route.length - 1].time) <
-           timeToMinutes(route[0].time);
-}
-
-function getTimeForCity(route, search) {
-    if (!search) return "";
-    search = search.toLowerCase();
-    for (let r of route) {
-        if (r.city.toLowerCase().includes(search)) {
-            return r.time;
-        }
-    }
-    return "";
-}
-
-function getBoardingInfo(route, search) {
-    if (!search) return "";
-    search = search.toLowerCase();
-    for (let i = 0; i < route.length; i++) {
-        if (route[i].city.toLowerCase().includes(search)) {
-            return i === route.length - 1
-                ? `🔴 Dropping at ${route[i].city} – ${route[i].time}`
-                : `🟢 Boarding at ${route[i].city} – ${route[i].time}`;
-        }
-    }
-    return "";
-}
-
-/* ===== RENDER ===== */
-function render() {
+/* ================= RENDER ================= */
+window.render = function(){
     const list = document.getElementById("busList");
-    list.innerHTML = "";
+    list.innerHTML="";
 
-    data = data.filter(b => Array.isArray(b.route));
-
-    let filtered = data.filter(bus =>
-        !activeSearch ||
-        bus.route.some(r => r.city.toLowerCase().includes(activeSearch))
+    let filtered = data.filter(b =>
+        !activeSearch || b.route.some(r=>r.city.toLowerCase().includes(activeSearch))
     );
 
-    filtered.sort((a, b) => {
-        let ta = timeToMinutes(getTimeForCity(a.route, activeSearch));
-        let tb = timeToMinutes(getTimeForCity(b.route, activeSearch));
-        return sortOrder === "asc" ? ta - tb : tb - ta;
+    filtered.sort((a,b)=>{
+        let ta=timeToMinutes(a.route[0].time);
+        let tb=timeToMinutes(b.route[0].time);
+        return sortOrder==="asc"?ta-tb:tb-ta;
     });
 
-    filtered.forEach(bus => {
-        let route = bus.route;
-        let duration = calcDuration(route);
-        let nextDay = isNextDay(route);
-        let boardingInfo = getBoardingInfo(route, activeSearch);
-
-        let routeDisplay = route.map((r, i) => {
-            if (i === 0) return `📍 ${r.city} ${r.time}`;
-            if (i === route.length - 1) return `🏁 ${r.city} ${r.time}`;
+    filtered.forEach((bus,i)=>{
+        let routeHtml = bus.route.map((r,idx)=>{
+            if(idx===0) return `📍 ${r.city} ${r.time}`;
+            if(idx===bus.route.length-1) return `🏁 ${r.city} ${r.time}`;
             return `➡ ${r.city} ${r.time}`;
         }).join("<br>");
 
-        let viaCities = route.slice(1, -1).map(r => r.city).join(", ");
-
-        let card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-            <h3>🚌 ${bus.travel}</h3>
-            <div style="line-height:1.6">${routeDisplay}</div><br>
-            ⏳ Duration: <b>${duration}</b>
-            ${nextDay ? "<br>📅 Arrival: Next Day" : ""}
-            ${viaCities ? `<br>🛣 Via: ${viaCities}` : ""}
-            ${boardingInfo ? `<br><br><b>${boardingInfo}</b>` : ""}
-            <br><br>
-            <button class="track-btn" onclick="openTrack('${bus.link}')">Track</button>
-            ${isAdmin ? `
-                <button class="admin-btn" onclick="editBus(${data.indexOf(bus)})">Edit</button>
-                <button class="delete-btn" onclick="deleteBus(${data.indexOf(bus)})">Delete</button>
-            ` : ""}
+        let card=document.createElement("div");
+        card.className="card";
+        card.innerHTML=`
+        <h3>🚌 ${bus.travel}</h3>
+        ${routeHtml}<br><br>
+        <button class="track-btn" onclick="window.location.href='${bus.link}'">Track</button>
+        ${isAdmin?`
+        <button class="admin-btn" onclick="editBus(${i})">Edit</button>
+        <button class="delete-btn" onclick="deleteBus(${i})">Delete</button>`:""}
         `;
         list.appendChild(card);
     });
-}
+};
 
-/* ===== SORT ===== */
-function toggleSort() {
-    sortOrder = sortOrder === "asc" ? "desc" : "asc";
-    sortBtn.innerText = sortOrder === "asc"
-        ? "⏰ Earliest First"
-        : "⏰ Latest First";
-    render();
-}
-
-/* ===== ADMIN ===== */
-function login() {
-    if (username.value === ADMIN_USER &&
-        password.value === localStorage.getItem("adminPass")) {
-        isAdmin = true;
+/* ================= ADMIN ================= */
+window.login = function(){
+    if(username.value==="admin" && password.value==="1234"){
+        isAdmin=true;
         loginBox.classList.add("hidden");
         adminPanel.classList.remove("hidden");
         render();
     } else alert("Invalid login");
-}
+};
 
-function logout() {
-    isAdmin = false;
+window.logout = function(){
+    isAdmin=false;
     adminPanel.classList.add("hidden");
     loginBox.classList.remove("hidden");
     render();
-}
+};
 
-function saveBus() {
-    const fromCity = document.getElementById("fromCity").value.trim();
-    const fromTime = document.getElementById("fromTime").value.trim();
-    const toCity = document.getElementById("toCity").value.trim();
-    const toTime = document.getElementById("toTime").value.trim();
-
-    if (!fromCity || !fromTime || !toCity || !toTime) {
-        alert("From and To are compulsory");
-        return;
+window.saveBus = async function(){
+    let route=[{city:fromCity.value,time:fromTime.value}];
+    for(let i=1;i<=6;i++){
+        let c=document.getElementById(`via${i}City`).value;
+        let t=document.getElementById(`via${i}Time`).value;
+        if(c&&t) route.push({city:c,time:t});
     }
+    route.push({city:toCity.value,time:toTime.value});
 
-    let route = [{ city: fromCity, time: fromTime }];
-
-    for (let i = 1; i <= 6; i++) {
-        let c = document.getElementById(`via${i}City`).value.trim();
-        let t = document.getElementById(`via${i}Time`).value.trim();
-        if (c && t) route.push({ city: c, time: t });
-    }
-
-    route.push({ city: toCity, time: toTime });
-
-    let bus = {
-        travel: document.getElementById("travel").value.trim(),
+    let bus={
+        travel:travel.value,
         route,
-        link: document.getElementById("link").value.trim()
+        link:link.value
     };
 
-    editIndex >= 0 ? data[editIndex] = bus : data.push(bus);
-    editIndex = -1;
+    editIndex>=0
+      ? await updateDoc(doc(db,"buses",data[editIndex].id),bus)
+      : await addDoc(collection(db,"buses"),bus);
 
-    localStorage.setItem("busData", JSON.stringify(data));
-    document.querySelectorAll("#adminPanel input").forEach(i => i.value = "");
+    editIndex=-1;
+    document.querySelectorAll("#adminPanel input").forEach(i=>i.value="");
+};
+
+window.editBus = function(i){
+    let b=data[i];
+    editIndex=i;
+    travel.value=b.travel;
+    fromCity.value=b.route[0].city;
+    fromTime.value=b.route[0].time;
+    toCity.value=b.route[b.route.length-1].city;
+    toTime.value=b.route[b.route.length-1].time;
+};
+
+window.deleteBus = async function(i){
+    if(confirm("Delete bus?")){
+        await deleteDoc(doc(db,"buses",data[i].id));
+    }
+};
+
+window.toggleSort=function(){
+    sortOrder=sortOrder==="asc"?"desc":"asc";
+    sortBtn.innerText=sortOrder==="asc"?"⏰ Earliest First":"⏰ Latest First";
     render();
-    alert("Saved successfully ✅");
-}
+};
 
-function editBus(i) {
-    let b = data[i];
-    editIndex = i;
-
-    document.getElementById("travel").value = b.travel;
-    document.getElementById("link").value = b.link;
-
-    document.getElementById("fromCity").value = b.route[0].city;
-    document.getElementById("fromTime").value = b.route[0].time;
-
-    document.getElementById("toCity").value = b.route[b.route.length - 1].city;
-    document.getElementById("toTime").value = b.route[b.route.length - 1].time;
-
-    for (let i = 1; i <= 6; i++) {
-        document.getElementById(`via${i}City`).value = "";
-        document.getElementById(`via${i}Time`).value = "";
-    }
-
-    let idx = 1;
-    for (let j = 1; j < b.route.length - 1 && idx <= 6; j++) {
-        document.getElementById(`via${idx}City`).value = b.route[j].city;
-        document.getElementById(`via${idx}Time`).value = b.route[j].time;
-        idx++;
-    }
-}
-
-function deleteBus(i) {
-    if (confirm("Delete bus?")) {
-        data.splice(i, 1);
-        localStorage.setItem("busData", JSON.stringify(data));
-        render();
-    }
-}
-
-/* ===== TRACKING ===== */
-function openTrack(link) {
-    if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
-        window.location.href = link;
-    } else {
-        frame.src = link;
-        modal.style.display = "block";
-    }
-}
-function closeTrack() {
-    modal.style.display = "none";
-    frame.src = "";
-}
-
-render();
 </script>
 
 </body>
