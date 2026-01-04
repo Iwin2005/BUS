@@ -26,7 +26,7 @@ h2, h3 {
 input, button {
     width: 100%;
     padding: 12px;
-    margin: 8px 0;
+    margin: 6px 0;
     border-radius: 8px;
     border: none;
     font-size: 16px;
@@ -52,7 +52,17 @@ button {
 
 .hidden { display: none; }
 
-/* Modal */
+/* city + time row */
+.row {
+    display: flex;
+    gap: 10px;
+}
+
+.row input {
+    flex: 1;
+}
+
+/* modal */
 .modal {
     position: fixed;
     inset: 0;
@@ -91,7 +101,8 @@ iframe {
 
 <h2>🚌 Smart Bus Tracking</h2>
 
-<input type="text" id="search" placeholder="Search city (Udankudi / Thoothukudi...)"
+<input type="text" id="search"
+placeholder="Search city (Udankudi / Thoothukudi...)"
 onkeyup="activeSearch=this.value.toLowerCase(); render()">
 
 <button class="sort-btn" id="sortBtn" onclick="toggleSort()">⏰ Earliest First</button>
@@ -112,11 +123,26 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
     <h3>Admin Panel</h3>
 
     <input id="travel" placeholder="Travels Name">
-    <input id="routeTime" placeholder="City-Time (comma separated)">
-    <small>
-        Example:<br>
-        Udankudi-05:30 PM, Thiruchendur-06:15 PM, Thoothukudi-07:00 PM, Madurai-11:30 PM, Chennai-07:00 AM
-    </small>
+
+    <!-- FROM (required) -->
+    <div class="row">
+        <input id="fromCity" placeholder="From City *">
+        <input id="fromTime" placeholder="Time (05:30 PM)">
+    </div>
+
+    <!-- VIA (optional) -->
+    <div class="row"><input id="via1City" placeholder="Via 1 City"><input id="via1Time" placeholder="Time"></div>
+    <div class="row"><input id="via2City" placeholder="Via 2 City"><input id="via2Time" placeholder="Time"></div>
+    <div class="row"><input id="via3City" placeholder="Via 3 City"><input id="via3Time" placeholder="Time"></div>
+    <div class="row"><input id="via4City" placeholder="Via 4 City"><input id="via4Time" placeholder="Time"></div>
+    <div class="row"><input id="via5City" placeholder="Via 5 City"><input id="via5Time" placeholder="Time"></div>
+    <div class="row"><input id="via6City" placeholder="Via 6 City"><input id="via6Time" placeholder="Time"></div>
+
+    <!-- TO (required) -->
+    <div class="row">
+        <input id="toCity" placeholder="To City *">
+        <input id="toTime" placeholder="Time (07:00 AM)">
+    </div>
 
     <input id="link" placeholder="Tracking Link">
 
@@ -135,25 +161,20 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 </div>
 
 <script>
+/* ===== CONFIG ===== */
 const ADMIN_USER = "admin";
 if (!localStorage.getItem("adminPass")) {
     localStorage.setItem("adminPass", "1234");
 }
 
-let data = JSON.parse(localStorage.getItem("busData")) || [
-    {
-        travel: "TMV Travels",
-        routeTime: "Udankudi-05:30 PM, Thiruchendur-06:15 PM, Thoothukudi-07:00 PM, Madurai-11:30 PM, Chennai-07:00 AM",
-        link: "https://reports.yourbus.in/trackbus/TMVCHENNAI-TRIVANDRUM-0335PM"
-    }
-];
-
+/* ===== STATE ===== */
+let data = JSON.parse(localStorage.getItem("busData")) || [];
 let isAdmin = false;
 let editIndex = -1;
 let sortOrder = "asc";
 let activeSearch = "";
 
-/* Time helpers */
+/* ===== HELPERS ===== */
 function timeToMinutes(t) {
     if (!t) return 99999;
     let [time, mod] = t.split(" ");
@@ -163,28 +184,25 @@ function timeToMinutes(t) {
     return h * 60 + m;
 }
 
-/* Core logic: get correct time for searched city */
 function getTimeForCity(bus, city) {
-    if (!city || !bus.routeTime) return "";
+    if (!city) return "";
     city = city.toLowerCase();
-
-    let routes = bus.routeTime.split(",");
-    for (let r of routes) {
-        let [c, t] = r.split("-");
-        if (!c || !t) continue;
-        if (c.trim().toLowerCase().includes(city)) {
-            return t.trim();
+    for (let r of bus.route) {
+        if (r.city.toLowerCase().includes(city)) {
+            return r.time;
         }
     }
     return "";
 }
 
+/* ===== RENDER ===== */
 function render() {
     const list = document.getElementById("busList");
     list.innerHTML = "";
 
     let filtered = data.filter(bus =>
-        !activeSearch || bus.routeTime.toLowerCase().includes(activeSearch)
+        !activeSearch ||
+        bus.route.some(r => r.city.toLowerCase().includes(activeSearch))
     );
 
     filtered.sort((a, b) => {
@@ -195,14 +213,14 @@ function render() {
 
     filtered.forEach(bus => {
         let time = getTimeForCity(bus, activeSearch);
+        let routeText = bus.route.map(r => `${r.city} (${r.time})`).join(" → ");
 
         let card = document.createElement("div");
         card.className = "card";
-
         card.innerHTML = `
             <h3>🚌 ${bus.travel}</h3>
             <b>⏰ ${time}</b><br><br>
-            🛣️ <i>${bus.routeTime}</i><br><br>
+            🛣️ ${routeText}<br><br>
             <button class="track-btn" onclick="openTrack('${bus.link}')">Track</button>
             ${isAdmin ? `
                 <button class="admin-btn" onclick="editBus(${data.indexOf(bus)})">Edit</button>
@@ -213,14 +231,16 @@ function render() {
     });
 }
 
+/* ===== SORT ===== */
 function toggleSort() {
     sortOrder = sortOrder === "asc" ? "desc" : "asc";
-    document.getElementById("sortBtn").innerText =
-        sortOrder === "asc" ? "⏰ Earliest First" : "⏰ Latest First";
+    sortBtn.innerText = sortOrder === "asc"
+        ? "⏰ Earliest First"
+        : "⏰ Latest First";
     render();
 }
 
-/* Admin functions */
+/* ===== ADMIN ===== */
 function login() {
     if (username.value === ADMIN_USER &&
         password.value === localStorage.getItem("adminPass")) {
@@ -239,9 +259,25 @@ function logout() {
 }
 
 function saveBus() {
+    if (!fromCity.value || !fromTime.value || !toCity.value || !toTime.value) {
+        alert("From and To are compulsory");
+        return;
+    }
+
+    let route = [];
+    route.push({ city: fromCity.value, time: fromTime.value });
+
+    for (let i = 1; i <= 6; i++) {
+        let c = document.getElementById(`via${i}City`).value;
+        let t = document.getElementById(`via${i}Time`).value;
+        if (c && t) route.push({ city: c, time: t });
+    }
+
+    route.push({ city: toCity.value, time: toTime.value });
+
     let bus = {
         travel: travel.value,
-        routeTime: routeTime.value,
+        route: route,
         link: link.value
     };
 
@@ -256,8 +292,26 @@ function saveBus() {
 function editBus(i) {
     let b = data[i];
     travel.value = b.travel;
-    routeTime.value = b.routeTime;
     link.value = b.link;
+
+    fromCity.value = b.route[0].city;
+    fromTime.value = b.route[0].time;
+
+    toCity.value = b.route[b.route.length - 1].city;
+    toTime.value = b.route[b.route.length - 1].time;
+
+    for (let i = 1; i <= 6; i++) {
+        document.getElementById(`via${i}City`).value = "";
+        document.getElementById(`via${i}Time`).value = "";
+    }
+
+    let idx = 1;
+    for (let j = 1; j < b.route.length - 1; j++) {
+        document.getElementById(`via${idx}City`).value = b.route[j].city;
+        document.getElementById(`via${idx}Time`).value = b.route[j].time;
+        idx++;
+    }
+
     editIndex = i;
 }
 
@@ -269,7 +323,7 @@ function deleteBus(i) {
     }
 }
 
-/* Tracking */
+/* ===== TRACKING ===== */
 function openTrack(link) {
     if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
         window.location.href = link;
