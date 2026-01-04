@@ -28,10 +28,7 @@ input, button {
     border: none;
     font-size: 16px;
 }
-button {
-    font-weight: bold;
-    cursor: pointer;
-}
+button { font-weight: bold; cursor: pointer; }
 .track-btn { background: #2a9d8f; color: white; }
 .admin-btn { background: #fb8500; color: white; }
 .delete-btn { background: #d00000; color: white; }
@@ -44,24 +41,23 @@ button {
     margin: 12px 0;
     box-shadow: 0 0 8px rgba(0,0,0,0.2);
 }
-
 .hidden { display: none; }
-
-.row {
-    display: flex;
-    gap: 10px;
-}
+.row { display: flex; gap: 10px; }
 .row input { flex: 1; }
+.route-summary {
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 6px;
+}
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
 <h2>🚌 Smart Bus Tracking</h2>
 
-<input id="search" placeholder="Search city"
+<input id="search" placeholder="Search city or travels name"
 onkeyup="activeSearch=this.value.toLowerCase(); render()">
 
 <button class="sort-btn" id="sortBtn" onclick="toggleSort()">⏰ Earliest First</button>
@@ -71,7 +67,6 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 <hr>
 
 <h3>🔐 Admin Login</h3>
-
 <div id="loginBox">
     <input id="username" placeholder="Admin Email">
     <input id="password" type="password" placeholder="Password">
@@ -88,12 +83,12 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
         <input id="fromTime" placeholder="05:30 PM">
     </div>
 
-    <div class="row"><input id="via1City" placeholder="Via 1"><input id="via1Time" placeholder="Time"></div>
-    <div class="row"><input id="via2City" placeholder="Via 2"><input id="via2Time" placeholder="Time"></div>
-    <div class="row"><input id="via3City" placeholder="Via 3"><input id="via3Time" placeholder="Time"></div>
-    <div class="row"><input id="via4City" placeholder="Via 4"><input id="via4Time" placeholder="Time"></div>
-    <div class="row"><input id="via5City" placeholder="Via 5"><input id="via5Time" placeholder="Time"></div>
-    <div class="row"><input id="via6City" placeholder="Via 6"><input id="via6Time" placeholder="Time"></div>
+    <div class="row"><input id="via1City"><input id="via1Time"></div>
+    <div class="row"><input id="via2City"><input id="via2Time"></div>
+    <div class="row"><input id="via3City"><input id="via3Time"></div>
+    <div class="row"><input id="via4City"><input id="via4Time"></div>
+    <div class="row"><input id="via5City"><input id="via5Time"></div>
+    <div class="row"><input id="via6City"><input id="via6Time"></div>
 
     <div class="row">
         <input id="toCity" placeholder="To City *">
@@ -110,15 +105,13 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 </div>
 
 <script type="module">
-
-/* ========= FIREBASE IMPORTS ========= */
+/* ========= FIREBASE ========= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* ========= FIREBASE CONFIG ========= */
 const firebaseConfig = {
   apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
   authDomain: "smart-bus-tracking-2ba21.firebaseapp.com",
@@ -134,25 +127,10 @@ const auth = getAuth(app);
 
 /* ========= STATE ========= */
 let data = [];
-let isAdmin = false;
 let editIndex = -1;
+let isAdmin = false;
 let sortOrder = "asc";
 window.activeSearch = "";
-
-/* ========= FIRESTORE SYNC ========= */
-onSnapshot(collection(db, "buses"), snap => {
-    data = [];
-    snap.forEach(d => data.push({ id: d.id, ...d.data() }));
-    render();
-});
-
-/* ========= AUTH STATE ========= */
-onAuthStateChanged(auth, user => {
-    isAdmin = !!user;
-    loginBox.classList.toggle("hidden", isAdmin);
-    adminPanel.classList.toggle("hidden", !isAdmin);
-    render();
-});
 
 /* ========= HELPERS ========= */
 function timeToMinutes(t) {
@@ -163,6 +141,41 @@ function timeToMinutes(t) {
     return h * 60 + m;
 }
 
+function calcDuration(route) {
+    let start = timeToMinutes(route[0].time);
+    let end = timeToMinutes(route[route.length - 1].time);
+    if (end < start) end += 1440;
+    let diff = end - start;
+    return `${Math.floor(diff / 60)}h ${diff % 60}m`;
+}
+
+function getBoardingInfo(route, search) {
+    if (!search) return "";
+    for (let i = 0; i < route.length; i++) {
+        if (route[i].city.toLowerCase().includes(search)) {
+            return i === route.length - 1
+                ? `🔴 Dropping at ${route[i].city} – ${route[i].time}`
+                : `🟢 Boarding at ${route[i].city} – ${route[i].time}`;
+        }
+    }
+    return "";
+}
+
+/* ========= FIRESTORE SYNC ========= */
+onSnapshot(collection(db, "buses"), snap => {
+    data = [];
+    snap.forEach(d => data.push({ id: d.id, ...d.data() }));
+    render();
+});
+
+/* ========= AUTH ========= */
+onAuthStateChanged(auth, user => {
+    isAdmin = !!user;
+    loginBox.classList.toggle("hidden", isAdmin);
+    adminPanel.classList.toggle("hidden", !isAdmin);
+    render();
+});
+
 /* ========= RENDER ========= */
 window.render = function () {
     const list = document.getElementById("busList");
@@ -170,6 +183,7 @@ window.render = function () {
 
     let filtered = data.filter(bus =>
         !activeSearch ||
+        bus.travel.toLowerCase().includes(activeSearch) ||
         bus.route.some(r => r.city.toLowerCase().includes(activeSearch))
     );
 
@@ -180,9 +194,13 @@ window.render = function () {
     });
 
     filtered.forEach((bus, i) => {
-        let routeHtml = bus.route.map((r, idx) => {
+        let route = bus.route;
+        let duration = calcDuration(route);
+        let boarding = getBoardingInfo(route, activeSearch);
+
+        let routeHtml = route.map((r, idx) => {
             if (idx === 0) return `📍 ${r.city} ${r.time}`;
-            if (idx === bus.route.length - 1) return `🏁 ${r.city} ${r.time}`;
+            if (idx === route.length - 1) return `🏁 ${r.city} ${r.time}`;
             return `➡ ${r.city} ${r.time}`;
         }).join("<br>");
 
@@ -190,7 +208,11 @@ window.render = function () {
         card.className = "card";
         card.innerHTML = `
             <h3>🚌 ${bus.travel}</h3>
+            <div class="route-summary">${route[0].city} → ${route[route.length - 1].city}</div>
             <div style="line-height:1.6">${routeHtml}</div><br>
+            ⏳ Duration: <b>${duration}</b>
+            ${boarding ? `<br><br><b>${boarding}</b>` : ""}
+            <br><br>
             <button class="track-btn" onclick="window.location.href='${bus.link}'">Track</button>
             ${isAdmin ? `
                 <button class="admin-btn" onclick="editBus(${i})">Edit</button>
@@ -202,86 +224,61 @@ window.render = function () {
 };
 
 /* ========= AUTH ACTIONS ========= */
-window.login = async function () {
+window.login = async () => {
     await signInWithEmailAndPassword(auth, username.value, password.value)
-      .catch(err => alert(err.message));
+        .catch(err => alert(err.message));
 };
-
-window.logout = async function () {
-    await signOut(auth);
-};
+window.logout = async () => await signOut(auth);
 
 /* ========= CRUD ========= */
-window.saveBus = async function () {
+window.saveBus = async () => {
     let route = [{ city: fromCity.value, time: fromTime.value }];
-
     for (let i = 1; i <= 6; i++) {
         let c = document.getElementById(`via${i}City`).value;
         let t = document.getElementById(`via${i}Time`).value;
         if (c && t) route.push({ city: c, time: t });
     }
-
     route.push({ city: toCity.value, time: toTime.value });
 
-    let bus = {
-        travel: travel.value,
-        route,
-        link: link.value
-    };
+    let bus = { travel: travel.value, route, link: link.value };
 
-    if (editIndex >= 0) {
-        await updateDoc(doc(db, "buses", data[editIndex].id), bus);
-    } else {
-        await addDoc(collection(db, "buses"), bus);
-    }
+    editIndex >= 0
+        ? await updateDoc(doc(db, "buses", data[editIndex].id), bus)
+        : await addDoc(collection(db, "buses"), bus);
 
     cancelEdit();
 };
 
-window.editBus = function (i) {
-    const b = data[i];
+window.editBus = i => {
     editIndex = i;
-
+    let b = data[i];
     document.querySelectorAll("#adminPanel input").forEach(el => el.value = "");
-
     travel.value = b.travel;
     link.value = b.link;
-
     fromCity.value = b.route[0].city;
     fromTime.value = b.route[0].time;
-
     toCity.value = b.route[b.route.length - 1].city;
     toTime.value = b.route[b.route.length - 1].time;
-
-    let idx = 1;
-    for (let j = 1; j < b.route.length - 1 && idx <= 6; j++) {
-        document.getElementById(`via${idx}City`).value = b.route[j].city;
-        document.getElementById(`via${idx}Time`).value = b.route[j].time;
-        idx++;
-    }
-
     adminTitle.innerText = "Edit Bus ✏️";
-    adminPanel.scrollIntoView({ behavior: "smooth" });
 };
 
-window.cancelEdit = function () {
+window.cancelEdit = () => {
     editIndex = -1;
-    document.querySelectorAll("#adminPanel input").forEach(el => el.value = "");
     adminTitle.innerText = "Admin Panel";
+    document.querySelectorAll("#adminPanel input").forEach(el => el.value = "");
 };
 
-window.deleteBus = async function (i) {
+window.deleteBus = async i => {
     if (confirm("Delete bus?")) {
         await deleteDoc(doc(db, "buses", data[i].id));
     }
 };
 
-window.toggleSort = function () {
+window.toggleSort = () => {
     sortOrder = sortOrder === "asc" ? "desc" : "asc";
     sortBtn.innerText = sortOrder === "asc" ? "⏰ Earliest First" : "⏰ Latest First";
     render();
 };
-
 </script>
 
 </body>
