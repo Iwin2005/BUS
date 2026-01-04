@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login | Smart Bus Tracking</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #fff3b0, #ffd60a);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.box {
+    background: #fff;
+    padding: 25px;
+    width: 320px;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.2);
+}
+h2 {
+    text-align: center;
+}
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+}
+button {
+    background: #2a9d8f;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+.role {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+.role button {
+    flex: 1;
+    background: #023047;
+}
+.msg {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+    <h2>🚌 Smart Bus Tracking</h2>
+
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+
+    <button id="loginBtn">Login</button>
+
+    <div class="role">
+        <button onclick="setRole('user')">User</button>
+        <button onclick="setRole('admin')">Admin</button>
+    </div>
+
+    <div class="msg" id="msg"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from
+"https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from
+"https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
+  authDomain: "smart-bus-tracking-2ba21.firebaseapp.com",
+  projectId: "smart-bus-tracking-2ba21",
+  storageBucket: "smart-bus-tracking-2ba21.appspot.com",
+  messagingSenderId: "356136567230",
+  appId: "1:356136567230:web:ede96211188d3d42eeb9ef"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let selectedRole = "user";
+
+window.setRole = r => selectedRole = r;
+
+loginBtn.onclick = async () => {
+    msg.innerText = "";
+
+    try {
+        const cred = await signInWithEmailAndPassword(
+            auth,
+            email.value,
+            password.value
+        );
+
+        const uid = cred.user.uid;
+        const snap = await getDoc(doc(db, "users", uid));
+
+        if (!snap.exists()) {
+            msg.innerText = "No role assigned";
+            return;
+        }
+
+        if (snap.data().role !== selectedRole) {
+            msg.innerText = "Role mismatch";
+            return;
+        }
+
+        window.location.href = "index.html";
+    }
+    catch (e) {
+        msg.innerText = e.message;
+    }
+};
+</script>
+
+</body>
+</html>
