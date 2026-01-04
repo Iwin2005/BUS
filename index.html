@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<!-- ✅ REQUIRED FOR MOBILE -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Smart Bus Tracking</title>
 
 <style>
@@ -24,15 +28,15 @@ h2, h3 {
 
 input, button {
     width: 100%;
-    padding: 10px;
-    margin: 6px 0;
-    border-radius: 6px;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
     border: none;
+    font-size: 16px; /* prevents mobile zoom */
 }
 
 button {
     background: #ffb703;
-    color: black;
     font-weight: bold;
     cursor: pointer;
 }
@@ -47,30 +51,48 @@ button {
     border-radius: 10px;
     margin: 12px 0;
     box-shadow: 0 0 8px rgba(0,0,0,0.2);
+    animation: fadeIn 0.4s ease-in;
 }
 
 .hidden { display: none; }
 
+/* ===== MODAL ===== */
 .modal {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.85);
     display: none;
     justify-content: center;
     align-items: center;
+    z-index: 999;
 }
 
 .modal-content {
     background: white;
-    width: 95%;
-    height: 90%;
-    border-radius: 10px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-close {
+    background: #d00000;
+    color: white;
+    padding: 14px;
+    font-size: 16px;
+    border: none;
 }
 
 iframe {
     width: 100%;
     height: 100%;
     border: none;
+}
+
+/* ===== ANIMATION ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
 </head>
@@ -101,8 +123,8 @@ iframe {
     <input id="travel" placeholder="Travels Name">
     <input id="from" placeholder="From">
     <input id="to" placeholder="To">
-    <input id="departure" placeholder="Departure Time (e.g 03:35 PM)">
-    <input id="drop" placeholder="Dropping Time (e.g 07:00 AM)">
+    <input id="departure" placeholder="Departure Time (03:35 PM)">
+    <input id="drop" placeholder="Dropping Time (07:00 AM)">
     <input id="link" placeholder="Tracking Link">
 
     <button onclick="saveBus()">Save</button>
@@ -113,10 +135,10 @@ iframe {
 
 </div>
 
-<!-- Tracking -->
+<!-- ===== TRACKING MODAL ===== -->
 <div class="modal" id="modal">
     <div class="modal-content">
-        <button onclick="closeTrack()">Close</button>
+        <button class="modal-close" onclick="closeTrack()">✖ Close Tracking</button>
         <iframe id="frame"></iframe>
     </div>
 </div>
@@ -154,9 +176,7 @@ function calcDuration(start, end) {
     let e = timeToMinutes(end);
     if (e < s) e += 1440;
     let diff = e - s;
-    let h = Math.floor(diff / 60);
-    let m = diff % 60;
-    return `${h}h ${m}m`;
+    return Math.floor(diff / 60) + "h " + (diff % 60) + "m";
 }
 
 function render() {
@@ -172,8 +192,8 @@ function render() {
             bus.from.toLowerCase().includes(search) ||
             bus.to.toLowerCase().includes(search)
         ) {
-            if (!grouped[bus.travel]) grouped[bus.travel] = {};
-            if (!grouped[bus.travel][bus.from]) grouped[bus.travel][bus.from] = [];
+            grouped[bus.travel] ??= {};
+            grouped[bus.travel][bus.from] ??= [];
             grouped[bus.travel][bus.from].push(bus);
         }
     });
@@ -181,31 +201,26 @@ function render() {
     for (let travel in grouped) {
         let card = document.createElement("div");
         card.className = "card";
-
         card.innerHTML = `<h3>🚌 ${travel}</h3>`;
 
         for (let from in grouped[travel]) {
-            card.innerHTML += `<b>📍 From: ${from}</b><br>`;
+            card.innerHTML += `<b>📍 From: ${from}</b><br><br>`;
 
             grouped[travel][from].forEach(bus => {
                 let duration = calcDuration(bus.depart, bus.drop);
 
                 card.innerHTML += `
-                <div style="margin-left:15px;">
-                    ⏰ <b>${bus.depart}</b> → <b>${bus.to}</b><br>
-                    🕓 Drop: ${bus.drop} | ⏳ Duration: <b>${duration}</b><br><br>
+                ⏰ <b>${bus.depart}</b> → <b>${bus.to}</b><br>
+                🕓 Drop: ${bus.drop} | ⏳ <b>${duration}</b><br><br>
 
-                    <button class="track-btn" onclick="openTrack('${bus.link}')">Track</button>
-                    ${isAdmin ? `
-                        <button class="admin-btn" onclick="editBus(${data.indexOf(bus)})">Edit</button>
-                        <button class="delete-btn" onclick="deleteBus(${data.indexOf(bus)})">Delete</button>
-                    ` : ""}
-                </div><br>`;
+                <button class="track-btn" onclick="openTrack('${bus.link}')">Track</button>
+                ${isAdmin ? `
+                    <button class="admin-btn" onclick="editBus(${data.indexOf(bus)})">Edit</button>
+                    <button class="delete-btn" onclick="deleteBus(${data.indexOf(bus)})">Delete</button>
+                ` : ""}
+                <hr>`;
             });
-
-            card.innerHTML += `<hr>`;
         }
-
         list.appendChild(card);
     }
 }
@@ -214,16 +229,16 @@ function login() {
     if (username.value === ADMIN_USER &&
         password.value === localStorage.getItem("adminPass")) {
         isAdmin = true;
-        document.getElementById("loginBox").classList.add("hidden");
-        document.getElementById("adminPanel").classList.remove("hidden");
+        loginBox.classList.add("hidden");
+        adminPanel.classList.remove("hidden");
         render();
     } else alert("Invalid login");
 }
 
 function logout() {
     isAdmin = false;
-    document.getElementById("adminPanel").classList.add("hidden");
-    document.getElementById("loginBox").classList.remove("hidden");
+    adminPanel.classList.add("hidden");
+    loginBox.classList.remove("hidden");
     render();
 }
 
@@ -237,12 +252,8 @@ function saveBus() {
         link: link.value
     };
 
-    if (editIndex >= 0) {
-        data[editIndex] = bus;
-        editIndex = -1;
-    } else {
-        data.push(bus);
-    }
+    editIndex >= 0 ? data[editIndex] = bus : data.push(bus);
+    editIndex = -1;
 
     localStorage.setItem("busData", JSON.stringify(data));
     render();
@@ -269,13 +280,17 @@ function deleteBus(i) {
 }
 
 function openTrack(link) {
-    document.getElementById("frame").src = link;
-    document.getElementById("modal").style.display = "flex";
+    if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        window.location.href = link;
+    } else {
+        frame.src = link;
+        modal.style.display = "flex";
+    }
 }
 
 function closeTrack() {
-    document.getElementById("modal").style.display = "none";
-    document.getElementById("frame").src = "";
+    modal.style.display = "none";
+    frame.src = "";
 }
 
 render();
