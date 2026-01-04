@@ -137,7 +137,7 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 
 </div>
 
-<!-- Modal -->
+<!-- Tracking Modal -->
 <div class="modal" id="modal">
     <div class="modal-content">
         <button class="modal-close" onclick="closeTrack()">✖ Close Tracking</button>
@@ -169,12 +169,38 @@ function timeToMinutes(t) {
     return h * 60 + m;
 }
 
-function getTimeForCity(bus, city) {
-    if (!city || !Array.isArray(bus.route)) return "";
-    city = city.toLowerCase();
-    for (let r of bus.route) {
-        if (r.city.toLowerCase().includes(city)) {
+function calcDuration(route) {
+    let start = timeToMinutes(route[0].time);
+    let end = timeToMinutes(route[route.length - 1].time);
+    if (end < start) end += 1440;
+    let diff = end - start;
+    return Math.floor(diff / 60) + "h " + (diff % 60) + "m";
+}
+
+function isNextDay(route) {
+    return timeToMinutes(route[route.length - 1].time) <
+           timeToMinutes(route[0].time);
+}
+
+function getTimeForCity(route, search) {
+    if (!search) return "";
+    search = search.toLowerCase();
+    for (let r of route) {
+        if (r.city.toLowerCase().includes(search)) {
             return r.time;
+        }
+    }
+    return "";
+}
+
+function getBoardingInfo(route, search) {
+    if (!search) return "";
+    search = search.toLowerCase();
+    for (let i = 0; i < route.length; i++) {
+        if (route[i].city.toLowerCase().includes(search)) {
+            return i === route.length - 1
+                ? `🔴 Dropping at ${route[i].city} – ${route[i].time}`
+                : `🟢 Boarding at ${route[i].city} – ${route[i].time}`;
         }
     }
     return "";
@@ -185,7 +211,6 @@ function render() {
     const list = document.getElementById("busList");
     list.innerHTML = "";
 
-    // ✅ remove incompatible old data safely
     data = data.filter(b => Array.isArray(b.route));
 
     let filtered = data.filter(bus =>
@@ -194,21 +219,35 @@ function render() {
     );
 
     filtered.sort((a, b) => {
-        let ta = timeToMinutes(getTimeForCity(a, activeSearch));
-        let tb = timeToMinutes(getTimeForCity(b, activeSearch));
+        let ta = timeToMinutes(getTimeForCity(a.route, activeSearch));
+        let tb = timeToMinutes(getTimeForCity(b.route, activeSearch));
         return sortOrder === "asc" ? ta - tb : tb - ta;
     });
 
     filtered.forEach(bus => {
-        let time = getTimeForCity(bus, activeSearch);
-        let routeText = bus.route.map(r => `${r.city} (${r.time})`).join(" → ");
+        let route = bus.route;
+        let duration = calcDuration(route);
+        let nextDay = isNextDay(route);
+        let boardingInfo = getBoardingInfo(route, activeSearch);
+
+        let routeDisplay = route.map((r, i) => {
+            if (i === 0) return `📍 ${r.city} ${r.time}`;
+            if (i === route.length - 1) return `🏁 ${r.city} ${r.time}`;
+            return `➡ ${r.city} ${r.time}`;
+        }).join("<br>");
+
+        let viaCities = route.slice(1, -1).map(r => r.city).join(", ");
 
         let card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
             <h3>🚌 ${bus.travel}</h3>
-            <b>⏰ ${time}</b><br><br>
-            🛣️ ${routeText}<br><br>
+            <div style="line-height:1.6">${routeDisplay}</div><br>
+            ⏳ Duration: <b>${duration}</b>
+            ${nextDay ? "<br>📅 Arrival: Next Day" : ""}
+            ${viaCities ? `<br>🛣 Via: ${viaCities}` : ""}
+            ${boardingInfo ? `<br><br><b>${boardingInfo}</b>` : ""}
+            <br><br>
             <button class="track-btn" onclick="openTrack('${bus.link}')">Track</button>
             ${isAdmin ? `
                 <button class="admin-btn" onclick="editBus(${data.indexOf(bus)})">Edit</button>
@@ -253,7 +292,7 @@ function saveBus() {
     const toTime = document.getElementById("toTime").value.trim();
 
     if (!fromCity || !fromTime || !toCity || !toTime) {
-        alert("From and To city & time are compulsory");
+        alert("From and To are compulsory");
         return;
     }
 
@@ -277,13 +316,9 @@ function saveBus() {
     editIndex = -1;
 
     localStorage.setItem("busData", JSON.stringify(data));
-    clearForm();
+    document.querySelectorAll("#adminPanel input").forEach(i => i.value = "");
     render();
     alert("Saved successfully ✅");
-}
-
-function clearForm() {
-    document.querySelectorAll("#adminPanel input").forEach(i => i.value = "");
 }
 
 function editBus(i) {
