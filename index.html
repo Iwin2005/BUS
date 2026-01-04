@@ -79,7 +79,7 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 </div>
 
 <div id="adminPanel" class="hidden">
-    <h3>Admin Panel</h3>
+    <h3 id="adminTitle">Admin Panel</h3>
 
     <input id="travel" placeholder="Travels Name">
 
@@ -103,12 +103,12 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
     <input id="link" placeholder="Tracking Link">
 
     <button onclick="saveBus()">Save</button>
+    <button onclick="cancelEdit()">Cancel</button>
     <button onclick="logout()">Logout</button>
 </div>
 
 </div>
 
-<!-- ================= FIREBASE + APP LOGIC ================= -->
 <script type="module">
 
 /* ========= FIREBASE IMPORTS ========= */
@@ -139,41 +139,7 @@ let editIndex = -1;
 let sortOrder = "asc";
 window.activeSearch = "";
 
-/* ========= HELPERS ========= */
-function timeToMinutes(t) {
-    let [time, mod] = t.split(" ");
-    let [h, m] = time.split(":").map(Number);
-    if (mod === "PM" && h !== 12) h += 12;
-    if (mod === "AM" && h === 12) h = 0;
-    return h * 60 + m;
-}
-
-function calcDuration(route) {
-    let start = timeToMinutes(route[0].time);
-    let end = timeToMinutes(route[route.length - 1].time);
-    if (end < start) end += 1440;
-    let diff = end - start;
-    return Math.floor(diff / 60) + "h " + (diff % 60) + "m";
-}
-
-function isNextDay(route) {
-    return timeToMinutes(route[route.length - 1].time) <
-           timeToMinutes(route[0].time);
-}
-
-function getBoardingInfo(route, search) {
-    if (!search) return "";
-    for (let i = 0; i < route.length; i++) {
-        if (route[i].city.toLowerCase().includes(search)) {
-            return i === route.length - 1
-                ? `🔴 Dropping at ${route[i].city} – ${route[i].time}`
-                : `🟢 Boarding at ${route[i].city} – ${route[i].time}`;
-        }
-    }
-    return "";
-}
-
-/* ========= FIRESTORE LIVE SYNC ========= */
+/* ========= FIRESTORE SYNC ========= */
 onSnapshot(collection(db, "buses"), snap => {
     data = [];
     snap.forEach(d => data.push({ id: d.id, ...d.data() }));
@@ -183,10 +149,19 @@ onSnapshot(collection(db, "buses"), snap => {
 /* ========= AUTH STATE ========= */
 onAuthStateChanged(auth, user => {
     isAdmin = !!user;
-    document.getElementById("loginBox").classList.toggle("hidden", isAdmin);
-    document.getElementById("adminPanel").classList.toggle("hidden", !isAdmin);
+    loginBox.classList.toggle("hidden", isAdmin);
+    adminPanel.classList.toggle("hidden", !isAdmin);
     render();
 });
+
+/* ========= HELPERS ========= */
+function timeToMinutes(t) {
+    let [time, mod] = t.split(" ");
+    let [h, m] = time.split(":").map(Number);
+    if (mod === "PM" && h !== 12) h += 12;
+    if (mod === "AM" && h === 12) h = 0;
+    return h * 60 + m;
+}
 
 /* ========= RENDER ========= */
 window.render = function () {
@@ -205,14 +180,9 @@ window.render = function () {
     });
 
     filtered.forEach((bus, i) => {
-        let route = bus.route;
-        let duration = calcDuration(route);
-        let nextDay = isNextDay(route);
-        let boarding = getBoardingInfo(route, activeSearch);
-
-        let routeHtml = route.map((r, idx) => {
+        let routeHtml = bus.route.map((r, idx) => {
             if (idx === 0) return `📍 ${r.city} ${r.time}`;
-            if (idx === route.length - 1) return `🏁 ${r.city} ${r.time}`;
+            if (idx === bus.route.length - 1) return `🏁 ${r.city} ${r.time}`;
             return `➡ ${r.city} ${r.time}`;
         }).join("<br>");
 
@@ -221,10 +191,6 @@ window.render = function () {
         card.innerHTML = `
             <h3>🚌 ${bus.travel}</h3>
             <div style="line-height:1.6">${routeHtml}</div><br>
-            ⏳ Duration: <b>${duration}</b>
-            ${nextDay ? "<br>📅 Arrival: Next Day" : ""}
-            ${boarding ? `<br><br><b>${boarding}</b>` : ""}
-            <br><br>
             <button class="track-btn" onclick="window.location.href='${bus.link}'">Track</button>
             ${isAdmin ? `
                 <button class="admin-btn" onclick="editBus(${i})">Edit</button>
@@ -237,11 +203,8 @@ window.render = function () {
 
 /* ========= AUTH ACTIONS ========= */
 window.login = async function () {
-    await signInWithEmailAndPassword(
-        auth,
-        username.value,
-        password.value
-    ).catch(err => alert(err.message));
+    await signInWithEmailAndPassword(auth, username.value, password.value)
+      .catch(err => alert(err.message));
 };
 
 window.logout = async function () {
@@ -251,11 +214,13 @@ window.logout = async function () {
 /* ========= CRUD ========= */
 window.saveBus = async function () {
     let route = [{ city: fromCity.value, time: fromTime.value }];
+
     for (let i = 1; i <= 6; i++) {
         let c = document.getElementById(`via${i}City`).value;
         let t = document.getElementById(`via${i}Time`).value;
         if (c && t) route.push({ city: c, time: t });
     }
+
     route.push({ city: toCity.value, time: toTime.value });
 
     let bus = {
@@ -264,23 +229,45 @@ window.saveBus = async function () {
         link: link.value
     };
 
-    editIndex >= 0
-        ? await updateDoc(doc(db, "buses", data[editIndex].id), bus)
-        : await addDoc(collection(db, "buses"), bus);
+    if (editIndex >= 0) {
+        await updateDoc(doc(db, "buses", data[editIndex].id), bus);
+    } else {
+        await addDoc(collection(db, "buses"), bus);
+    }
 
-    editIndex = -1;
-    document.querySelectorAll("#adminPanel input").forEach(i => i.value = "");
+    cancelEdit();
 };
 
 window.editBus = function (i) {
-    let b = data[i];
+    const b = data[i];
     editIndex = i;
 
+    document.querySelectorAll("#adminPanel input").forEach(el => el.value = "");
+
     travel.value = b.travel;
+    link.value = b.link;
+
     fromCity.value = b.route[0].city;
     fromTime.value = b.route[0].time;
+
     toCity.value = b.route[b.route.length - 1].city;
     toTime.value = b.route[b.route.length - 1].time;
+
+    let idx = 1;
+    for (let j = 1; j < b.route.length - 1 && idx <= 6; j++) {
+        document.getElementById(`via${idx}City`).value = b.route[j].city;
+        document.getElementById(`via${idx}Time`).value = b.route[j].time;
+        idx++;
+    }
+
+    adminTitle.innerText = "Edit Bus ✏️";
+    adminPanel.scrollIntoView({ behavior: "smooth" });
+};
+
+window.cancelEdit = function () {
+    editIndex = -1;
+    document.querySelectorAll("#adminPanel input").forEach(el => el.value = "");
+    adminTitle.innerText = "Admin Panel";
 };
 
 window.deleteBus = async function (i) {
@@ -291,12 +278,11 @@ window.deleteBus = async function (i) {
 
 window.toggleSort = function () {
     sortOrder = sortOrder === "asc" ? "desc" : "asc";
-    sortBtn.innerText = sortOrder === "asc"
-        ? "⏰ Earliest First"
-        : "⏰ Latest First";
+    sortBtn.innerText = sortOrder === "asc" ? "⏰ Earliest First" : "⏰ Latest First";
     render();
 };
 
 </script>
+
 </body>
 </html>
