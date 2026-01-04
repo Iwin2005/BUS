@@ -40,8 +40,6 @@ button {
 }
 
 .track-btn { background: #2a9d8f; color: white; }
-.admin-btn { background: #fb8500; color: white; }
-.delete-btn { background: #d00000; color: white; }
 .sort-btn { background: #023047; color: white; width: 100%; }
 
 .row {
@@ -143,7 +141,7 @@ button {
 <script type="module">
 /* ================= FIREBASE ================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc }
+import { getFirestore, collection, addDoc, onSnapshot }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
@@ -190,6 +188,20 @@ function getTodayTimestamp(time) {
     ).getTime();
 }
 
+function calcDuration(start, end) {
+    let s = timeToMinutes(start);
+    let e = timeToMinutes(end);
+    if (e < s) e += 1440;
+    let diff = e - s;
+    return `${Math.floor(diff / 60)}h ${diff % 60}m`;
+}
+
+function arrivalDay(start, end) {
+    return timeToMinutes(end) < timeToMinutes(start)
+        ? "Next Day"
+        : "Same Day";
+}
+
 /* ================= NEXT DEPARTURE ================= */
 function renderNextDeparture() {
     const box = document.getElementById("nextDeparture");
@@ -216,7 +228,6 @@ function renderNextDeparture() {
             renderNextDeparture();
             return;
         }
-
         const s = Math.floor(diff / 1000);
         box.innerHTML = `
             <b>🚨 NEXT DEPARTURE</b><br><br>
@@ -225,7 +236,9 @@ function renderNextDeparture() {
                 📍 ${o.bus.route[0].city} → ${o.bus.route[o.bus.route.length - 1].city}<br>
                 ⏰ ${o.bus.route[0].time}<br><br>
             `).join("")}
-            <div id="countdown">⏳ Departs in ${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s</div>
+            <div id="countdown">
+                ⏳ Departs in ${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s
+            </div>
         `;
     }
 
@@ -238,7 +251,6 @@ function renderNextDeparture() {
 function renderOperatorDropdown() {
     const select = document.getElementById("operatorSelect");
     const ops = [...new Set(data.map(b => b.travel))];
-
     select.innerHTML = `<option value="">All Operators</option>`;
     ops.forEach(op => {
         const o = document.createElement("option");
@@ -254,7 +266,7 @@ window.onOperatorChange = function () {
     renderAll();
 };
 
-/* ================= RENDER LIST ================= */
+/* ================= BUS LIST ================= */
 function renderList() {
     const list = document.getElementById("busList");
     list.innerHTML = "";
@@ -277,11 +289,56 @@ function renderList() {
     filtered.forEach(bus => {
         const card = document.createElement("div");
         card.className = "card";
-        card.innerHTML = `
-            <h3>🚌 ${bus.travel}</h3>
-            <div class="route-summary">${bus.route[0].city} → ${bus.route[bus.route.length - 1].city}</div>
-            <button class="track-btn" onclick="window.location.href='${bus.link}'">Track</button>
-        `;
+
+        let boarding = null;
+        if (activeSearch) {
+            boarding = bus.route.find(r =>
+                r.city.toLowerCase().includes(activeSearch)
+            );
+        }
+
+        const duration = calcDuration(
+            bus.route[0].time,
+            bus.route[bus.route.length - 1].time
+        );
+        const arrival = arrivalDay(
+            bus.route[0].time,
+            bus.route[bus.route.length - 1].time
+        );
+
+        if (boarding) {
+            card.innerHTML = `
+                <h3>🚌 ${bus.travel}</h3>
+                <b>${bus.route[0].city} → ${bus.route[bus.route.length - 1].city}</b><br><br>
+
+                ${bus.route.map((r, i) => `
+                    ${i === 0 ? "📍" : i === bus.route.length - 1 ? "🏁" : "➡"}
+                    ${r.city} ${r.time}
+                `).join("<br>")}
+
+                <br><br>
+                ⏳ <b>Duration:</b> ${duration}<br>
+                📅 <b>Arrival:</b> ${arrival}<br>
+                🟢 <b>Boarding at ${boarding.city} – ${boarding.time}</b><br><br>
+
+                <button class="track-btn"
+                    onclick="window.location.href='${bus.link}'">
+                    Track
+                </button>
+            `;
+        } else {
+            card.innerHTML = `
+                <h3>🚌 ${bus.travel}</h3>
+                <div class="route-summary">
+                    ${bus.route[0].city} → ${bus.route[bus.route.length - 1].city}
+                </div>
+                <button class="track-btn"
+                    onclick="window.location.href='${bus.link}'">
+                    Track
+                </button>
+            `;
+        }
+
         list.appendChild(card);
     });
 }
@@ -312,7 +369,7 @@ window.login = () =>
 
 window.logout = () => signOut(auth);
 
-/* ================= CRUD ================= */
+/* ================= ADMIN SAVE ================= */
 window.saveBus = async () => {
     let route = [{ city: fromCity.value, time: fromTime.value }];
     for (let i = 1; i <= 6; i++) {
