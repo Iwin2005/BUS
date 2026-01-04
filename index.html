@@ -87,15 +87,13 @@ button {
 
 <!-- SEARCH + OPERATOR -->
 <div class="row">
-    <input id="search" placeholder="Search city or travels"
-           onkeyup="activeSearch=this.value.toLowerCase(); renderAll()">
-
-    <select id="operatorSelect" onchange="onOperatorChange()">
+    <input id="search" placeholder="Search city or travels">
+    <select id="operatorSelect">
         <option value="">All Operators</option>
     </select>
 </div>
 
-<button class="sort-btn" id="sortBtn" onclick="toggleSort()">⏰ Earliest First</button>
+<button class="sort-btn" id="sortBtn">⏰ Earliest First</button>
 
 <div id="busList"></div>
 
@@ -105,7 +103,7 @@ button {
 <div id="loginBox">
     <input id="username" placeholder="Admin Email"><br><br>
     <input id="password" type="password" placeholder="Password"><br><br>
-    <button onclick="login()">Login</button>
+    <button id="loginBtn">Login</button>
 </div>
 
 <div id="adminPanel" class="hidden">
@@ -132,8 +130,8 @@ button {
 
     <input id="link" placeholder="Tracking Link"><br><br>
 
-    <button onclick="saveBus()">Save</button>
-    <button onclick="logout()">Logout</button>
+    <button id="saveBtn">Save</button>
+    <button id="logoutBtn">Logout</button>
 </div>
 
 </div>
@@ -166,6 +164,33 @@ let activeSearch = "";
 let activeOperator = "";
 let countdownTimer = null;
 
+/* ================= ELEMENTS ================= */
+const searchInput = document.getElementById("search");
+const operatorSelect = document.getElementById("operatorSelect");
+const sortBtn = document.getElementById("sortBtn");
+const busList = document.getElementById("busList");
+
+/* ================= SEARCH FIX ================= */
+searchInput.addEventListener("input", e => {
+    activeSearch = e.target.value.toLowerCase();
+    renderAll();
+});
+
+/* ================= OPERATOR ================= */
+operatorSelect.addEventListener("change", () => {
+    activeOperator = operatorSelect.value;
+    renderAll();
+});
+
+/* ================= SORT ================= */
+sortBtn.addEventListener("click", () => {
+    sortOrder = sortOrder === "asc" ? "desc" : "asc";
+    sortBtn.innerText = sortOrder === "asc"
+        ? "⏰ Earliest First"
+        : "⏰ Latest First";
+    renderList();
+});
+
 /* ================= HELPERS ================= */
 function timeToMinutes(t) {
     let [time, mod] = t.split(" ");
@@ -192,8 +217,8 @@ function calcDuration(start, end) {
     let s = timeToMinutes(start);
     let e = timeToMinutes(end);
     if (e < s) e += 1440;
-    let diff = e - s;
-    return `${Math.floor(diff / 60)}h ${diff % 60}m`;
+    let d = e - s;
+    return `${Math.floor(d/60)}h ${d%60}m`;
 }
 
 function arrivalDay(start, end) {
@@ -247,29 +272,9 @@ function renderNextDeparture() {
     countdownTimer = setInterval(update, 1000);
 }
 
-/* ================= OPERATOR DROPDOWN ================= */
-function renderOperatorDropdown() {
-    const select = document.getElementById("operatorSelect");
-    const ops = [...new Set(data.map(b => b.travel))];
-    select.innerHTML = `<option value="">All Operators</option>`;
-    ops.forEach(op => {
-        const o = document.createElement("option");
-        o.value = op;
-        o.textContent = op;
-        if (op === activeOperator) o.selected = true;
-        select.appendChild(o);
-    });
-}
-
-window.onOperatorChange = function () {
-    activeOperator = operatorSelect.value;
-    renderAll();
-};
-
-/* ================= BUS LIST ================= */
+/* ================= RENDER LIST ================= */
 function renderList() {
-    const list = document.getElementById("busList");
-    list.innerHTML = "";
+    busList.innerHTML = "";
 
     const filtered = data.filter(bus =>
         (!activeOperator || bus.travel === activeOperator) &&
@@ -290,56 +295,35 @@ function renderList() {
         const card = document.createElement("div");
         card.className = "card";
 
-        let boarding = null;
-        if (activeSearch) {
-            boarding = bus.route.find(r =>
-                r.city.toLowerCase().includes(activeSearch)
-            );
-        }
-
-        const duration = calcDuration(
-            bus.route[0].time,
-            bus.route[bus.route.length - 1].time
-        );
-        const arrival = arrivalDay(
-            bus.route[0].time,
-            bus.route[bus.route.length - 1].time
-        );
+        const boarding = activeSearch
+            ? bus.route.find(r => r.city.toLowerCase().includes(activeSearch))
+            : null;
 
         if (boarding) {
             card.innerHTML = `
                 <h3>🚌 ${bus.travel}</h3>
-                <b>${bus.route[0].city} → ${bus.route[bus.route.length - 1].city}</b><br><br>
-
-                ${bus.route.map((r, i) => `
-                    ${i === 0 ? "📍" : i === bus.route.length - 1 ? "🏁" : "➡"}
+                <b>${bus.route[0].city} → ${bus.route[bus.route.length-1].city}</b><br><br>
+                ${bus.route.map((r,i)=>`
+                    ${i===0?"📍":i===bus.route.length-1?"🏁":"➡"}
                     ${r.city} ${r.time}
                 `).join("<br>")}
-
                 <br><br>
-                ⏳ <b>Duration:</b> ${duration}<br>
-                📅 <b>Arrival:</b> ${arrival}<br>
-                🟢 <b>Boarding at ${boarding.city} – ${boarding.time}</b><br><br>
-
-                <button class="track-btn"
-                    onclick="window.location.href='${bus.link}'">
-                    Track
-                </button>
+                ⏳ Duration: ${calcDuration(bus.route[0].time,bus.route.at(-1).time)}<br>
+                📅 Arrival: ${arrivalDay(bus.route[0].time,bus.route.at(-1).time)}<br>
+                🟢 Boarding at ${boarding.city} – ${boarding.time}<br><br>
+                <button class="track-btn" onclick="window.location.href='${bus.link}'">Track</button>
             `;
         } else {
             card.innerHTML = `
                 <h3>🚌 ${bus.travel}</h3>
                 <div class="route-summary">
-                    ${bus.route[0].city} → ${bus.route[bus.route.length - 1].city}
+                    ${bus.route[0].city} → ${bus.route.at(-1).city}
                 </div>
-                <button class="track-btn"
-                    onclick="window.location.href='${bus.link}'">
-                    Track
-                </button>
+                <button class="track-btn" onclick="window.location.href='${bus.link}'">Track</button>
             `;
         }
 
-        list.appendChild(card);
+        busList.appendChild(card);
     });
 }
 
@@ -348,6 +332,19 @@ function renderAll() {
     renderOperatorDropdown();
     renderNextDeparture();
     renderList();
+}
+
+/* ================= OPERATOR DROPDOWN ================= */
+function renderOperatorDropdown() {
+    const ops = [...new Set(data.map(b => b.travel))];
+    operatorSelect.innerHTML = `<option value="">All Operators</option>`;
+    ops.forEach(op => {
+        const o = document.createElement("option");
+        o.value = op;
+        o.textContent = op;
+        if (op === activeOperator) o.selected = true;
+        operatorSelect.appendChild(o);
+    });
 }
 
 /* ================= FIRESTORE ================= */
@@ -363,14 +360,14 @@ onAuthStateChanged(auth, u => {
     adminPanel.classList.toggle("hidden", !u);
 });
 
-window.login = () =>
+document.getElementById("loginBtn").onclick = () =>
     signInWithEmailAndPassword(auth, username.value, password.value)
         .catch(e => alert(e.message));
 
-window.logout = () => signOut(auth);
+document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
-/* ================= ADMIN SAVE ================= */
-window.saveBus = async () => {
+/* ================= SAVE ================= */
+document.getElementById("saveBtn").onclick = async () => {
     let route = [{ city: fromCity.value, time: fromTime.value }];
     for (let i = 1; i <= 6; i++) {
         let c = document.getElementById(`via${i}City`).value;
@@ -386,12 +383,6 @@ window.saveBus = async () => {
     });
 
     document.querySelectorAll("#adminPanel input").forEach(i => i.value = "");
-};
-
-window.toggleSort = () => {
-    sortOrder = sortOrder === "asc" ? "desc" : "asc";
-    sortBtn.innerText = sortOrder === "asc" ? "⏰ Earliest First" : "⏰ Latest First";
-    renderList();
 };
 </script>
 
