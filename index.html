@@ -11,18 +11,15 @@ body {
     margin: 0;
     background: linear-gradient(to right, #fff3b0, #ffd60a);
 }
-
 .container {
     max-width: 900px;
     margin: auto;
     padding: 15px;
 }
-
 h2, h3 {
     text-align: center;
     color: #3a2f00;
 }
-
 input, button {
     width: 100%;
     padding: 12px;
@@ -31,12 +28,10 @@ input, button {
     border: none;
     font-size: 16px;
 }
-
 button {
     font-weight: bold;
     cursor: pointer;
 }
-
 .track-btn { background: #2a9d8f; color: white; }
 .admin-btn { background: #fb8500; color: white; }
 .delete-btn { background: #d00000; color: white; }
@@ -52,15 +47,11 @@ button {
 
 .hidden { display: none; }
 
-/* city + time row */
 .row {
     display: flex;
     gap: 10px;
 }
-
-.row input {
-    flex: 1;
-}
+.row input { flex: 1; }
 
 /* modal */
 .modal {
@@ -70,7 +61,6 @@ button {
     display: none;
     z-index: 999;
 }
-
 .modal-content {
     width: 100%;
     height: 100%;
@@ -78,7 +68,6 @@ button {
     display: flex;
     flex-direction: column;
 }
-
 .modal-close {
     background: #d00000;
     color: white;
@@ -86,7 +75,6 @@ button {
     font-size: 16px;
     border: none;
 }
-
 iframe {
     width: 100%;
     height: 100%;
@@ -124,13 +112,11 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 
     <input id="travel" placeholder="Travels Name">
 
-    <!-- FROM (required) -->
     <div class="row">
         <input id="fromCity" placeholder="From City *">
         <input id="fromTime" placeholder="Time (05:30 PM)">
     </div>
 
-    <!-- VIA (optional) -->
     <div class="row"><input id="via1City" placeholder="Via 1 City"><input id="via1Time" placeholder="Time"></div>
     <div class="row"><input id="via2City" placeholder="Via 2 City"><input id="via2Time" placeholder="Time"></div>
     <div class="row"><input id="via3City" placeholder="Via 3 City"><input id="via3Time" placeholder="Time"></div>
@@ -138,7 +124,6 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
     <div class="row"><input id="via5City" placeholder="Via 5 City"><input id="via5Time" placeholder="Time"></div>
     <div class="row"><input id="via6City" placeholder="Via 6 City"><input id="via6Time" placeholder="Time"></div>
 
-    <!-- TO (required) -->
     <div class="row">
         <input id="toCity" placeholder="To City *">
         <input id="toTime" placeholder="Time (07:00 AM)">
@@ -152,7 +137,7 @@ onkeyup="activeSearch=this.value.toLowerCase(); render()">
 
 </div>
 
-<!-- Tracking Modal -->
+<!-- Modal -->
 <div class="modal" id="modal">
     <div class="modal-content">
         <button class="modal-close" onclick="closeTrack()">✖ Close Tracking</button>
@@ -185,7 +170,7 @@ function timeToMinutes(t) {
 }
 
 function getTimeForCity(bus, city) {
-    if (!city) return "";
+    if (!city || !Array.isArray(bus.route)) return "";
     city = city.toLowerCase();
     for (let r of bus.route) {
         if (r.city.toLowerCase().includes(city)) {
@@ -199,6 +184,9 @@ function getTimeForCity(bus, city) {
 function render() {
     const list = document.getElementById("busList");
     list.innerHTML = "";
+
+    // ✅ remove incompatible old data safely
+    data = data.filter(b => Array.isArray(b.route));
 
     let filtered = data.filter(bus =>
         !activeSearch ||
@@ -259,46 +247,57 @@ function logout() {
 }
 
 function saveBus() {
-    if (!fromCity.value || !fromTime.value || !toCity.value || !toTime.value) {
-        alert("From and To are compulsory");
+    const fromCity = document.getElementById("fromCity").value.trim();
+    const fromTime = document.getElementById("fromTime").value.trim();
+    const toCity = document.getElementById("toCity").value.trim();
+    const toTime = document.getElementById("toTime").value.trim();
+
+    if (!fromCity || !fromTime || !toCity || !toTime) {
+        alert("From and To city & time are compulsory");
         return;
     }
 
-    let route = [];
-    route.push({ city: fromCity.value, time: fromTime.value });
+    let route = [{ city: fromCity, time: fromTime }];
 
     for (let i = 1; i <= 6; i++) {
-        let c = document.getElementById(`via${i}City`).value;
-        let t = document.getElementById(`via${i}Time`).value;
+        let c = document.getElementById(`via${i}City`).value.trim();
+        let t = document.getElementById(`via${i}Time`).value.trim();
         if (c && t) route.push({ city: c, time: t });
     }
 
-    route.push({ city: toCity.value, time: toTime.value });
+    route.push({ city: toCity, time: toTime });
 
     let bus = {
-        travel: travel.value,
-        route: route,
-        link: link.value
+        travel: document.getElementById("travel").value.trim(),
+        route,
+        link: document.getElementById("link").value.trim()
     };
 
     editIndex >= 0 ? data[editIndex] = bus : data.push(bus);
     editIndex = -1;
 
     localStorage.setItem("busData", JSON.stringify(data));
+    clearForm();
     render();
-    alert("Saved");
+    alert("Saved successfully ✅");
+}
+
+function clearForm() {
+    document.querySelectorAll("#adminPanel input").forEach(i => i.value = "");
 }
 
 function editBus(i) {
     let b = data[i];
-    travel.value = b.travel;
-    link.value = b.link;
+    editIndex = i;
 
-    fromCity.value = b.route[0].city;
-    fromTime.value = b.route[0].time;
+    document.getElementById("travel").value = b.travel;
+    document.getElementById("link").value = b.link;
 
-    toCity.value = b.route[b.route.length - 1].city;
-    toTime.value = b.route[b.route.length - 1].time;
+    document.getElementById("fromCity").value = b.route[0].city;
+    document.getElementById("fromTime").value = b.route[0].time;
+
+    document.getElementById("toCity").value = b.route[b.route.length - 1].city;
+    document.getElementById("toTime").value = b.route[b.route.length - 1].time;
 
     for (let i = 1; i <= 6; i++) {
         document.getElementById(`via${i}City`).value = "";
@@ -306,13 +305,11 @@ function editBus(i) {
     }
 
     let idx = 1;
-    for (let j = 1; j < b.route.length - 1; j++) {
+    for (let j = 1; j < b.route.length - 1 && idx <= 6; j++) {
         document.getElementById(`via${idx}City`).value = b.route[j].city;
         document.getElementById(`via${idx}Time`).value = b.route[j].time;
         idx++;
     }
-
-    editIndex = i;
 }
 
 function deleteBus(i) {
@@ -332,7 +329,6 @@ function openTrack(link) {
         modal.style.display = "block";
     }
 }
-
 function closeTrack() {
     modal.style.display = "none";
     frame.src = "";
