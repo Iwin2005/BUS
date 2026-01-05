@@ -9,8 +9,8 @@
 body{
   margin:0;
   font-family:Arial,sans-serif;
-  background:linear-gradient(to right,#2b1900,#000);
-  color:#fff
+  background:linear-gradient(to right,#2b1a00,#000);
+  color:#fff;
 }
 .container{max-width:1000px;margin:auto;padding:15px}
 h2{text-align:center}
@@ -21,69 +21,45 @@ input,select,button{
   margin:6px 0;
   border-radius:8px;
   border:none;
-  font-size:16px
+  font-size:16px;
 }
 button{cursor:pointer;font-weight:bold}
-
-.sort-btn{background:#023047;color:#fff}
-.track-btn{background:#ffd60a;color:#000}
 
 .card{
   background:#111;
   padding:15px;
-  border-radius:12px;
+  border-radius:10px;
   margin:12px 0;
-  box-shadow:0 0 10px rgba(255,214,10,.2)
+  box-shadow:0 0 8px rgba(255,214,10,.4)
 }
+
+.track-btn{background:#ffd60a;color:#000}
+.sort-btn{background:#023047;color:#fff}
 
 .row{display:flex;gap:12px}
-@media(max-width:800px){.row{flex-direction:column}}
+@media(max-width:700px){.row{flex-direction:column}}
 
-.upcoming-wrapper{
-  background:#111;
-  border-radius:16px;
-  padding:16px;
-  display:flex;
-  gap:16px;
-  box-shadow:0 0 14px rgba(255,214,10,.3)
-}
-.upcoming-col{
+.upcoming{
   flex:1;
-  text-align:center
+  background:#111;
+  border-radius:12px;
+  padding:15px;
+  box-shadow:0 0 8px rgba(255,214,10,.4)
 }
-.up-title{
-  font-size:20px;
-  font-weight:bold;
-  margin-bottom:6px
-}
-.date-line{font-size:14px;margin-bottom:6px}
-.countdown{margin-top:6px;font-weight:bold}
+.up-title{text-align:center;font-size:18px;font-weight:bold;margin-bottom:10px}
 
 /* MAP */
-.map-modal{
-  position:fixed;
-  inset:0;
+#mapModal{
+  position:fixed; inset:0;
   background:#000;
-  display:none;
-  z-index:9999;
+  display:none; z-index:9999;
 }
-.map-close{
-  position:absolute;
-  top:12px;
-  right:12px;
-  background:#ffd60a;
-  border:none;
-  font-size:22px;
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  z-index:10000;
+#mapModal button{
+  position:absolute; top:12px; right:12px;
+  width:40px;height:40px;border-radius:50%;
+  font-size:20px;background:#ffd60a;border:none
 }
 #mapFrame{width:100%;height:100%;border:none}
-
-/* ADMIN */
-.admin-box{background:#111;padding:15px;border-radius:12px;margin-top:20px}
-.hidden{display:none}
 </style>
 </head>
 
@@ -92,142 +68,155 @@ button{cursor:pointer;font-weight:bold}
 
 <h2>🚌 Smart Bus Tracking</h2>
 
-<!-- UPCOMING COMBINED BOX -->
-<div class="upcoming-wrapper">
-  <div class="upcoming-col" id="upDep"></div>
-  <div class="upcoming-col" id="upArr"></div>
+<!-- UPCOMING -->
+<div class="row">
+  <div class="upcoming" id="upDep"></div>
+  <div class="upcoming" id="upArr"></div>
 </div>
 
 <input id="search" placeholder="Search city or travels">
 
 <div class="row">
-  <select id="operator"></select>
-  <select id="journey">
-    <option value="both">Boarding & Dropping</option>
-    <option value="boarding">Boarding</option>
-    <option value="dropping">Dropping</option>
-  </select>
+<select id="operator"><option value="">All Operators</option></select>
+<select id="journey">
+<option value="both">Boarding & Dropping</option>
+<option value="boarding">Boarding</option>
+<option value="dropping">Dropping</option>
+</select>
 </div>
 
-<button id="sortBtn" class="sort-btn">⏰ Earliest First</button>
+<button class="sort-btn" id="sort">⏰ Earliest First</button>
 
-<div id="busList"></div>
+<div id="list"></div>
 
-<div class="admin-box">
+<!-- ADMIN -->
+<div class="card">
 <h3>🔐 Admin Login</h3>
 <input id="email" placeholder="Email">
 <input id="password" type="password" placeholder="Password">
-<button id="loginBtn">Login</button>
-
-<div id="adminPanel" class="hidden">
-  <h3>Admin Panel Active</h3>
-  <button id="logoutBtn">Logout</button>
-</div>
+<button id="login">Login</button>
 </div>
 
 </div>
 
 <!-- MAP -->
-<div class="map-modal" id="mapModal">
-<button class="map-close" onclick="closeMap()">✖</button>
+<div id="mapModal">
+<button onclick="closeMap()">✖</button>
 <iframe id="mapFrame"></iframe>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const app = initializeApp({
  apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
  authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
  projectId:"smart-bus-tracking-2ba21"
 });
+
 const db=getFirestore(app);
 const auth=getAuth(app);
 
-let data=[],sortAsc=true;
-let depTimer=null,arrTimer=null;
+let buses=[],searchTxt="",op="",journey="both",sort="asc";
+let depTimer,arrTimer;
 
 const toMin=t=>{
- let[p,m]=t.split(" ");
- let[h,mm]=p.split(":").map(Number);
- if(m==="PM"&&h!==12)h+=12;
- if(m==="AM"&&h===12)h=0;
+ let[p,m]=t.split(" ");let[h,mm]=p.split(":").map(Number);
+ if(m==="PM"&&h!==12)h+=12;if(m==="AM"&&h===12)h=0;
  return h*60+mm;
-};
-const nextDate=time=>{
- let d=new Date();
- let m=toMin(time);
- d.setHours(Math.floor(m/60),m%60,0,0);
- if(d<Date.now())d.setDate(d.getDate()+1);
- return d;
-};
-
-function startCountdown(el,date,label){
- clearInterval(el.timer);
- const render=()=>{
-  let diff=date-Date.now();
-  if(diff<0)return;
-  let s=Math.floor(diff/1000);
-  el.querySelector(".countdown").innerText=
-   `⏳ ${label} in ${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s`;
- };
- render();
- el.timer=setInterval(render,1000);
 }
+const nextDate=t=>{
+ const m=toMin(t);let d=new Date();
+ d.setHours(Math.floor(m/60),m%60,0,0);
+ if(d<Date.now()) d.setDate(d.getDate()+1);
+ return d;
+}
+
+window.openMap=u=>{mapFrame.src=u;mapModal.style.display="block"}
+window.closeMap=()=>{mapFrame.src="";mapModal.style.display="none"}
 
 function renderUpcoming(){
  clearInterval(depTimer);clearInterval(arrTimer);
+ const now=Date.now();
 
- let deps=[],arrs=[];
- data.forEach(b=>{
-  let bd=b.route.find(r=>r.type==="boarding");
-  let dr=[...b.route].reverse().find(r=>r.type==="dropping");
-  if(bd)deps.push({b,p:bd,t:nextDate(bd.time)});
-  if(dr)arrs.push({b,p:dr,t:nextDate(dr.time)});
+ const deps=[],arrs=[];
+ buses.forEach(b=>{
+  const bd=b.route.find(r=>r.type==="boarding");
+  const dr=[...b.route].reverse().find(r=>r.type==="dropping");
+  if(bd) deps.push({b,pt:bd,d:nextDate(bd.time)});
+  if(dr) arrs.push({b,pt:dr,d:nextDate(dr.time)});
  });
 
- deps.sort((a,b)=>a.t-b.t);
- arrs.sort((a,b)=>a.t-b.t);
+ const dep=deps.sort((a,b)=>a.d-b.d)[0];
+ const arr=arrs.sort((a,b)=>a.d-b.d)[0];
 
- if(deps[0]){
-  upDep.innerHTML=`
+ function tick(){
+  if(dep){
+   let s=Math.floor((dep.d-Date.now())/1000);
+   upDep.innerHTML=`
    <div class="up-title">🚨 UPCOMING DEPARTURE</div>
-   <div class="date-line">📅 ${deps[0].t.toDateString()}</div>
-   🚌 ${deps[0].b.travel}<br>
-   📍 ${deps[0].p.city} ${deps[0].p.time}
-   <div class="countdown"></div>
-  `;
-  startCountdown(upDep,deps[0].t,"Departs");
- }
-
- if(arrs[0]){
-  upArr.innerHTML=`
+   📅 ${dep.d.toDateString()}<br>
+   🚌 ${dep.b.travel}<br>
+   📍 ${dep.pt.city} ${dep.pt.time}<br>
+   ⏳ ${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s`;
+  }
+  if(arr){
+   let s=Math.floor((arr.d-Date.now())/1000);
+   upArr.innerHTML=`
    <div class="up-title">🚏 UPCOMING ARRIVAL</div>
-   <div class="date-line">📅 ${arrs[0].t.toDateString()}</div>
-   🚌 ${arrs[0].b.travel}<br>
-   🏁 ${arrs[0].p.city} ${arrs[0].p.time}
-   <div class="countdown"></div>
-  `;
-  startCountdown(upArr,arrs[0].t,"Arrives");
+   📅 ${arr.d.toDateString()}<br>
+   🚌 ${arr.b.travel}<br>
+   🏁 ${arr.pt.city} ${arr.pt.time}<br>
+   ⏳ ${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s`;
+  }
  }
+ tick();depTimer=setInterval(tick,1000);arrTimer=depTimer;
 }
 
-window.openMap=u=>{mapFrame.src=u;mapModal.style.display="block"};
-window.closeMap=()=>{mapFrame.src="";mapModal.style.display="none"};
+function render(){
+ list.innerHTML="";
+ let f=buses.filter(b=>{
+  if(op && b.travel!==op) return false;
+  if(!searchTxt) return true;
+  return b.travel.toLowerCase().includes(searchTxt)
+   || b.route.some(r=>r.city.toLowerCase().includes(searchTxt));
+ });
 
-onSnapshot(collection(db,"buses"),s=>{
- data=[];
- s.forEach(d=>data.push(d.data()));
- renderUpcoming();
-});
+ f.sort((a,b)=>sort==="asc"
+  ? toMin(a.route[0].time)-toMin(b.route[0].time)
+  : toMin(b.route[0].time)-toMin(a.route[0].time)
+ );
 
-loginBtn.onclick=()=>signInWithEmailAndPassword(auth,email.value,password.value);
-logoutBtn.onclick=()=>signOut(auth);
-onAuthStateChanged(auth,u=>{
- adminPanel.classList.toggle("hidden",!u);
+ if(!f.length){list.innerHTML="<div class='card'>No buses</div>";return}
+
+ f.forEach(b=>{
+  const c=document.createElement("div");
+  c.className="card";
+  c.innerHTML=`
+  <h3>🚌 ${b.travel}</h3>
+  ${b.route.map(r=>`${r.type==="boarding"?"🟢":r.type==="dropping"?"🔵":"➡"} ${r.city} ${r.time}`).join("<br>")}
+  <br><br>
+  <button class="track-btn" onclick="openMap('${b.link}')">Track</button>`;
+  list.appendChild(c);
+ });
+}
+
+search.oninput=e=>{searchTxt=e.target.value.toLowerCase();render()}
+operator.onchange=e=>{op=e.target.value;render()}
+journey.onchange=e=>{journey=e.target.value;render()}
+sort.onclick=()=>{sort=sort==="asc"?"desc":"asc";render()}
+
+login.onclick=()=>signInWithEmailAndPassword(auth,email.value,password.value).alert;
+
+onSnapshot(collection(db,"buses"),snap=>{
+ buses=[];snap.forEach(d=>buses.push(d.data()));
+ operator.innerHTML='<option value="">All Operators</option>';
+ [...new Set(buses.map(b=>b.travel))].forEach(o=>{
+  operator.innerHTML+=`<option>${o}</option>`;
+ });
+ renderUpcoming();render();
 });
 </script>
 </body>
