@@ -3,80 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Bus Tracking</title>
+<title>Smart Bus Tracking Pro</title>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:linear-gradient(to right,#fff3b0,#ffd60a);
-}
-.container{max-width:1100px;margin:auto;padding:15px}
-h2{text-align:center;color:#3a2f00}
-
-input,select,button{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  border-radius:8px;
-  border:none;
-  font-size:16px;
-}
-button{cursor:pointer;font-weight:bold}
-
-.row{display:flex;gap:12px}
-@media(max-width:700px){.row{flex-direction:column}}
-
-.card{
-  background:#fff8dc;
-  padding:15px;
-  border-radius:10px;
-  margin:12px 0;
-  box-shadow:0 0 8px rgba(0,0,0,.2)
+:root {
+    --primary: #2a9d8f;
+    --secondary: #023047;
+    --accent: #ffd60a;
+    --bg: #f0f2f5;
+    --card-bg: #ffffff;
 }
 
-.track-btn{background:#2a9d8f;color:#fff}
-.sort-btn{background:#023047;color:#fff}
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: #333;
+}
 
-.hidden{display:none}
+.container { max-width: 800px; margin: auto; padding: 20px; }
 
-/* UPCOMING */
-.upcoming{
-  display:flex;
-  gap:12px;
-  margin-bottom:10px
-}
-.up-box{
-  flex:1;
-  background:#1f1f1f;
-  color:#fff;
-  border-radius:12px;
-  padding:15px
-}
-.up-title{text-align:center;font-size:18px;font-weight:bold}
-.up-date{text-align:center;font-size:14px;margin:6px 0}
-.count{margin-top:6px;font-weight:bold}
+h2 { text-align: center; color: var(--secondary); margin-bottom: 25px; }
 
-/* MAP */
-.map-modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.9);
-  display:none;
-  z-index:9999;
+/* INPUTS & BUTTONS */
+input, select, button {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    box-sizing: border-box;
 }
-.map-close{
-  position:absolute;
-  top:10px;
-  right:10px;
-  background:#ffd60a;
-  border:none;
-  font-size:22px;
-  width:40px;
-  height:40px;
-  border-radius:50%;
+
+button { 
+    cursor: pointer; 
+    font-weight: bold; 
+    transition: all 0.2s; 
+    border: none;
 }
-#mapFrame{width:100%;height:100%;border:none}
+
+button:active { transform: scale(0.98); }
+
+.row { display: flex; gap: 12px; }
+@media(max-width: 700px) { .row { flex-direction: column; } }
+
+/* CARDS */
+.card {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 15px;
+    margin: 15px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border-left: 5px solid var(--primary);
+}
+
+.track-btn { background: var(--primary); color: #fff; margin-top: 15px; }
+.track-btn:hover { background: #21867a; }
+
+.sort-btn { background: var(--secondary); color: #fff; }
+
+.hidden { display: none; }
+
+/* UPCOMING DASHBOARD */
+.upcoming { display: flex; gap: 12px; margin-bottom: 20px; }
+.up-box {
+    flex: 1;
+    background: #1b263b;
+    color: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.up-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #a2a2a2; }
+.up-date { font-size: 14px; margin: 8px 0; color: var(--accent); }
+.count { font-size: 20px; font-weight: bold; font-family: monospace; }
+
+/* TIMELINE DESIGN */
+.timeline-item {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding-bottom: 15px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 15px;
+    width: 2px;
+    height: 100%;
+    background: #e0e0e0;
+}
+.timeline-item:last-child::before { display: none; }
+
+.dot {
+    width: 14px;
+    height: 14px;
+    background: var(--primary);
+    border-radius: 50%;
+    margin-right: 15px;
+    z-index: 1;
+    border: 3px solid #fff;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+/* MAP MODAL */
+.map-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    z-index: 9999;
+}
+.map-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: var(--accent);
+    border: none;
+    font-size: 24px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#mapFrame { width: 100%; height: 100%; border: none; }
+
+/* SEARCH HIGHLIGHT */
+#search {
+    border: 2px solid var(--primary);
+    background: #fff;
+}
 </style>
 </head>
 
@@ -85,197 +145,229 @@ button{cursor:pointer;font-weight:bold}
 
 <h2>🚌 Smart Bus Tracking</h2>
 
-<!-- UPCOMING -->
 <div class="upcoming">
-  <div class="up-box" id="upDep"></div>
-  <div class="up-box" id="upArr"></div>
+  <div class="up-box" id="upDep">Wait...</div>
+  <div class="up-box" id="upArr">Wait...</div>
 </div>
 
-<input id="search" placeholder="Search city or travels">
+<input id="search" placeholder="🔍 Search city, travels or operator...">
 
-<div class="row">
-  <select id="operator"><option value="">All Operators</option></select>
-</div>
-
-<button id="sortBtn" class="sort-btn">⏰ Earliest First</button>
+<button id="sortBtn" class="sort-btn">⏰ Sort: Earliest First</button>
 
 <div id="busList"></div>
 
-<hr>
+<hr style="margin: 40px 0; border: 0; border-top: 1px solid #ccc;">
 
-<h3>🔐 Admin Login</h3>
+<h3>🔐 Admin Access</h3>
 <div id="loginBox">
   <input id="email" placeholder="Admin Email">
   <input id="pass" type="password" placeholder="Password">
-  <button id="loginBtn">Login</button>
+  <button id="loginBtn" style="background:#023047; color:white;">Login</button>
 </div>
 
-<div id="adminPanel" class="hidden card">
-  <h3>✅ Admin Panel</h3>
-
+<div id="adminPanel" class="hidden card" style="border-left-color: #e76f51;">
+  <h3>🛠 Admin Panel</h3>
   <input id="travel" placeholder="Travels Name">
-
-  <h4>Route</h4>
+  
+  <h4>Route Management</h4>
   <div id="routes">
     <div class="row">
-      <input class="city" placeholder="City">
+      <input class="city" placeholder="City Name">
       <input class="time" placeholder="06:05 PM">
     </div>
   </div>
 
-  <button onclick="addRoute()">➕ Add Stop</button>
+  <button onclick="addRoute()" style="background:#eee; color:#333;">➕ Add Stop</button>
+  <input id="link" placeholder="Google Maps Tracking Link">
 
-  <input id="link" placeholder="Tracking Link">
-
-  <button onclick="saveBus()">💾 Save Bus</button>
-  <button onclick="logout()">Logout</button>
+  <button onclick="saveBus()" style="background:#2a9d8f; color:white;">💾 Save Bus to Database</button>
+  <button onclick="logout()" style="background:#e63946; color:white; margin-top:20px;">Logout</button>
 </div>
 
 </div>
 
-<!-- MAP -->
 <div class="map-modal" id="mapModal">
-  <button class="map-close" onclick="closeMap()">✖</button>
+  <button class="map-close" onclick="closeMap()">✕</button>
   <iframe id="mapFrame"></iframe>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc }
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* FIREBASE */
+/* FIREBASE CONFIG */
 const app = initializeApp({
-  apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
-  authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
-  projectId:"smart-bus-tracking-2ba21"
+  apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
+  authDomain: "smart-bus-tracking-2ba21.firebaseapp.com",
+  projectId: "smart-bus-tracking-2ba21"
 });
-const db=getFirestore(app);
-const auth=getAuth(app);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 /* STATE */
-let data=[],sortAsc=true;
+let data = [];
+let sortAsc = true;
 
-/* HELPERS */
-function toMin(t){
- let[p,m]=t.split(" ");
- let[h,mm]=p.split(":").map(Number);
- if(m==="PM"&&h!==12)h+=12;
- if(m==="AM"&&h===12)h=0;
- return h*60+mm;
-}
-function nextDate(time){
- let d=new Date();
- const m=toMin(time);
- d.setHours(Math.floor(m/60),m%60,0,0);
- if(d<Date.now()) d.setDate(d.getDate()+1);
- return d;
-}
-function fmt(d){
- return d.toLocaleDateString("en-GB")+" "+d.toLocaleTimeString("en-GB");
+/* TIME HELPERS */
+function toMin(t) {
+    if(!t) return 0;
+    let [p, m] = t.split(" ");
+    let [h, mm] = p.split(":").map(Number);
+    if (m === "PM" && h !== 12) h += 12;
+    if (m === "AM" && h === 12) h = 0;
+    return h * 60 + mm;
 }
 
-/* MAP */
-window.openMap=url=>{
- mapFrame.src=url;
- mapModal.style.display="block";
-}
-window.closeMap=()=>{
- mapFrame.src="";
- mapModal.style.display="none";
+function nextDate(time) {
+    let d = new Date();
+    const m = toMin(time);
+    d.setHours(Math.floor(m / 60), m % 60, 0, 0);
+    if (d < Date.now()) d.setDate(d.getDate() + 1);
+    return d;
 }
 
-/* UPCOMING */
-function renderUpcoming(){
- if(!data.length){upDep.innerHTML="";upArr.innerHTML="";return}
-
- let deps=[],arrs=[];
- data.forEach(b=>{
-  deps.push({bus:b,time:nextDate(b.route[0].time)});
-  arrs.push({bus:b,time:nextDate(b.route.at(-1).time)});
- });
-
- const dMin=Math.min(...deps.map(x=>x.time));
- const aMin=Math.min(...arrs.map(x=>x.time));
-
- function tick(){
-  const d=Math.max(0,Math.floor((dMin-Date.now())/1000));
-  const a=Math.max(0,Math.floor((aMin-Date.now())/1000));
-
-  upDep.innerHTML=`
-   <div class="up-title">🚨 UPCOMING DEPARTURE</div>
-   <div class="up-date">📅 ${fmt(new Date(dMin))}</div>
-   ⏳ ${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m ${d%60}s
-  `;
-  upArr.innerHTML=`
-   <div class="up-title">🚏 UPCOMING ARRIVAL</div>
-   <div class="up-date">📅 ${fmt(new Date(aMin))}</div>
-   ⏳ ${Math.floor(a/3600)}h ${Math.floor((a%3600)/60)}m ${a%60}s
-  `;
- }
- tick();
- setInterval(tick,1000);
+function fmt(d) {
+    return d.toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
 }
 
-/* LIST */
-function renderList(){
- busList.innerHTML="";
- let list=[...data];
- if(!sortAsc) list.reverse();
-
- list.forEach(b=>{
-  const c=document.createElement("div");
-  c.className="card";
-  c.innerHTML=`
-   <h3>🚌 ${b.travel}</h3>
-   ${b.route.map(r=>`➡ ${r.city} ${r.time}`).join("<br>")}
-   <br><br>
-   <button class="track-btn" onclick="openMap('${b.link}')">Track</button>
-  `;
-  busList.appendChild(c);
- });
-}
-
-/* ADMIN */
-loginBtn.onclick=()=>signInWithEmailAndPassword(auth,email.value,pass.value)
- .catch(e=>alert(e.message));
-window.logout=()=>signOut(auth);
-
-onAuthStateChanged(auth,u=>{
- loginBox.classList.toggle("hidden",!!u);
- adminPanel.classList.toggle("hidden",!u);
-});
-
-/* ADD BUS */
-window.addRoute=()=>{
- const d=document.createElement("div");
- d.className="row";
- d.innerHTML=`<input class="city"><input class="time">`;
- routes.appendChild(d);
-}
-window.saveBus=async()=>{
- let route=[];
- document.querySelectorAll(".city").forEach((c,i)=>{
-  const t=document.querySelectorAll(".time")[i];
-  if(c.value&&t.value) route.push({city:c.value,time:t.value});
- });
- if(route.length<2)return alert("Add at least 2 stops");
- await addDoc(collection(db,"buses"),{
-  travel:travel.value,
-  route,
-  link:link.value
- });
- alert("Bus Added");
+/* SEARCH & FILTER LOGIC */
+document.getElementById('search').addEventListener('input', renderList);
+document.getElementById('sortBtn').onclick = () => {
+    sortAsc = !sortAsc;
+    document.getElementById('sortBtn').innerText = sortAsc ? "⏰ Sort: Earliest First" : "⏰ Sort: Latest First";
+    renderList();
 };
 
-/* DATA */
-onSnapshot(collection(db,"buses"),snap=>{
- data=[];
- snap.forEach(d=>data.push(d.data()));
- renderUpcoming();
- renderList();
+/* MAP FUNCTIONS */
+window.openMap = url => {
+    document.getElementById('mapFrame').src = url;
+    document.getElementById('mapModal').style.display = "block";
+}
+window.closeMap = () => {
+    document.getElementById('mapFrame').src = "";
+    document.getElementById('mapModal').style.display = "none";
+}
+
+/* LIST RENDERING */
+function renderList() {
+    const busList = document.getElementById('busList');
+    const searchTerm = document.getElementById('search').value.toLowerCase();
+    busList.innerHTML = "";
+    
+    let list = [...data].filter(b => 
+        b.travel.toLowerCase().includes(searchTerm) || 
+        b.route.some(r => r.city.toLowerCase().includes(searchTerm))
+    );
+
+    list.sort((a, b) => {
+        const timeA = toMin(a.route[0].time);
+        const timeB = toMin(b.route[0].time);
+        return sortAsc ? timeA - timeB : timeB - timeA;
+    });
+
+    list.forEach(b => {
+        const c = document.createElement("div");
+        c.className = "card";
+        
+        const routeHtml = b.route.map((r, i) => `
+            <div class="timeline-item">
+                <div class="dot" style="background: ${i === 0 ? '#2a9d8f' : (i === b.route.length-1 ? '#e76f51' : '#023047')}"></div>
+                <div style="flex:1"><b>${r.city}</b></div>
+                <div style="color:#666; font-size:14px">${r.time}</div>
+            </div>
+        `).join("");
+
+        c.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                <h3 style="margin:0; color:#023047">🚌 ${b.travel}</h3>
+                <span style="font-size:12px; background:#e9f5f3; color:#2a9d8f; padding:4px 8px; border-radius:5px; font-weight:bold">LIVE</span>
+            </div>
+            <div class="route-container">${routeHtml}</div>
+            <button class="track-btn" onclick="openMap('${b.link}')">📍 Track Live Location</button>
+        `;
+        busList.appendChild(c);
+    });
+}
+
+/* UPCOMING DASHBOARD LOGIC */
+function renderUpcoming() {
+    if (!data.length) return;
+    
+    function tick() {
+        let deps = data.map(b => ({ t: nextDate(b.route[0].time) })).sort((a,b) => a.t - b.t);
+        let arrs = data.map(b => ({ t: nextDate(b.route.at(-1).time) })).sort((a,b) => a.t - b.t);
+
+        const dMin = deps[0].t;
+        const aMin = arrs[0].t;
+
+        const d = Math.max(0, Math.floor((dMin - Date.now()) / 1000));
+        const a = Math.max(0, Math.floor((aMin - Date.now()) / 1000));
+
+        document.getElementById('upDep').innerHTML = `
+            <div class="up-title">Next Departure</div>
+            <div class="up-date">at ${fmt(dMin)}</div>
+            <div class="count">${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m ${d%60}s</div>
+        `;
+        document.getElementById('upArr').innerHTML = `
+            <div class="up-title">Next Arrival</div>
+            <div class="up-date">at ${fmt(aMin)}</div>
+            <div class="count">${Math.floor(a/3600)}h ${Math.floor((a%3600)/60)}m ${a%60}s</div>
+        `;
+    }
+    tick();
+    setInterval(tick, 1000);
+}
+
+/* ADMIN LOGIC */
+document.getElementById('loginBtn').onclick = () => {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('pass').value;
+    signInWithEmailAndPassword(auth, email, pass).catch(e => alert(e.message));
+};
+
+window.logout = () => signOut(auth);
+
+onAuthStateChanged(auth, u => {
+    document.getElementById('loginBox').classList.toggle("hidden", !!u);
+    document.getElementById('adminPanel').classList.toggle("hidden", !u);
+});
+
+window.addRoute = () => {
+    const d = document.createElement("div");
+    d.className = "row";
+    d.innerHTML = `<input class="city" placeholder="City Name"><input class="time" placeholder="00:00 AM/PM">`;
+    document.getElementById('routes').appendChild(d);
+}
+
+window.saveBus = async () => {
+    let route = [];
+    const cities = document.querySelectorAll(".city");
+    const times = document.querySelectorAll(".time");
+    
+    cities.forEach((c, i) => {
+        if (c.value && times[i].value) route.push({ city: c.value, time: times[i].value });
+    });
+
+    if (route.length < 2) return alert("Please add at least 2 stops");
+    
+    try {
+        await addDoc(collection(db, "buses"), {
+            travel: document.getElementById('travel').value,
+            route,
+            link: document.getElementById('link').value
+        });
+        alert("Bus Added Successfully!");
+        location.reload(); 
+    } catch(e) { alert(e.message); }
+};
+
+/* DATA INITIALIZATION */
+onSnapshot(collection(db, "buses"), snap => {
+    data = [];
+    snap.forEach(doc => data.push(doc.data()));
+    renderUpcoming();
+    renderList();
 });
 </script>
 </body>
