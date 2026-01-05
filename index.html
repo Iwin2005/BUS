@@ -39,16 +39,21 @@ button{cursor:pointer;font-weight:bold}
 @media(max-width:700px){.row{flex-direction:column}}
 
 .upcoming-box{
-  background:#fff;
-  border-radius:10px;
+  background:#1f1f1f;
+  color:#fff;
+  border-radius:12px;
   padding:15px;
   flex:1;
-  box-shadow:0 0 8px rgba(0,0,0,.2)
 }
-.upcoming-title{text-align:center;font-weight:bold;font-size:18px}
-.date-line{text-align:center;font-size:14px;margin-bottom:8px}
+.upcoming-title{
+  text-align:center;
+  font-weight:bold;
+  font-size:18px;
+  margin-bottom:5px
+}
+.date-line{text-align:center;font-size:14px;margin-bottom:10px}
 .arrival-highlight{
-  background:#e0f7fa;
+  background:#2a9d8f;
   padding:6px;
   border-radius:6px;
   font-weight:bold
@@ -115,8 +120,6 @@ button{cursor:pointer;font-weight:bold}
 
 <div id="adminPanel" class="hidden">
   <h3>Admin Panel</h3>
-  <input id="travel" placeholder="Travels Name">
-  <input id="link" placeholder="Tracking Link">
   <button onclick="logout()">Logout</button>
 </div>
 
@@ -145,7 +148,6 @@ const auth=getAuth(app);
 let data=[],searchTxt="",operator="",journey="both",sortOrder="asc";
 let depTimer=null,arrTimer=null;
 
-/* EVENTS */
 search.oninput=e=>{searchTxt=e.target.value.toLowerCase();renderList()};
 operatorSelect.onchange=e=>{operator=e.target.value;renderList()};
 journeyFilter.onchange=e=>{journey=e.target.value;renderList()};
@@ -155,7 +157,6 @@ sortBtn.onclick=()=>{
  renderList();
 };
 
-/* TIME HELPERS */
 function toMin(t){
  let[p,m]=t.split(" ");
  let[h,mm]=p.split(":").map(Number);
@@ -171,71 +172,64 @@ function nextTime(time){
  return d;
 }
 
-/* UPCOMING (GLOBAL – FIXED) */
+window.openMap=url=>{
+ mapFrame.src=url;
+ mapModal.style.display="block";
+};
+window.closeMap=()=>{
+ mapFrame.src="";
+ mapModal.style.display="none";
+};
+
+/* UPCOMING (ALWAYS WORKS) */
 function renderUpcoming(){
  clearInterval(depTimer);clearInterval(arrTimer);
 
- /* DEPARTURE */
- let deps=[];
- data.forEach(b=>{
-  const p=b.route?.find(r=>r.type==="boarding");
-  if(!p) return;
-  const d=nextTime(p.time);
-  deps.push({bus:b,point:p,time:d});
+ let deps=[],arrs=[];
+ data.forEach(bus=>{
+  const b=bus.route.find(r=>r.type==="boarding");
+  const d=[...bus.route].reverse().find(r=>r.type==="dropping");
+  if(b) deps.push({bus,point:b,time:nextTime(b.time)});
+  if(d) arrs.push({bus,point:d,time:nextTime(d.time)});
  });
 
- if(!deps.length){
-  upcomingDeparture.innerHTML="<div class='upcoming-title'>🚨 UPCOMING DEPARTURE</div>No upcoming departure";
- }else{
-  const soon=Math.min(...deps.map(x=>x.time));
-  const list=deps.filter(x=>x.time==soon);
-  function tick(){
-   const s=Math.floor((soon-Date.now())/1000);
-   if(s<=0){renderUpcoming();return;}
-   upcomingDeparture.innerHTML=`
-    <div class="upcoming-title">🚨 UPCOMING DEPARTURE</div>
-    ${list.map(o=>`
-      🚌 ${o.bus.travel}<br>
-      📍 ${o.point.city} → ${o.bus.route.at(-1).city}<br>
-      ⏰ ${o.point.time}<br><br>
-    `).join("")}
-    ⏳ Departs in ${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s
-   `;
-  }
-  tick();depTimer=setInterval(tick,1000);
- }
+ const depSoon=Math.min(...deps.map(x=>x.time));
+ const arrSoon=Math.min(...arrs.map(x=>x.time));
 
- /* ARRIVAL */
- let arrs=[];
- data.forEach(b=>{
-  const p=[...b.route||[]].reverse().find(r=>r.type==="dropping");
-  if(!p) return;
-  const d=nextTime(p.time);
-  arrs.push({bus:b,point:p,time:d});
- });
-
- if(!arrs.length){
-  upcomingArrival.innerHTML="<div class='upcoming-title'>🚏 UPCOMING ARRIVAL</div>No upcoming arrival";
- }else{
-  const soon=Math.min(...arrs.map(x=>x.time));
-  const list=arrs.filter(x=>x.time==soon);
-  function tickA(){
-   const s=Math.floor((soon-Date.now())/1000);
-   if(s<=0){renderUpcoming();return;}
-   upcomingArrival.innerHTML=`
-    <div class="upcoming-title">🚏 UPCOMING ARRIVAL</div>
-    ${list.map(o=>`
-      🚌 ${o.bus.travel}<br>
-      <div class="arrival-highlight">🏁 ${o.point.city} – ${o.point.time}</div>
-    `).join("<br>")}
-    <br>⏳ Arrives in ${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s
-   `;
-  }
-  tickA();arrTimer=setInterval(tickA,1000);
+ function tickDep(){
+  const s=Math.floor((depSoon-Date.now())/1000);
+  const date=new Date(depSoon).toLocaleDateString("en-GB");
+  const list=deps.filter(x=>x.time.getTime()===depSoon);
+  upcomingDeparture.innerHTML=`
+   <div class="upcoming-title">🚨 UPCOMING DEPARTURE</div>
+   <div class="date-line">📅 ${date}</div>
+   ${list.map(o=>`
+    🚌 ${o.bus.travel}<br>
+    📍 ${o.point.city} → ${o.bus.route.at(-1).city}<br>
+    ⏰ ${o.point.time}<br><br>
+   `).join("")}
+   ⏳ Departs in ${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s
+  `;
  }
+ tickDep(); depTimer=setInterval(tickDep,1000);
+
+ function tickArr(){
+  const s=Math.floor((arrSoon-Date.now())/1000);
+  const date=new Date(arrSoon).toLocaleDateString("en-GB");
+  const list=arrs.filter(x=>x.time.getTime()===arrSoon);
+  upcomingArrival.innerHTML=`
+   <div class="upcoming-title">🚏 UPCOMING ARRIVAL</div>
+   <div class="date-line">📅 ${date}</div>
+   ${list.map(o=>`
+    🚌 ${o.bus.travel}<br>
+    <div class="arrival-highlight">🏁 ${o.point.city} – ${o.point.time}</div>
+   `).join("<br>")}
+   <br>⏳ Arrives in ${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s
+  `;
+ }
+ tickArr(); arrTimer=setInterval(tickArr,1000);
 }
 
-/* LIST */
 function renderList(){
  busList.innerHTML="";
  let shown=0;
@@ -266,29 +260,18 @@ function renderList(){
  if(!shown) busList.innerHTML="<div class='card'>❌ No buses found</div>";
 }
 
-/* MAP */
-window.openMap=url=>{
- mapFrame.src=url;
- mapModal.style.display="block";
-};
-window.closeMap=()=>{
- mapFrame.src="";
- mapModal.style.display="none";
-};
-
 /* AUTH */
 loginBtn.onclick=()=>{
  signInWithEmailAndPassword(auth,adminEmail.value,adminPass.value)
  .catch(e=>alert(e.message));
 };
 window.logout=()=>signOut(auth);
-
 onAuthStateChanged(auth,u=>{
  loginBox.classList.toggle("hidden",!!u);
  adminPanel.classList.toggle("hidden",!u);
 });
 
-/* FIRESTORE */
+/* DATA */
 onSnapshot(collection(db,"buses"),snap=>{
  data=[];
  snap.forEach(d=>data.push(d.data()));
