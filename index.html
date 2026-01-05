@@ -7,77 +7,71 @@
 
 <style>
 body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:linear-gradient(to right,#fff3b0,#ffd60a);
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:linear-gradient(to right,#fff3b0,#ffd60a);
 }
-.container{
-    max-width:900px;
-    margin:auto;
-    padding:15px;
-}
+.container{max-width:900px;margin:auto;padding:15px}
 h2{text-align:center;color:#3a2f00}
 
 input,select,button{
-    width:100%;
-    padding:12px;
-    margin:6px 0;
-    border-radius:8px;
-    border:none;
-    font-size:16px;
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border-radius:8px;
+  border:none;
+  font-size:16px;
 }
-
 button{cursor:pointer;font-weight:bold}
-.sort-btn{background:#023047;color:#fff}
+
 .track-btn{background:#2a9d8f;color:#fff}
+.sort-btn{background:#023047;color:#fff}
 
 .card{
-    background:#fff8dc;
-    padding:15px;
-    border-radius:10px;
-    margin:12px 0;
-    box-shadow:0 0 8px rgba(0,0,0,.2)
+  background:#fff8dc;
+  padding:15px;
+  border-radius:10px;
+  margin:12px 0;
+  box-shadow:0 0 8px rgba(0,0,0,.2)
 }
 
 .row{display:flex;gap:10px}
+.row input,.row select{flex:1}
 @media(max-width:600px){.row{flex-direction:column}}
 
 #nextDeparture{
-    background:#fff;
-    border-left:6px solid #2a9d8f;
-    padding:12px;
-    margin:12px 0;
-    border-radius:8px
+  background:#fff;
+  border-left:6px solid #2a9d8f;
+  padding:12px;
+  margin:12px 0;
+  border-radius:8px
 }
 
-/* MAP MODAL */
+/* MAP */
 .map-modal{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.85);
-    display:none;
-    z-index:9999;
-    flex-direction:column
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.9);
+  display:none;
+  z-index:9999;
 }
-.map-header{
-    background:#ffd60a;
-    padding:10px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-weight:bold
+.map-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  background:#ffd60a;
+  border:none;
+  font-size:22px;
+  width:40px;
+  height:40px;
+  border-radius:50%;
 }
-.map-header button{
-    background:none;
-    border:none;
-    font-size:22px;
-    cursor:pointer
-}
-#mapFrame{
-    width:100%;
-    height:calc(100% - 45px);
-    border:none
-}
+#mapFrame{width:100%;height:100%;border:none}
+
+/* ADMIN */
+#adminPanel{background:#fff;padding:15px;border-radius:10px;margin-top:20px}
+.hidden{display:none}
+.via-row button{background:#d00000;color:#fff}
 </style>
 </head>
 
@@ -86,7 +80,6 @@ button{cursor:pointer;font-weight:bold}
 
 <h2>🚌 Smart Bus Tracking</h2>
 
-<!-- NEXT DEPARTURE -->
 <div id="nextDeparture"></div>
 
 <input id="search" placeholder="Search city or travels">
@@ -96,75 +89,82 @@ button{cursor:pointer;font-weight:bold}
 <option value="">All Operators</option>
 </select>
 
-<select id="travelMode">
-<option value="departure">Departures</option>
-<option value="arrival">Arrivals</option>
-<option value="both">Both</option>
+<select id="journeyFilter">
+<option value="both">Boarding & Dropping</option>
+<option value="boarding">Boarding Only</option>
+<option value="dropping">Dropping Only</option>
 </select>
 </div>
 
 <button id="sortBtn" class="sort-btn">⏰ Earliest First</button>
 
 <div id="busList"></div>
+
+<hr>
+
+<h3>🔐 Admin Panel</h3>
+<div id="adminPanel">
+
+<input id="travel" placeholder="Travels Name">
+
+<div class="row">
+<input id="fromCity" placeholder="From City">
+<input id="fromTime" placeholder="05:30 PM">
+</div>
+
+<h4>Via Stops</h4>
+<div id="viaContainer"></div>
+<button type="button" onclick="addVia()">➕ Add Via Stop</button>
+
+<div class="row">
+<input id="toCity" placeholder="To City">
+<input id="toTime" placeholder="07:00 AM">
+</div>
+
+<input id="link" placeholder="Tracking Link">
+
+<button id="saveBtn">Save</button>
+</div>
 </div>
 
 <!-- MAP -->
 <div id="mapModal" class="map-modal">
-    <div class="map-header">
-        <span>🗺 Live Bus Tracking</span>
-        <button onclick="closeMap()">✖</button>
-    </div>
-    <iframe id="mapFrame"></iframe>
+<button class="map-close" onclick="closeMap()">✖</button>
+<iframe id="mapFrame"></iframe>
 </div>
 
 <script type="module">
 /* FIREBASE */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot }
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-const firebaseConfig={
+const app = initializeApp({
  apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
  authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
  projectId:"smart-bus-tracking-2ba21"
-};
-
-const app=initializeApp(firebaseConfig);
-const db=getFirestore(app);
+});
+const db = getFirestore(app);
 
 /* STATE */
 let data=[];
+let searchTxt="";
+let operator="";
+let journey="both";
 let sortOrder="asc";
-let activeSearch="";
-let activeOperator="";
-let travelMode="both";
 
 /* ELEMENTS */
 const busList=document.getElementById("busList");
-const search=document.getElementById("search");
-const operatorSelect=document.getElementById("operatorSelect");
-const travelModeSelect=document.getElementById("travelMode");
-const sortBtn=document.getElementById("sortBtn");
-
-/* EVENTS */
-search.oninput=e=>{
- activeSearch=e.target.value.toLowerCase().trim();
- render();
-};
-operatorSelect.onchange=e=>{
- activeOperator=e.target.value;
- render();
-};
-travelModeSelect.onchange=e=>{
- travelMode=e.target.value;
- render();
-};
+search.oninput=e=>{searchTxt=e.target.value.toLowerCase();render()};
+operatorSelect.onchange=e=>{operator=e.target.value;render()};
+journeyFilter.onchange=e=>{journey=e.target.value;render()};
 sortBtn.onclick=()=>{
  sortOrder=sortOrder==="asc"?"desc":"asc";
  sortBtn.innerText=sortOrder==="asc"?"⏰ Earliest First":"⏰ Latest First";
  render();
 };
 
-/* HELPERS */
+/* TIME */
 function toMin(t){
  let[p,m]=t.split(" ");
  let[h,mm]=p.split(":").map(Number);
@@ -175,149 +175,111 @@ function toMin(t){
 
 /* MAP */
 window.openMap=url=>{
- document.getElementById("mapFrame").src=url;
- document.getElementById("mapModal").style.display="flex";
- document.body.style.overflow="hidden";
+ mapFrame.src=url;
+ mapModal.style.display="block";
 };
 window.closeMap=()=>{
- document.getElementById("mapFrame").src="";
- document.getElementById("mapModal").style.display="none";
- document.body.style.overflow="auto";
+ mapFrame.src="";
+ mapModal.style.display="none";
+};
+
+/* VIA */
+window.addVia=()=>{
+ const div=document.createElement("div");
+ div.className="row via-row";
+ div.innerHTML=`
+   <input class="viaCity" placeholder="Via City">
+   <input class="viaTime" placeholder="Time">
+   <select class="viaType">
+     <option value="via">Via</option>
+     <option value="boarding">Boarding</option>
+     <option value="dropping">Dropping</option>
+   </select>
+   <button onclick="this.parentElement.remove()">✖</button>
+ `;
+ viaContainer.appendChild(div);
+};
+
+/* SAVE */
+saveBtn.onclick=async()=>{
+ let route=[];
+
+ route.push({city:fromCity.value,time:fromTime.value,type:"boarding"});
+
+ document.querySelectorAll(".via-row").forEach(r=>{
+  const c=r.querySelector(".viaCity").value;
+  const t=r.querySelector(".viaTime").value;
+  const ty=r.querySelector(".viaType").value;
+  if(c&&t) route.push({city:c,time:t,type:ty});
+ });
+
+ route.push({city:toCity.value,time:toTime.value,type:"dropping"});
+
+ await addDoc(collection(db,"buses"),{
+  travel:travel.value,
+  route,
+  link:link.value
+ });
+
+ alert("Bus Saved ✅");
+ viaContainer.innerHTML="";
 };
 
 /* RENDER */
 function render(){
  busList.innerHTML="";
+ let list=[...data];
+
+ if(operator) list=list.filter(b=>b.travel===operator);
+
+ list.sort((a,b)=>{
+  let t1=toMin(a.route[0].time);
+  let t2=toMin(b.route[0].time);
+  return sortOrder==="asc"?t1-t2:t2-t1;
+ });
+
  let shown=0;
 
- let filtered=data.filter(b=>{
-   if(activeOperator && b.travel!==activeOperator) return false;
-   return true;
+ list.forEach(bus=>{
+  const matchCity=bus.route.find(r=>r.city.toLowerCase().includes(searchTxt));
+  const matchOp=bus.travel.toLowerCase().includes(searchTxt);
+
+  if(searchTxt && !matchCity && !matchOp) return;
+
+  if(matchCity){
+    if(journey==="boarding" && matchCity.type!=="boarding") return;
+    if(journey==="dropping" && matchCity.type!=="dropping") return;
+  }
+
+  shown++;
+
+  const card=document.createElement("div");
+  card.className="card";
+  card.innerHTML=`
+   <h3>🚌 ${bus.travel}</h3>
+   ${bus.route.map(r=>`
+     ${r.type==="boarding"?"🟢":r.type==="dropping"?"🔵":"➡"}
+     ${r.city} ${r.time}
+   `).join("<br>")}
+   <br><br>
+   <button class="track-btn" onclick="openMap('${bus.link}')">Track</button>
+  `;
+  busList.appendChild(card);
  });
 
- filtered.sort((a,b)=>{
-   let t1=toMin(a.route[0].time);
-   let t2=toMin(b.route[0].time);
-   return sortOrder==="asc"?t1-t2:t2-t1;
- });
-
- filtered.forEach(bus=>{
-   const first=bus.route[0];
-   const last=bus.route.at(-1);
-
-   let cityMatch=bus.route.find(r=>r.city.toLowerCase().includes(activeSearch));
-   let operatorMatch=bus.travel.toLowerCase().includes(activeSearch);
-
-   let show=false;
-   let label="";
-
-   if(!activeSearch){
-     show=true;
-     label="🟢 Departs from "+first.city;
-   }
-   else if(cityMatch){
-     if(travelMode==="departure" && cityMatch.city===first.city){
-        show=true; label="🟢 Departs from "+first.city;
-     }
-     else if(travelMode==="arrival" && cityMatch.city===last.city){
-        show=true; label="🔵 Arrives at "+last.city;
-     }
-     else if(travelMode==="both"){
-        show=true;
-        label = cityMatch.city===first.city
-          ? "🟢 Departs from "+first.city
-          : cityMatch.city===last.city
-          ? "🔵 Arrives at "+last.city
-          : "➡ Via "+cityMatch.city;
-     }
-   }
-   else if(operatorMatch){
-     show=true;
-     label="🚌 Operator match";
-   }
-
-   if(!show) return;
-
-   shown++;
-
-   const card=document.createElement("div");
-   card.className="card";
-   card.innerHTML=`
-     <h3>🚌 ${bus.travel}</h3>
-     <b>${first.city} → ${last.city}</b><br><br>
-     ${bus.route.map((r,i)=>`
-        ${i===0?"📍":i===bus.route.length-1?"🏁":"➡"}
-        ${r.city} ${r.time}
-     `).join("<br>")}
-     <br><br><b>${label}</b><br><br>
-     <button class="track-btn" onclick="openMap('${bus.link}')">Track</button>
-   `;
-   busList.appendChild(card);
- });
-
- if(shown===0){
-   busList.innerHTML=`
-     <div class="card">
-       ❌ No buses found<br><br>
-       Try changing:
-       <ul>
-         <li>Departure / Arrival</li>
-         <li>Operator</li>
-         <li>Search city</li>
-       </ul>
-     </div>
-   `;
+ if(!shown){
+  busList.innerHTML="<div class='card'>❌ No buses found</div>";
  }
 }
 
 /* OPERATORS */
 function renderOperators(){
- const ops=[...new Set(data.map(b=>b.travel))];
  operatorSelect.innerHTML='<option value="">All Operators</option>';
- ops.forEach(o=>{
-   const opt=document.createElement("option");
-   opt.value=o;
-   opt.textContent=o;
-   operatorSelect.appendChild(opt);
+ [...new Set(data.map(b=>b.travel))].forEach(o=>{
+  const op=document.createElement("option");
+  op.value=o;op.textContent=o;
+  operatorSelect.appendChild(op);
  });
-}
-
-/* NEXT DEPARTURE */
-function renderNext(){
- const box=document.getElementById("nextDeparture");
- const now=Date.now();
-
- let future=data.map(b=>{
-   let t=toMin(b.route[0].time);
-   let d=new Date();
-   d.setHours(Math.floor(t/60),t%60,0,0);
-   return {bus:b,time:d.getTime()};
- }).filter(x=>x.time>now);
-
- if(!future.length){
-   box.innerHTML="<b>🚨 NEXT DEPARTURE</b><br>No upcoming buses";
-   return;
- }
-
- let soon=Math.min(...future.map(f=>f.time));
- let list=future.filter(f=>f.time===soon);
-
- function tick(){
-   let diff=soon-Date.now();
-   if(diff<=0){renderNext();return;}
-   let s=Math.floor(diff/1000);
-   box.innerHTML=`
-     <b>🚨 NEXT DEPARTURE</b><br><br>
-     ${list.map(o=>`
-        🚌 ${o.bus.travel}<br>
-        📍 ${o.bus.route[0].city} → ${o.bus.route.at(-1).city}<br>
-        ⏰ ${o.bus.route[0].time}<br><br>
-     `).join("")}
-     ⏳ Departs in ${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s
-   `;
- }
- tick();
- setInterval(tick,1000);
 }
 
 /* FIRESTORE */
@@ -325,7 +287,6 @@ onSnapshot(collection(db,"buses"),snap=>{
  data=[];
  snap.forEach(d=>data.push(d.data()));
  renderOperators();
- renderNext();
  render();
 });
 </script>
