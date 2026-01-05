@@ -20,6 +20,7 @@ h2 {
     text-align: center;
     color: #3a2f00;
 }
+
 input, select, button {
     padding: 12px;
     border-radius: 8px;
@@ -74,6 +75,37 @@ button {
     font-weight: bold;
     margin-top: 6px;
 }
+
+/* MAP MODAL */
+.map-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    z-index: 9999;
+    flex-direction: column;
+}
+.map-header {
+    height: 44px;
+    background: #ffd60a;
+    color: #023047;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 12px;
+    font-weight: bold;
+}
+.map-header button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+}
+#mapFrame {
+    flex: 1;
+    width: 100%;
+    border: none;
+}
 </style>
 </head>
 
@@ -85,11 +117,16 @@ button {
 <!-- NEXT DEPARTURE -->
 <div id="nextDeparture" class="hidden"></div>
 
-<!-- SEARCH + OPERATOR -->
+<!-- SEARCH + FILTERS -->
 <div class="row">
     <input id="search" placeholder="Search city or travels">
     <select id="operatorSelect">
         <option value="">All Operators</option>
+    </select>
+    <select id="travelMode">
+        <option value="departure">Departures</option>
+        <option value="arrival">Arrivals</option>
+        <option value="both">Both</option>
     </select>
 </div>
 
@@ -136,6 +173,15 @@ button {
 
 </div>
 
+<!-- MAP MODAL -->
+<div id="mapModal" class="map-modal">
+    <div class="map-header">
+        <span>🗺 Live Bus Tracking</span>
+        <button onclick="closeMap()">✖</button>
+    </div>
+    <iframe id="mapFrame"></iframe>
+</div>
+
 <script type="module">
 /* ================= FIREBASE ================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -147,10 +193,7 @@ from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 const firebaseConfig = {
   apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
   authDomain: "smart-bus-tracking-2ba21.firebaseapp.com",
-  projectId: "smart-bus-tracking-2ba21",
-  storageBucket: "smart-bus-tracking-2ba21.appspot.com",
-  messagingSenderId: "356136567230",
-  appId: "1:356136567230:web:ede96211188d3d42eeb9ef"
+  projectId: "smart-bus-tracking-2ba21"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -162,11 +205,13 @@ let data = [];
 let sortOrder = "asc";
 let activeSearch = "";
 let activeOperator = "";
+let travelMode = "departure";
 let countdownTimer = null;
 
 /* ================= ELEMENTS ================= */
 const searchInput = document.getElementById("search");
 const operatorSelect = document.getElementById("operatorSelect");
+const travelModeSelect = document.getElementById("travelMode");
 const sortBtn = document.getElementById("sortBtn");
 const busList = document.getElementById("busList");
 
@@ -179,6 +224,11 @@ searchInput.addEventListener("input", e => {
 operatorSelect.addEventListener("change", () => {
     activeOperator = operatorSelect.value;
     renderAll();
+});
+
+travelModeSelect.addEventListener("change", () => {
+    travelMode = travelModeSelect.value;
+    renderList();
 });
 
 sortBtn.addEventListener("click", () => {
@@ -275,12 +325,7 @@ function renderList() {
     busList.innerHTML = "";
 
     const filtered = data.filter(bus =>
-        (!activeOperator || bus.travel === activeOperator) &&
-        (
-            !activeSearch ||
-            bus.travel.toLowerCase().includes(activeSearch) ||
-            bus.route.some(r => r.city.toLowerCase().includes(activeSearch))
-        )
+        (!activeOperator || bus.travel === activeOperator)
     );
 
     filtered.sort((a, b) => {
@@ -290,55 +335,68 @@ function renderList() {
     });
 
     filtered.forEach(bus => {
-        const card = document.createElement("div");
-        card.className = "card";
+        const firstCity = bus.route[0].city.toLowerCase();
+        const lastCity = bus.route.at(-1).city.toLowerCase();
+        const searchedCity = activeSearch;
 
-        const showDetails = activeSearch.length > 0 || activeOperator.length > 0;
-
+        let match = false;
         let boarding = null;
+        let label = "";
 
-        if (activeSearch) {
-            boarding = bus.route.find(r =>
-                r.city.toLowerCase().includes(activeSearch)
-            );
-        }
+        if (searchedCity) {
+            if (travelMode === "departure" && firstCity === searchedCity) {
+                match = true;
+                boarding = bus.route[0];
+                label = "🟢 Departs from " + boarding.city;
+            }
 
-        if (!boarding && showDetails) {
+            if (travelMode === "arrival" && lastCity === searchedCity) {
+                match = true;
+                boarding = bus.route.at(-1);
+                label = "🔵 Arrives at " + boarding.city;
+            }
+
+            if (travelMode === "both") {
+                const found = bus.route.find(r =>
+                    r.city.toLowerCase() === searchedCity
+                );
+                if (found) {
+                    match = true;
+                    boarding = found;
+                    label =
+                        firstCity === searchedCity
+                            ? "🟢 Departs from " + boarding.city
+                            : lastCity === searchedCity
+                            ? "🔵 Arrives at " + boarding.city
+                            : "➡ Via " + boarding.city;
+                }
+            }
+        } else {
+            match = true;
             boarding = bus.route[0];
         }
 
-        if (showDetails && boarding) {
-            card.innerHTML = `
-                <h3>🚌 ${bus.travel}</h3>
-                <b>${bus.route[0].city} → ${bus.route[bus.route.length - 1].city}</b><br><br>
+        if (!match) return;
 
-                ${bus.route.map((r, i) => `
-                    ${i === 0 ? "📍" : i === bus.route.length - 1 ? "🏁" : "➡"}
-                    ${r.city} ${r.time}
-                `).join("<br>")}
+        const card = document.createElement("div");
+        card.className = "card";
 
-                <br><br>
-                ⏳ <b>Duration:</b> ${calcDuration(bus.route[0].time, bus.route.at(-1).time)}<br>
-                📅 <b>Arrival:</b> ${arrivalDay(bus.route[0].time, bus.route.at(-1).time)}<br>
-                🟢 <b>Boarding at ${boarding.city} – ${boarding.time}</b><br><br>
+        card.innerHTML = `
+            <h3>🚌 ${bus.travel}</h3>
+            <b>${bus.route[0].city} → ${bus.route.at(-1).city}</b><br><br>
 
-                <button class="track-btn"
-                    onclick="window.location.href='${bus.link}'">
-                    Track
-                </button>
-            `;
-        } else {
-            card.innerHTML = `
-                <h3>🚌 ${bus.travel}</h3>
-                <div class="route-summary">
-                    ${bus.route[0].city} → ${bus.route.at(-1).city}
-                </div>
-                <button class="track-btn"
-                    onclick="window.location.href='${bus.link}'">
-                    Track
-                </button>
-            `;
-        }
+            ${bus.route.map((r, i) => `
+                ${i === 0 ? "📍" : i === bus.route.length - 1 ? "🏁" : "➡"}
+                ${r.city} ${r.time}
+            `).join("<br>")}
+
+            <br><br>
+            ⏳ <b>Duration:</b> ${calcDuration(bus.route[0].time, bus.route.at(-1).time)}<br>
+            📅 <b>Arrival:</b> ${arrivalDay(bus.route[0].time, bus.route.at(-1).time)}<br>
+            <b>${label}</b><br><br>
+
+            <button class="track-btn" onclick="openMap('${bus.link}')">Track</button>
+        `;
 
         busList.appendChild(card);
     });
@@ -400,6 +458,19 @@ document.getElementById("saveBtn").onclick = async () => {
     });
 
     document.querySelectorAll("#adminPanel input").forEach(i => i.value = "");
+};
+
+/* ================= MAP ================= */
+window.openMap = function (url) {
+    document.getElementById("mapFrame").src = url;
+    document.getElementById("mapModal").style.display = "flex";
+    document.body.style.overflow = "hidden";
+};
+
+window.closeMap = function () {
+    document.getElementById("mapFrame").src = "";
+    document.getElementById("mapModal").style.display = "none";
+    document.body.style.overflow = "auto";
 };
 </script>
 
