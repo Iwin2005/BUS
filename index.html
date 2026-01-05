@@ -9,11 +9,10 @@
 body{
   margin:0;
   font-family:Arial,sans-serif;
-  background:linear-gradient(to right,#2b1a00,#000);
-  color:#fff;
+  background:linear-gradient(to right,#fff3b0,#ffd60a);
 }
 .container{max-width:1000px;margin:auto;padding:15px}
-h2{text-align:center}
+h2{text-align:center;color:#3a2f00}
 
 input,select,button{
   width:100%;
@@ -25,27 +24,63 @@ input,select,button{
 }
 button{cursor:pointer;font-weight:bold}
 
-.card{
-  background:#111;
-  padding:15px;
-  border-radius:12px;
-  margin:12px 0;
-  box-shadow:0 0 10px #000
-}
-.track-btn{background:#ffd60a;color:#000}
+.track-btn{background:#2a9d8f;color:#fff}
 .sort-btn{background:#023047;color:#fff}
+
+.card{
+  background:#fff8dc;
+  padding:15px;
+  border-radius:10px;
+  margin:12px 0;
+  box-shadow:0 0 8px rgba(0,0,0,.2)
+}
 
 .row{display:flex;gap:12px}
 @media(max-width:700px){.row{flex-direction:column}}
 
-.upcoming{
-  background:#111;
-  border-radius:14px;
+.upcoming-box{
+  background:#1f1f1f;
+  color:#fff;
+  border-radius:12px;
   padding:15px;
-  margin-bottom:12px
+  flex:1;
 }
-.up-title{font-size:20px;font-weight:bold;text-align:center}
-.center{text-align:center;margin-top:8px}
+.upcoming-title{
+  text-align:center;
+  font-weight:bold;
+  font-size:18px;
+  margin-bottom:5px
+}
+.date-line{text-align:center;font-size:14px;margin-bottom:10px}
+.arrival-highlight{
+  background:#2a9d8f;
+  padding:6px;
+  border-radius:6px;
+  font-weight:bold
+}
+
+.hidden{display:none}
+
+/* MAP */
+.map-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.9);
+  display:none;
+  z-index:9999;
+}
+.map-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  background:#ffd60a;
+  border:none;
+  font-size:22px;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+}
+#mapFrame{width:100%;height:100%;border:none}
 </style>
 </head>
 
@@ -54,181 +89,194 @@ button{cursor:pointer;font-weight:bold}
 
 <h2>🚌 Smart Bus Tracking</h2>
 
-<div id="upcomingDeparture" class="upcoming"></div>
-<div id="upcomingArrival" class="upcoming"></div>
+<!-- UPCOMING -->
+<div class="row">
+  <div class="upcoming-box" id="upcomingDeparture"></div>
+  <div class="upcoming-box" id="upcomingArrival"></div>
+</div>
 
 <input id="search" placeholder="Search city or travels">
 
 <div class="row">
-<select id="operatorSelect">
-<option value="">All Operators</option>
-</select>
-
+<select id="operatorSelect"><option value="">All Operators</option></select>
 <select id="journeyFilter">
-<option value="both">Boarding & Dropping</option>
-<option value="boarding">Boarding</option>
-<option value="dropping">Dropping</option>
+  <option value="both">Boarding & Dropping</option>
+  <option value="boarding">Boarding</option>
+  <option value="dropping">Dropping</option>
 </select>
 </div>
 
 <button id="sortBtn" class="sort-btn">⏰ Earliest First</button>
-
 <div id="busList"></div>
 
+<hr>
+
+<h3>🔐 Admin Login</h3>
+<div id="loginBox">
+  <input id="adminEmail" placeholder="Admin Email">
+  <input id="adminPass" type="password" placeholder="Password">
+  <button id="loginBtn">Login</button>
+</div>
+
+<div id="adminPanel" class="hidden">
+  <h3>Admin Panel</h3>
+  <button onclick="logout()">Logout</button>
+</div>
+
+</div>
+
+<!-- MAP -->
+<div id="mapModal" class="map-modal">
+<button class="map-close" onclick="closeMap()">✖</button>
+<iframe id="mapFrame"></iframe>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* ---------- FIREBASE ---------- */
 const app = initializeApp({
  apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
  authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
  projectId:"smart-bus-tracking-2ba21"
 });
-const db = getFirestore(app);
+const db=getFirestore(app);
+const auth=getAuth(app);
 
-/* ---------- STATE ---------- */
-let buses=[];
-let searchTxt="",operator="",journey="both",sortOrder="asc";
+let data=[],searchTxt="",operator="",journey="both",sortOrder="asc";
+let depTimer=null,arrTimer=null;
 
-/* ---------- HELPERS ---------- */
-function toMin(t){
- if(!t) return null;
- const p=t.trim().split(" ");
- if(p.length!==2) return null;
- let [h,m]=p[0].split(":").map(Number);
- if(isNaN(h)||isNaN(m)) return null;
- if(p[1]==="PM"&&h!==12)h+=12;
- if(p[1]==="AM"&&h===12)h=0;
- return h*60+m;
-}
-
-function nextDate(time){
- const mins=toMin(time);
- if(mins===null) return null;
- let d=new Date();
- d.setHours(Math.floor(mins/60),mins%60,0,0);
- if(d.getTime()<Date.now()) d.setDate(d.getDate()+1);
- return d;
-}
-
-function fmt(d){
- return d.toLocaleDateString()+" "+d.toLocaleTimeString();
-}
-
-/* ---------- UPCOMING ---------- */
-function renderUpcoming(){
- let dep=[],arr=[];
-
- buses.forEach(b=>{
-  if(!b.route||!b.route.length) return;
-
-  const first=b.route[0];
-  const last=b.route[b.route.length-1];
-
-  const d1=nextDate(first.time);
-  const d2=nextDate(last.time);
-
-  if(d1) dep.push({bus:b,time:d1,city:first.city});
-  if(d2) arr.push({bus:b,time:d2,city:last.city});
- });
-
- dep.sort((a,b)=>a.time-b.time);
- arr.sort((a,b)=>a.time-b.time);
-
- const depBox=document.getElementById("upcomingDeparture");
- const arrBox=document.getElementById("upcomingArrival");
-
- if(dep.length){
-  const d=dep[0];
-  depBox.innerHTML=`
-   <div class="up-title">🚨 UPCOMING DEPARTURE</div>
-   <div class="center">📅 ${fmt(d.time)}</div>
-   <div class="center">🚌 ${d.bus.travel}</div>
-   <div class="center">📍 ${d.city}</div>
-  `;
- }else{
-  depBox.innerHTML=`<div class="up-title">🚨 UPCOMING DEPARTURE</div>`;
- }
-
- if(arr.length){
-  const a=arr[0];
-  arrBox.innerHTML=`
-   <div class="up-title">🚏 UPCOMING ARRIVAL</div>
-   <div class="center">📅 ${fmt(a.time)}</div>
-   <div class="center">🚌 ${a.bus.travel}</div>
-   <div class="center">🏁 ${a.city}</div>
-  `;
- }else{
-  arrBox.innerHTML=`<div class="up-title">🚏 UPCOMING ARRIVAL</div>`;
- }
-}
-
-/* ---------- LIST ---------- */
-function renderList(){
- const list=document.getElementById("busList");
- list.innerHTML="";
-
- let filtered=buses.filter(b=>{
-  if(operator && b.travel!==operator) return false;
-  if(!searchTxt) return true;
-  if(b.travel.toLowerCase().includes(searchTxt)) return true;
-  return b.route?.some(r=>r.city?.toLowerCase().includes(searchTxt));
- });
-
- filtered.forEach(b=>{
-  const c=document.createElement("div");
-  c.className="card";
-  c.innerHTML=`
-   <b>🚌 ${b.travel}</b><br>
-   ${b.route.map(r=>`➡ ${r.city} ${r.time}`).join("<br>")}
-   <br><br>
-   <button class="track-btn" onclick="location.href='${b.link}'">Track</button>
-  `;
-  list.appendChild(c);
- });
-
- if(!filtered.length){
-  list.innerHTML="<div class='card'>❌ No buses found</div>";
- }
-}
-
-/* ---------- EVENTS ---------- */
-search.oninput=e=>{searchTxt=e.target.value.toLowerCase();renderAll()};
-operatorSelect.onchange=e=>{operator=e.target.value;renderAll()};
-journeyFilter.onchange=e=>{journey=e.target.value;renderAll()};
+search.oninput=e=>{searchTxt=e.target.value.toLowerCase();renderList()};
+operatorSelect.onchange=e=>{operator=e.target.value;renderList()};
+journeyFilter.onchange=e=>{journey=e.target.value;renderList()};
 sortBtn.onclick=()=>{
  sortOrder=sortOrder==="asc"?"desc":"asc";
+ sortBtn.innerText=sortOrder==="asc"?"⏰ Earliest First":"⏰ Latest First";
  renderList();
 };
 
-/* ---------- OPERATORS ---------- */
-function renderOperators(){
- operatorSelect.innerHTML='<option value="">All Operators</option>';
- [...new Set(buses.map(b=>b.travel))].forEach(o=>{
-  const op=document.createElement("option");
-  op.value=o;op.textContent=o;
-  operatorSelect.appendChild(op);
- });
+function toMin(t){
+ let[p,m]=t.split(" ");
+ let[h,mm]=p.split(":").map(Number);
+ if(m==="PM"&&h!==12)h+=12;
+ if(m==="AM"&&h===12)h=0;
+ return h*60+mm;
+}
+function nextTime(time){
+ let d=new Date();
+ const m=toMin(time);
+ d.setHours(Math.floor(m/60),m%60,0,0);
+ if(d<Date.now()) d.setDate(d.getDate()+1);
+ return d;
 }
 
-function renderAll(){
+window.openMap=url=>{
+ mapFrame.src=url;
+ mapModal.style.display="block";
+};
+window.closeMap=()=>{
+ mapFrame.src="";
+ mapModal.style.display="none";
+};
+
+/* UPCOMING (ALWAYS WORKS) */
+function renderUpcoming(){
+ clearInterval(depTimer);clearInterval(arrTimer);
+
+ let deps=[],arrs=[];
+ data.forEach(bus=>{
+  const b=bus.route.find(r=>r.type==="boarding");
+  const d=[...bus.route].reverse().find(r=>r.type==="dropping");
+  if(b) deps.push({bus,point:b,time:nextTime(b.time)});
+  if(d) arrs.push({bus,point:d,time:nextTime(d.time)});
+ });
+
+ const depSoon=Math.min(...deps.map(x=>x.time));
+ const arrSoon=Math.min(...arrs.map(x=>x.time));
+
+ function tickDep(){
+  const s=Math.floor((depSoon-Date.now())/1000);
+  const date=new Date(depSoon).toLocaleDateString("en-GB");
+  const list=deps.filter(x=>x.time.getTime()===depSoon);
+  upcomingDeparture.innerHTML=`
+   <div class="upcoming-title">🚨 UPCOMING DEPARTURE</div>
+   <div class="date-line">📅 ${date}</div>
+   ${list.map(o=>`
+    🚌 ${o.bus.travel}<br>
+    📍 ${o.point.city} → ${o.bus.route.at(-1).city}<br>
+    ⏰ ${o.point.time}<br><br>
+   `).join("")}
+   ⏳ Departs in ${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s
+  `;
+ }
+ tickDep(); depTimer=setInterval(tickDep,1000);
+
+ function tickArr(){
+  const s=Math.floor((arrSoon-Date.now())/1000);
+  const date=new Date(arrSoon).toLocaleDateString("en-GB");
+  const list=arrs.filter(x=>x.time.getTime()===arrSoon);
+  upcomingArrival.innerHTML=`
+   <div class="upcoming-title">🚏 UPCOMING ARRIVAL</div>
+   <div class="date-line">📅 ${date}</div>
+   ${list.map(o=>`
+    🚌 ${o.bus.travel}<br>
+    <div class="arrival-highlight">🏁 ${o.point.city} – ${o.point.time}</div>
+   `).join("<br>")}
+   <br>⏳ Arrives in ${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s
+  `;
+ }
+ tickArr(); arrTimer=setInterval(tickArr,1000);
+}
+
+function renderList(){
+ busList.innerHTML="";
+ let shown=0;
+ data.forEach(bus=>{
+  if(operator && bus.travel!==operator) return;
+  if(searchTxt && !bus.travel.toLowerCase().includes(searchTxt)
+    && !bus.route.some(r=>r.city.toLowerCase().includes(searchTxt))) return;
+
+  const m=bus.route.find(r=>r.city.toLowerCase().includes(searchTxt));
+  if(m){
+    if(journey==="boarding"&&m.type!=="boarding")return;
+    if(journey==="dropping"&&m.type!=="dropping")return;
+  }
+
+  shown++;
+  const c=document.createElement("div");
+  c.className="card";
+  c.innerHTML=`
+    <h3>🚌 ${bus.travel}</h3>
+    ${bus.route.map(r=>`
+      ${r.type==="boarding"?"🟢":r.type==="dropping"?"🔵":"➡"} ${r.city} ${r.time}
+    `).join("<br>")}
+    <br><br>
+    <button class="track-btn" onclick="openMap('${bus.link}')">Track</button>
+  `;
+  busList.appendChild(c);
+ });
+ if(!shown) busList.innerHTML="<div class='card'>❌ No buses found</div>";
+}
+
+/* AUTH */
+loginBtn.onclick=()=>{
+ signInWithEmailAndPassword(auth,adminEmail.value,adminPass.value)
+ .catch(e=>alert(e.message));
+};
+window.logout=()=>signOut(auth);
+onAuthStateChanged(auth,u=>{
+ loginBox.classList.toggle("hidden",!!u);
+ adminPanel.classList.toggle("hidden",!u);
+});
+
+/* DATA */
+onSnapshot(collection(db,"buses"),snap=>{
+ data=[];
+ snap.forEach(d=>data.push(d.data()));
  renderUpcoming();
  renderList();
-}
-
-/* ---------- FIRESTORE ---------- */
-onSnapshot(collection(db,"buses"),snap=>{
- buses=[];
- ensuresnap:
- snap.forEach(d=>{
-  const x=d.data();
-  if(x&&x.route&&x.travel) buses.push(x);
- });
- renderOperators();
- renderAll();
 });
 </script>
 </body>
