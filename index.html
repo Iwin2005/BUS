@@ -39,6 +39,9 @@ button{cursor:pointer;font-weight:bold}
 .row input,.row select{flex:1}
 @media(max-width:600px){.row{flex-direction:column}}
 
+.hidden{display:none}
+
+/* NEXT DEPARTURE */
 #nextDeparture{
   background:#fff;
   border-left:6px solid #2a9d8f;
@@ -69,8 +72,12 @@ button{cursor:pointer;font-weight:bold}
 #mapFrame{width:100%;height:100%;border:none}
 
 /* ADMIN */
-#adminPanel{background:#fff;padding:15px;border-radius:10px;margin-top:20px}
-.hidden{display:none}
+#adminPanel{
+  background:#fff;
+  padding:15px;
+  border-radius:10px;
+  margin-top:20px
+}
 .via-row button{background:#d00000;color:#fff}
 </style>
 </head>
@@ -80,6 +87,7 @@ button{cursor:pointer;font-weight:bold}
 
 <h2>🚌 Smart Bus Tracking</h2>
 
+<!-- NEXT DEPARTURE -->
 <div id="nextDeparture"></div>
 
 <input id="search" placeholder="Search city or travels">
@@ -91,8 +99,8 @@ button{cursor:pointer;font-weight:bold}
 
 <select id="journeyFilter">
 <option value="both">Boarding & Dropping</option>
-<option value="boarding">Boarding Only</option>
-<option value="dropping">Dropping Only</option>
+<option value="boarding">Boarding</option>
+<option value="dropping">Dropping</option>
 </select>
 </div>
 
@@ -102,8 +110,15 @@ button{cursor:pointer;font-weight:bold}
 
 <hr>
 
-<h3>🔐 Admin Panel</h3>
-<div id="adminPanel">
+<h3>🔐 Admin Login</h3>
+<div id="loginBox">
+<input id="adminEmail" placeholder="Admin Email">
+<input id="adminPass" type="password" placeholder="Password">
+<button id="loginBtn">Login</button>
+</div>
+
+<div id="adminPanel" class="hidden">
+<h3>Admin Panel</h3>
 
 <input id="travel" placeholder="Travels Name">
 
@@ -124,6 +139,7 @@ button{cursor:pointer;font-weight:bold}
 <input id="link" placeholder="Tracking Link">
 
 <button id="saveBtn">Save</button>
+<button onclick="logout()">Logout</button>
 </div>
 </div>
 
@@ -138,6 +154,8 @@ button{cursor:pointer;font-weight:bold}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const app = initializeApp({
  apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
@@ -145,6 +163,7 @@ const app = initializeApp({
  projectId:"smart-bus-tracking-2ba21"
 });
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 /* STATE */
 let data=[];
@@ -152,9 +171,9 @@ let searchTxt="";
 let operator="";
 let journey="both";
 let sortOrder="asc";
+let countdownTimer=null;
 
-/* ELEMENTS */
-const busList=document.getElementById("busList");
+/* EVENTS */
 search.oninput=e=>{searchTxt=e.target.value.toLowerCase();render()};
 operatorSelect.onchange=e=>{operator=e.target.value;render()};
 journeyFilter.onchange=e=>{journey=e.target.value;render()};
@@ -225,27 +244,60 @@ saveBtn.onclick=async()=>{
  viaContainer.innerHTML="";
 };
 
+/* NEXT DEPARTURE (FIXED) */
+function renderNextDeparture(){
+ if(countdownTimer) clearInterval(countdownTimer);
+
+ const now=Date.now();
+ let upcoming=[];
+
+ data.forEach(bus=>{
+   const dep=bus.route.find(r=>r.type==="boarding") || bus.route[0];
+   const mins=toMin(dep.time);
+   const d=new Date();
+   d.setHours(Math.floor(mins/60),mins%60,0,0);
+   if(d.getTime()>now) upcoming.push({bus,dep,time:d.getTime()});
+ });
+
+ if(!upcoming.length){
+   nextDeparture.innerHTML="<b>🚨 NEXT DEPARTURE</b><br>No upcoming buses";
+   return;
+ }
+
+ const soon=Math.min(...upcoming.map(u=>u.time));
+ const list=upcoming.filter(u=>u.time===soon);
+
+ function tick(){
+  const diff=soon-Date.now();
+  if(diff<=0){renderNextDeparture();return;}
+  const s=Math.floor(diff/1000);
+  nextDeparture.innerHTML=`
+    <b>🚨 NEXT DEPARTURE</b><br><br>
+    ${list.map(o=>`
+      🚌 ${o.bus.travel}<br>
+      📍 ${o.dep.city} → ${o.bus.route.at(-1).city}<br>
+      ⏰ ${o.dep.time}<br><br>
+    `).join("")}
+    ⏳ Departs in ${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s
+  `;
+ }
+ tick();
+ countdownTimer=setInterval(tick,1000);
+}
+
 /* RENDER */
 function render(){
  busList.innerHTML="";
- let list=[...data];
-
- if(operator) list=list.filter(b=>b.travel===operator);
-
- list.sort((a,b)=>{
-  let t1=toMin(a.route[0].time);
-  let t2=toMin(b.route[0].time);
-  return sortOrder==="asc"?t1-t2:t2-t1;
- });
-
  let shown=0;
+
+ let list=[...data];
+ if(operator) list=list.filter(b=>b.travel===operator);
 
  list.forEach(bus=>{
   const matchCity=bus.route.find(r=>r.city.toLowerCase().includes(searchTxt));
   const matchOp=bus.travel.toLowerCase().includes(searchTxt);
 
   if(searchTxt && !matchCity && !matchOp) return;
-
   if(matchCity){
     if(journey==="boarding" && matchCity.type!=="boarding") return;
     if(journey==="dropping" && matchCity.type!=="dropping") return;
@@ -256,13 +308,13 @@ function render(){
   const card=document.createElement("div");
   card.className="card";
   card.innerHTML=`
-   <h3>🚌 ${bus.travel}</h3>
-   ${bus.route.map(r=>`
-     ${r.type==="boarding"?"🟢":r.type==="dropping"?"🔵":"➡"}
-     ${r.city} ${r.time}
-   `).join("<br>")}
-   <br><br>
-   <button class="track-btn" onclick="openMap('${bus.link}')">Track</button>
+    <h3>🚌 ${bus.travel}</h3>
+    ${bus.route.map(r=>`
+      ${r.type==="boarding"?"🟢":r.type==="dropping"?"🔵":"➡"}
+      ${r.city} ${r.time}
+    `).join("<br>")}
+    <br><br>
+    <button class="track-btn" onclick="openMap('${bus.link}')">Track</button>
   `;
   busList.appendChild(card);
  });
@@ -282,12 +334,25 @@ function renderOperators(){
  });
 }
 
+/* AUTH */
+loginBtn.onclick=()=>{
+ signInWithEmailAndPassword(auth,adminEmail.value,adminPass.value)
+ .catch(e=>alert(e.message));
+};
+window.logout=()=>signOut(auth);
+
+onAuthStateChanged(auth,user=>{
+ loginBox.classList.toggle("hidden",!!user);
+ adminPanel.classList.toggle("hidden",!user);
+});
+
 /* FIRESTORE */
 onSnapshot(collection(db,"buses"),snap=>{
  data=[];
  snap.forEach(d=>data.push(d.data()));
  renderOperators();
  render();
+ renderNextDeparture();
 });
 </script>
 </body>
