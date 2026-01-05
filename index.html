@@ -21,25 +21,40 @@ body {
     color: #333;
 }
 
-.container { max-width: 900px; margin: auto; padding: 20px; }
+.container { max-width: 1000px; margin: auto; padding: 20px; }
 h2 { text-align: center; color: var(--secondary); margin-bottom: 25px; }
 
-/* INPUTS & BUTTONS */
+/* SEARCH SECTION */
+.search-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.city-filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
 input, select, button {
     width: 100%;
     padding: 12px;
-    margin: 8px 0;
+    margin: 5px 0;
     border-radius: 10px;
     border: 1px solid #ddd;
-    font-size: 15px;
+    font-size: 14px;
     box-sizing: border-box;
 }
 
 button { cursor: pointer; font-weight: bold; border: none; transition: 0.2s; }
 button:active { transform: scale(0.98); }
-
-.row { display: flex; gap: 10px; align-items: flex-end; }
-@media(max-width: 700px) { .row { flex-direction: column; } }
 
 /* CARDS */
 .card {
@@ -52,7 +67,6 @@ button:active { transform: scale(0.98); }
 }
 
 .track-btn { background: var(--primary); color: #fff; margin-top: 15px; }
-.edit-btn { background: #ff9f1c; color: white; width: auto; padding: 5px 15px; }
 
 /* DASHBOARD */
 .upcoming { display: flex; gap: 12px; margin-bottom: 20px; }
@@ -64,26 +78,16 @@ button:active { transform: scale(0.98); }
     padding: 15px;
     text-align: center;
 }
-.up-title { font-size: 11px; text-transform: uppercase; color: #a2a2a2; margin-bottom: 5px; }
-.up-bus-name { font-size: 14px; font-weight: bold; color: var(--accent); }
-.up-city { font-size: 12px; margin: 4px 0; }
-.count { font-size: 20px; font-weight: bold; font-family: monospace; color: #fff; margin-top: 5px; }
-.up-date-small { font-size: 10px; color: #888; }
+.count { font-size: 20px; font-weight: bold; font-family: monospace; color: var(--accent); }
 
-/* TIMELINE */
-.timeline-item { display: flex; align-items: center; position: relative; padding-bottom: 10px; }
-.dot { width: 10px; height: 10px; background: var(--secondary); border-radius: 50%; margin-right: 12px; }
-.badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; }
+.timeline-item { display: flex; align-items: center; padding-bottom: 8px; font-size: 13px; }
+.dot { width: 8px; height: 8px; background: var(--secondary); border-radius: 50%; margin-right: 10px; }
+.badge { font-size: 9px; padding: 2px 5px; border-radius: 4px; margin-left: auto; }
 .boarding { background: #e9f5f3; color: #2a9d8f; }
 .dropping { background: #fef2f2; color: #e63946; }
 
-/* MAP MODAL */
-.map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
-.map-close { position: absolute; top: 15px; right: 15px; background: var(--accent); width: 40px; height: 40px; border-radius: 50%; }
-#mapFrame { width: 100%; height: 100%; border: none; }
-
 .hidden { display: none; }
-label { font-size: 12px; font-weight: bold; color: #666; margin-left: 5px; }
+@media(max-width: 768px) { .search-grid, .city-filter-row { grid-template-columns: 1fr; } }
 </style>
 </head>
 
@@ -94,18 +98,39 @@ label { font-size: 12px; font-weight: bold; color: #666; margin-left: 5px; }
 
 <div class="upcoming">
   <div class="up-box" id="upDepBox">
-      <div class="up-title">Next Departure</div>
-      <div id="depInfo">Calculating...</div>
+      <div style="font-size:10px; color:#aaa">NEXT DEPARTURE</div>
+      <div id="depInfo">Loading...</div>
       <div class="count" id="depCount">00:00:00</div>
   </div>
   <div class="up-box" id="upArrBox">
-      <div class="up-title">Next Arrival</div>
-      <div id="arrInfo">Calculating...</div>
+      <div style="font-size:10px; color:#aaa">NEXT ARRIVAL</div>
+      <div id="arrInfo">Loading...</div>
       <div class="count" id="arrCount">00:00:00</div>
   </div>
 </div>
 
-<input id="search" placeholder="🔍 Search bus, city, or boarding point...">
+<div class="search-section">
+    <div class="search-grid">
+        <input id="search" placeholder="🔍 Search bus, city, or via routes...">
+        <select id="stopType">
+            <option value="All">All Stops</option>
+            <option value="Boarding">Boarding Only</option>
+            <option value="Dropping">Dropping Only</option>
+        </select>
+        <select id="operatorFilter">
+            <option value="All">All Operators</option>
+        </select>
+    </div>
+    <div class="city-filter-row">
+        <select id="fromCity">
+            <option value="">Select Boarding City</option>
+        </select>
+        <select id="toCity">
+            <option value="">Select Destination</option>
+        </select>
+    </div>
+    <button onclick="resetFilters()" style="background:#ddd; color:#333; margin-top:10px; padding:8px">Clear Filters</button>
+</div>
 
 <div id="busList"></div>
 
@@ -118,245 +143,162 @@ label { font-size: 12px; font-weight: bold; color: #666; margin-left: 5px; }
   <button id="loginBtn" style="background:var(--secondary); color:white;">Login</button>
 </div>
 
-<div id="adminPanel" class="hidden card" style="border-left-color: #e76f51;">
-  <h3 id="adminTitle">🛠 Add New Bus</h3>
-  <label>Travels Name</label>
-  <input id="travel" placeholder="e.g. TTT Travels">
-  
-  <div class="row">
-    <div style="flex:1">
-      <label>Departure City</label>
-      <input id="depCity" placeholder="Source City">
-      <input id="depTime" placeholder="05:50 PM">
-    </div>
-    <div style="flex:1">
-      <label>Destination City</label>
-      <input id="destCity" placeholder="Destination City">
-      <input id="destTime" placeholder="06:55 AM">
-    </div>
+<div id="adminPanel" class="hidden card">
+  <h3 id="adminTitle">🛠 Bus Management</h3>
+  <input id="travel" placeholder="Operator/Travels Name">
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+    <input id="depCity" placeholder="Source City">
+    <input id="depTime" placeholder="Departure Time (e.g. 10:00 AM)">
+    <input id="destCity" placeholder="Destination City">
+    <input id="destTime" placeholder="Arrival Time (e.g. 08:00 PM)">
   </div>
-
-  <h4>Route Via (Stops)</h4>
   <div id="routes"></div>
-  <button onclick="addRouteUI()" style="background:#eee; color:#333; margin-top:0;">➕ Add Via Stop</button>
-
-  <label style="display:block; margin-top:15px;">Live Tracking Link</label>
-  <input id="link" placeholder="Google Maps Share Link">
-
+  <button onclick="addRouteUI()" style="background:#eee; color:#333">➕ Add Via Stop</button>
+  <input id="link" placeholder="Tracking Link">
   <input type="hidden" id="editingBusId">
-  
-  <div class="row" style="margin-top:20px;">
-    <button id="saveBtn" onclick="saveBus()" style="background:var(--primary); color:white; flex:2">💾 Save Bus</button>
-    <button id="cancelEdit" class="hidden" onclick="resetAdmin()" style="background:#666; color:white; flex:1">Cancel Edit</button>
-  </div>
-  
-  <button onclick="logout()" style="background:#e63946; color:white; margin-top:20px;">Logout</button>
+  <button onclick="saveBus()" style="background:var(--primary); color:white; margin-top:10px">💾 Save Bus</button>
+  <button onclick="logout()" style="background:#e63946; color:white; margin-top:20px">Logout</button>
 </div>
 
-</div>
-
-<div class="map-modal" id="mapModal">
-  <button class="map-close" onclick="closeMap()">✕</button>
-  <iframe id="mapFrame"></iframe>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
-  authDomain: "smart-bus-tracking-2ba21.firebaseapp.com",
-  projectId: "smart-bus-tracking-2ba21"
-};
-
+const firebaseConfig = { apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", authDomain: "smart-bus-tracking-2ba21.firebaseapp.com", projectId: "smart-bus-tracking-2ba21" };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
 let data = [];
 
-/* --- TIME LOGIC --- */
-function getNextOccurrence(timeStr) {
-    const now = new Date();
-    let [time, modifier] = timeStr.split(" ");
-    let [hours, minutes] = time.split(":").map(Number);
-    
-    if (modifier === "PM" && hours !== 12) hours += 12;
-    if (modifier === "AM" && hours === 12) hours = 0;
+/* FILTER EVENT LISTENERS */
+document.getElementById('search').oninput = renderList;
+document.getElementById('stopType').onchange = renderList;
+document.getElementById('operatorFilter').onchange = renderList;
+document.getElementById('fromCity').onchange = () => { updateToCityDropdown(); renderList(); };
+document.getElementById('toCity').onchange = renderList;
 
-    let target = new Date();
-    target.setHours(hours, minutes, 0, 0);
-
-    // If time has already passed today, set it for tomorrow
-    if (target < now) {
-        target.setDate(target.getDate() + 1);
-    }
-    return target;
-}
-
-function formatCountdown(ms) {
-    if (ms < 0) return "00h 00m 00s";
-    const totalSeconds = Math.floor(ms / 1000);
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
-}
-
-/* --- DASHBOARD UPDATE --- */
-function updateDashboard() {
-    if (!data.length) return;
-
-    // Map all buses to their next departure/arrival times
-    let depList = data.map(b => ({
-        bus: b,
-        targetDate: getNextOccurrence(b.depTime)
-    })).sort((a, b) => a.targetDate - b.targetDate);
-
-    let arrList = data.map(b => ({
-        bus: b,
-        targetDate: getNextOccurrence(b.destTime)
-    })).sort((a, b) => a.targetDate - b.targetDate);
-
-    const nextDep = depList[0];
-    const nextArr = arrList[0];
-
-    // Update Departure UI
-    document.getElementById('depInfo').innerHTML = `
-        <div class="up-bus-name">${nextDep.bus.travel}</div>
-        <div class="up-city">${nextDep.bus.depCity} (${nextDep.bus.depTime})</div>
-        <div class="up-date-small">${nextDep.targetDate.toLocaleDateString('en-GB')}</div>
-    `;
-
-    // Update Arrival UI
-    document.getElementById('arrInfo').innerHTML = `
-        <div class="up-bus-name">${nextArr.bus.travel}</div>
-        <div class="up-city">${nextArr.bus.destCity} (${nextArr.bus.destTime})</div>
-        <div class="up-date-small">${nextArr.targetDate.toLocaleDateString('en-GB')}</div>
-    `;
-
-    if (window.timerInterval) clearInterval(window.timerInterval);
-    window.timerInterval = setInterval(() => {
-        const now = new Date();
-        const dDiff = nextDep.targetDate - now;
-        const aDiff = nextArr.targetDate - now;
-        
-        document.getElementById('depCount').innerText = formatCountdown(dDiff);
-        document.getElementById('arrCount').innerText = formatCountdown(aDiff);
-        
-        // Refresh logic if a timer hits zero
-        if (dDiff <= 0 || aDiff <= 0) {
-            clearInterval(window.timerInterval);
-            updateDashboard();
-        }
-    }, 1000);
-}
-
-/* --- ADMIN HANDLERS --- */
-window.addRouteUI = (city = "", time = "", type = "Boarding") => {
-    const d = document.createElement("div");
-    d.className = "row stop-row";
-    d.innerHTML = `
-        <div style="flex:2"><label>City</label><input class="c-city" value="${city}"></div>
-        <div style="flex:1"><label>Time</label><input class="c-time" value="${time}"></div>
-        <div style="flex:1">
-            <label>Type</label>
-            <select class="c-type">
-                <option value="Boarding" ${type==='Boarding'?'selected':''}>Boarding</option>
-                <option value="Dropping" ${type==='Dropping'?'selected':''}>Dropping</option>
-            </select>
-        </div>
-        <button onclick="this.parentElement.remove()" style="background:#ff4d4d; color:white; width:40px; margin-bottom:8px">X</button>
-    `;
-    document.getElementById('routes').appendChild(d);
+window.resetFilters = () => {
+    document.getElementById('search').value = "";
+    document.getElementById('stopType').value = "All";
+    document.getElementById('operatorFilter').value = "All";
+    document.getElementById('fromCity').value = "";
+    document.getElementById('toCity').value = "";
+    updateToCityDropdown();
+    renderList();
 };
 
-window.saveBus = async () => {
-    const id = document.getElementById('editingBusId').value;
-    const viaStops = [];
-    document.querySelectorAll(".stop-row").forEach(row => {
-        const cityVal = row.querySelector(".c-city").value;
-        const timeVal = row.querySelector(".c-time").value;
-        if(cityVal && timeVal) {
-            viaStops.push({
-                city: cityVal,
-                time: timeVal,
-                type: row.querySelector(".c-type").value
-            });
+/* --- DYNAMIC DROPDOWN LOGIC --- */
+function updateSearchDropdowns() {
+    const operators = new Set();
+    const allCities = new Set();
+    
+    data.forEach(b => {
+        operators.add(b.travel);
+        allCities.add(b.depCity);
+        allCities.add(b.destCity);
+        if(b.route) b.route.forEach(r => allCities.add(r.city));
+    });
+
+    // Update Operator List
+    const opFilter = document.getElementById('operatorFilter');
+    const currentOp = opFilter.value;
+    opFilter.innerHTML = '<option value="All">All Operators</option>';
+    Array.from(operators).sort().forEach(op => {
+        opFilter.innerHTML += `<option value="${op}" ${op === currentOp ? 'selected' : ''}>${op}</option>`;
+    });
+
+    // Update Boarding City List
+    const fromFilter = document.getElementById('fromCity');
+    const currentFrom = fromFilter.value;
+    fromFilter.innerHTML = '<option value="">Select Boarding City</option>';
+    Array.from(allCities).sort().forEach(city => {
+        fromFilter.innerHTML += `<option value="${city}" ${city === currentFrom ? 'selected' : ''}>${city}</option>`;
+    });
+    
+    updateToCityDropdown();
+}
+
+function updateToCityDropdown() {
+    const fromCity = document.getElementById('fromCity').value;
+    const toFilter = document.getElementById('toCity');
+    const possibleDestinations = new Set();
+
+    if (!fromCity) {
+        toFilter.innerHTML = '<option value="">Select Destination</option>';
+        return;
+    }
+
+    data.forEach(b => {
+        const busCities = [b.depCity, ...(b.route?.map(r => r.city) || []), b.destCity];
+        if (busCities.includes(fromCity)) {
+            const idx = busCities.indexOf(fromCity);
+            // Only cities appearing AFTER the boarding point are valid destinations
+            busCities.slice(idx + 1).forEach(c => possibleDestinations.add(c));
         }
     });
 
-    const busObj = {
-        travel: document.getElementById('travel').value,
-        depCity: document.getElementById('depCity').value,
-        depTime: document.getElementById('depTime').value,
-        destCity: document.getElementById('destCity').value,
-        destTime: document.getElementById('destTime').value,
-        route: viaStops,
-        link: document.getElementById('link').value
-    };
+    toFilter.innerHTML = '<option value="">Select Destination</option>';
+    Array.from(possibleDestinations).sort().forEach(city => {
+        toFilter.innerHTML += `<option value="${city}">${city}</option>`;
+    });
+}
 
-    if(!busObj.travel || !busObj.depCity) return alert("Fill required fields!");
-
-    try {
-        if (id) {
-            await updateDoc(doc(db, "buses", id), busObj);
-            alert("Bus Updated!");
-        } else {
-            await addDoc(collection(db, "buses"), busObj);
-            alert("Bus Added!");
-        }
-        resetAdmin();
-    } catch(e) { alert(e.message); }
-};
-
-window.editBus = (id) => {
-    const b = data.find(x => x.id === id);
-    if(!b) return;
-    document.getElementById('editingBusId').value = id;
-    document.getElementById('travel').value = b.travel;
-    document.getElementById('depCity').value = b.depCity;
-    document.getElementById('depTime').value = b.depTime;
-    document.getElementById('destCity').value = b.destCity;
-    document.getElementById('destTime').value = b.destTime;
-    document.getElementById('link').value = b.link;
-    document.getElementById('routes').innerHTML = "";
-    if(b.route) b.route.forEach(s => addRouteUI(s.city, s.time, s.type));
-    document.getElementById('adminTitle').innerText = "📝 Edit " + b.travel;
-    document.getElementById('cancelEdit').classList.remove('hidden');
-    document.getElementById('adminPanel').scrollIntoView({behavior:'smooth'});
-};
-
-window.resetAdmin = () => {
-    document.getElementById('editingBusId').value = "";
-    document.getElementById('adminTitle').innerText = "🛠 Add New Bus";
-    document.getElementById('cancelEdit').classList.add('hidden');
-    document.getElementById('routes').innerHTML = "";
-    document.querySelectorAll('#adminPanel input').forEach(i => i.value="");
-};
-
-/* --- UI RENDER --- */
+/* --- MAIN FILTERING ENGINE --- */
 function renderList() {
-    const busList = document.getElementById('busList');
     const term = document.getElementById('search').value.toLowerCase();
+    const stopType = document.getElementById('stopType').value;
+    const operator = document.getElementById('operatorFilter').value;
+    const from = document.getElementById('fromCity').value;
+    const to = document.getElementById('toCity').value;
     const isAdmin = auth.currentUser !== null;
-    busList.innerHTML = "";
 
-    const filtered = data.filter(b => 
-        b.travel.toLowerCase().includes(term) || 
-        b.depCity.toLowerCase().includes(term) ||
-        b.destCity.toLowerCase().includes(term)
-    );
+    const filtered = data.filter(b => {
+        // 1. Text Search (Travels, Dep, Dest, Via)
+        const allVia = b.route?.map(r => r.city.toLowerCase()).join(' ') || '';
+        const textMatch = b.travel.toLowerCase().includes(term) || b.depCity.toLowerCase().includes(term) || 
+                          b.destCity.toLowerCase().includes(term) || allVia.includes(term);
+        
+        // 2. Operator Filter
+        const opMatch = (operator === "All" || b.travel === operator);
 
+        // 3. Stop Type Filter
+        let typeMatch = true;
+        if (stopType !== "All") {
+            const hasBoarding = b.depCity.toLowerCase().includes(term) || b.route?.some(r => r.type === "Boarding" && r.city.toLowerCase().includes(term));
+            const hasDropping = b.destCity.toLowerCase().includes(term) || b.route?.some(r => r.type === "Dropping" && r.city.toLowerCase().includes(term));
+            typeMatch = (stopType === "Boarding" ? hasBoarding : hasDropping);
+        }
+
+        // 4. Source-to-Destination Filter
+        let routeMatch = true;
+        if (from || to) {
+            const busCities = [b.depCity, ...(b.route?.map(r => r.city) || []), b.destCity];
+            if (from && to) {
+                const fIdx = busCities.indexOf(from);
+                const tIdx = busCities.indexOf(to);
+                routeMatch = (fIdx !== -1 && tIdx !== -1 && fIdx < tIdx);
+            } else if (from) {
+                routeMatch = busCities.includes(from);
+            }
+        }
+
+        return textMatch && opMatch && typeMatch && routeMatch;
+    });
+
+    const busList = document.getElementById('busList');
+    busList.innerHTML = filtered.length ? "" : "<p style='text-align:center; padding:20px;'>No buses found matching these filters.</p>";
+    
     filtered.forEach(b => {
         const c = document.createElement("div");
         c.className = "card";
         const viaHtml = b.route ? b.route.map(s => `
             <div class="timeline-item">
                 <div class="dot"></div>
-                <div style="flex:1; font-size:14px"><b>${s.city}</b> - ${s.time}</div>
+                <div style="flex:1"><b>${s.city}</b> - ${s.time}</div>
                 <span class="badge ${s.type.toLowerCase()}">${s.type}</span>
             </div>
         `).join('') : '';
@@ -364,47 +306,29 @@ function renderList() {
         c.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:start">
                 <div>
-                    <h3 style="margin:0 0 5px 0; color:var(--secondary)">🚌 ${b.travel}</h3>
-                    <div style="font-size:15px; font-weight:bold; color:var(--primary)">
+                    <h3 style="margin:0; color:var(--secondary)">🚌 ${b.travel}</h3>
+                    <div style="font-size:14px; font-weight:bold; color:var(--primary); margin:5px 0">
                         ${b.depCity} (${b.depTime}) ➔ ${b.destCity} (${b.destTime})
                     </div>
                 </div>
-                ${isAdmin ? `<button class="edit-btn" onclick="editBus('${b.id}')">Edit</button>` : ''}
+                ${isAdmin ? `<button style="width:auto; padding:5px 10px; background:#ff9f1c; color:#fff" onclick="editBus('${b.id}')">Edit</button>` : ''}
             </div>
-            <div style="margin: 15px 0; padding-left:5px; border-left: 2px dashed #ccc;">${viaHtml}</div>
+            <div style="margin:10px 0; border-left:1px dashed #ccc; padding-left:10px">${viaHtml}</div>
             <button class="track-btn" onclick="openMap('${b.link}')">📍 View Live Location</button>
         `;
         busList.appendChild(c);
     });
 }
 
-/* --- APP INIT --- */
-onAuthStateChanged(auth, u => {
-    document.getElementById('loginBox').classList.toggle('hidden', !!u);
-    document.getElementById('adminPanel').classList.toggle('hidden', !u);
-    renderList();
-});
-
-document.getElementById('loginBtn').onclick = () => {
-    signInWithEmailAndPassword(auth, email.value, pass.value).catch(e => alert(e.message));
-};
-window.logout = () => signOut(auth);
-document.getElementById('search').oninput = renderList;
-
+/* --- FIREBASE & OTHER HELPERS (Keep your existing updateDashboard, saveBus, etc.) --- */
 onSnapshot(collection(db, "buses"), snap => {
     data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    updateSearchDropdowns();
     renderList();
-    updateDashboard();
+    if(window.updateDashboard) updateDashboard(); // Call your existing dashboard function
 });
 
-window.openMap = url => {
-    document.getElementById('mapFrame').src = url;
-    document.getElementById('mapModal').style.display = "block";
-};
-window.closeMap = () => {
-    document.getElementById('mapFrame').src = "";
-    document.getElementById('mapModal').style.display = "none";
-};
+// [Rest of your saveBus, editBus, addRouteUI, login/logout functions go here]
 </script>
 </body>
 </html>
