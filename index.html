@@ -1,194 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BUS TRACKING</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUS TRACKING</title>
+    <style>
+        :root { --primary: #2a9d8f; --secondary: #023047; --accent: #ffd60a; --bg: #f0f2f5; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; }
+        
+        header { background: #fff; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        #liveClock { font-family: monospace; font-weight: bold; color: var(--secondary); background: #eee; padding: 5px 10px; border-radius: 5px; }
+        
+        .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-main:hover { opacity: 0.9; }
+        .container { max-width: 1000px; margin: auto; padding: 20px; }
+        .hidden { display: none !important; }
 
-<style>
-:root {
-    --primary: #2a9d8f;
-    --secondary: #023047;
-    --accent: #ffd60a;
-    --bg: #f0f2f5;
-    --card-bg: #ffffff;
-}
+        /* SQUARE LOGIN CARD */
+        #authWall { height: 80vh; display: flex; align-items: center; justify-content: center; }
+        .auth-card { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 20px; 
+            width: 100%;
+            max-width: 500px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .auth-card h2 { margin-bottom: 30px; color: var(--secondary); font-size: 24px; }
 
-/* Base Animations */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+        .admin-panel { background: #fff; border: 2px dashed var(--primary); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
 
-body {
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: var(--bg);
-    color: #333;
-}
+        /* DASHBOARD WIDGETS */
+        .upcoming { display: flex; gap: 15px; margin-bottom: 25px; }
+        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .up-title { font-size: 10px; text-transform: uppercase; color: #aaa; margin-bottom: 8px; letter-spacing: 1px; }
+        .up-date { font-size: 11px; color: #5bc0be; font-weight: bold; margin-bottom: 8px; }
+        .up-bus-name { font-size: 16px; font-weight: bold; color: var(--accent); display: block; margin-bottom: 4px; }
+        .up-city { font-size: 12px; color: #eee; display: block; margin-bottom: 10px; }
+        .count { font-size: 28px; font-weight: bold; font-family: monospace; color: #fff; }
 
-.container { max-width: 1000px; margin: auto; padding: 20px; }
-h2 { text-align: center; color: var(--secondary); margin-bottom: 25px; }
+        /* SEARCH & FILTERS */
+        .search-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; background: #fff; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
+        .city-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
 
-/* DASHBOARD */
-.upcoming { display: flex; gap: 12px; margin-bottom: 20px; }
-.up-box {
-    flex: 1;
-    background: #1b263b;
-    color: #fff;
-    border-radius: 15px;
-    padding: 15px;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-.up-title { font-size: 10px; text-transform: uppercase; color: #aaa; margin-bottom: 5px; }
-.up-bus-name { font-size: 15px; font-weight: bold; color: var(--accent); }
-.up-city { font-size: 12px; margin: 4px 0; }
-.up-date { font-size: 11px; color: #5bc0be; font-weight: bold; margin-bottom: 5px; }
-.count { font-size: 22px; font-weight: bold; font-family: monospace; color: #fff; margin-top: 5px; }
-
-/* SEARCH SECTION */
-.search-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 10px;
-    background: #fff;
-    padding: 15px;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    margin-bottom: 10px;
-}
-
-.city-filter-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-input, select, button {
-    width: 100%;
-    padding: 12px;
-    margin: 5px 0;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-
-button { cursor: pointer; font-weight: bold; border: none; transition: 0.2s; }
-
-/* WELCOME MESSAGE */
-#welcomeArea {
-    text-align: center;
-    padding: 50px 20px;
-    animation: fadeInUp 0.8s ease;
-}
-#welcomeArea h1 { color: var(--secondary); }
-
-/* CARDS */
-.card {
-    background: var(--card-bg);
-    padding: 20px;
-    border-radius: 15px;
-    margin: 15px 0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    border-left: 5px solid var(--primary);
-    animation: fadeInUp 0.4s ease forwards;
-}
-
-.track-btn { background: var(--primary); color: #fff; margin-top: 15px; }
-.edit-btn { background: #ff9f1c; color: white; width: auto; padding: 5px 15px; font-size: 12px; }
-.delete-btn { background: #e63946; color: white; margin-top: 10px; }
-
-.timeline-item { display: flex; align-items: center; padding-bottom: 8px; font-size: 13px; }
-.dot { width: 8px; height: 8px; background: var(--secondary); border-radius: 50%; margin-right: 10px; }
-.badge { font-size: 9px; padding: 2px 5px; border-radius: 4px; margin-left: auto; font-weight: bold; }
-.boarding { background: #e9f5f3; color: #2a9d8f; }
-.dropping { background: #fef2f2; color: #e63946; }
-
-.map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
-.map-close { position: absolute; top: 15px; right: 15px; background: var(--accent); width: 40px; height: 40px; border-radius: 50%; }
-#mapFrame { width: 100%; height: 100%; border: none; }
-
-.hidden { display: none !important; }
-@media(max-width: 768px) { .search-grid, .city-filter-row { grid-template-columns: 1fr; } }
-</style>
+        /* CARDS & TIMELINE */
+        .card { background: #fff; padding: 25px; border-radius: 15px; margin: 15px 0; border-left: 6px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .timeline-item { display: flex; align-items: center; padding-bottom: 10px; font-size: 13px; margin-top: 6px; border-bottom: 1px solid #f5f5f5; }
+        .dot { width: 8px; height: 8px; background: var(--secondary); border-radius: 50%; margin-right: 12px; }
+        .badge { font-size: 9px; padding: 3px 6px; border-radius: 5px; margin-left: auto; font-weight: bold; text-transform: uppercase; }
+        .boarding { background: #e9f5f3; color: #2a9d8f; }
+        .dropping { background: #fef2f2; color: #e63946; }
+        
+        #welcomeArea { text-align: center; padding: 80px 20px; color: var(--secondary); background: #fff; border-radius: 20px; border: 2px dashed #ddd; }
+    </style>
 </head>
-
 <body>
+
+<header>
+    <h3 style="margin:0; color:var(--secondary)">🚍 BUS TRACKING</h3>
+    <div class="header-right">
+        <div id="liveClock">00:00:00</div>
+        <div id="loggedInLinks" class="hidden">
+            <span id="userEmailDisplay" style="font-size: 13px; color: #666;"></span>
+            <button id="logoutBtn" class="btn-main" style="background:#e63946 !important; padding: 8px 15px;">Log Out</button>
+        </div>
+    </div>
+</header>
+
 <div class="container">
+    <div id="authWall">
+        <div class="auth-card">
+            <h2>Login</h2>
+            <input type="email" id="uEmail" placeholder="enter login id">
+            <input type="password" id="uPass" placeholder="enter password">
+            <button class="btn-main" style="width:100%; margin-top: 15px;" id="loginBtn">Login</button>
+        </div>
+    </div>
 
-<h2>🚍 BUS TRACKING</h2>
+    <div id="mainContent" class="hidden">
+        <div class="upcoming">
+            <div class="up-box">
+                <div class="up-title">Next Departure</div>
+                <div id="depDate" class="up-date"></div>
+                <b id="depBusName" class="up-bus-name">Ready...</b>
+                <span id="depCityInfo" class="up-city"></span>
+                <div class="count" id="depCounter">00:00:00</div>
+            </div>
+            <div class="up-box">
+                <div class="up-title">Next Arrival</div>
+                <div id="arrDate" class="up-date"></div>
+                <b id="arrBusName" class="up-bus-name">Ready...</b>
+                <span id="arrCityInfo" class="up-city"></span>
+                <div class="count" id="arrCounter">00:00:00</div>
+            </div>
+        </div>
 
-<div class="upcoming">
-  <div class="up-box">
-      <div class="up-title">Next Departure</div>
-      <div id="depDate" class="up-date"></div>
-      <div id="depInfo">Loading...</div>
-      <div class="count" id="depCount">00:00:00</div>
-  </div>
-  <div class="up-box">
-      <div class="up-title">Next Arrival</div>
-      <div id="arrDate" class="up-date"></div>
-      <div id="arrInfo">Loading...</div>
-      <div class="count" id="arrCount">00:00:00</div>
-  </div>
-</div>
+        <div id="adminPortal" class="admin-panel hidden">
+            <h3>🛠 Admin Portal</h3>
+            <input id="travel" placeholder="Travels Name">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+                <input id="depCityInput" placeholder="Departure City">
+                <input id="depTimeInput" placeholder="Time (e.g. 05:50 PM)">
+                <input id="destCityInput" placeholder="Destination City">
+                <input id="destTimeInput" placeholder="Time (e.g. 06:55 AM)">
+            </div>
+            <div id="dynamicStops"></div>
+            <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin-bottom:12px">➕ Add Route Stop</button>
+            <input id="trackLink" placeholder="Tracking Link">
+            <button onclick="saveBusToFirebase()" class="btn-main" style="width:100%">💾 Save Bus Record</button>
+        </div>
 
-<div class="search-grid">
-    <input id="search" placeholder="🔍 Search bus, city, or via routes...">
-    <select id="stopType">
-        <option value="All">All Stops</option>
-        <option value="Boarding">Boarding Points</option>
-        <option value="Dropping">Dropping Points</option>
-    </select>
-    <select id="operatorFilter"><option value="All">All Operators</option></select>
-</div>
-<div class="city-filter-row">
-    <select id="fromCity"><option value="">Select Boarding City</option></select>
-    <select id="toCity"><option value="">Select Destination</option></select>
-</div>
+        <div class="search-grid">
+            <input id="searchBox" placeholder="🔍 Search bus name or city...">
+            <select id="stopTypeFilter">
+                <option value="All">All Stops</option>
+                <option value="Boarding">Boarding Points</option>
+                <option value="Dropping">Dropping Points</option>
+            </select>
+            <select id="sortOption">
+                <option value="none">Sort By</option>
+                <option value="early">Early Departure</option>
+                <option value="late">Late Departure</option>
+            </select>
+            <button onclick="clearAllSearch()" class="btn-main" style="background:#555">Clear All</button>
+        </div>
+        <div class="city-filter-row">
+            <select id="fromCity"><option value="">Select Boarding City</option></select>
+            <select id="toCity"><option value="">Select Destination</option></select>
+        </div>
 
-<div id="welcomeArea">
-    <h1>👋 Welcome!</h1>
-    <p>Search for a city or operator to view live tracking results.</p>
-</div>
-
-<div id="busList" class="hidden"></div>
-
-<hr style="margin: 40px 0; border: 0; border-top: 1px solid #ddd;">
-
-<div id="loginBox" class="card">
-  <h3>🔐 Admin Access</h3>
-  <input id="email" type="email" autocomplete="username" placeholder="Admin Email">
-  <input id="pass" type="password" autocomplete="current-password" placeholder="Password">
-  <button id="loginBtn" style="background:var(--secondary); color:white;">Login</button>
-</div>
-
-<div id="adminPanel" class="hidden card">
-  <h3 id="adminTitle">🛠 Bus Management</h3>
-  <input id="travel" placeholder="Travels Name">
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
-    <input id="depCity" placeholder="Source City">
-    <input id="depTime" placeholder="05:50 PM">
-    <input id="destCity" placeholder="Destination City">
-    <input id="destTime" placeholder="06:00 AM">
-  </div>
-  <div id="routes"></div>
-  <button onclick="addRouteUI()" style="background:#eee; color:#333">➕ Add Via Stop</button>
-  <input id="link" placeholder="Tracking Link">
-  <input type="hidden" id="editingBusId">
-  <button onclick="saveBus()" style="background:var(--primary); color:white; margin-top:10px">💾 Save Bus</button>
-  <button id="delBtn" onclick="deleteBus()" class="delete-btn hidden">🗑 Delete Bus Record</button>
-  <button onclick="logout()" style="background:#e63946; color:white; margin-top:20px">Logout</button>
-</div>
-
-</div>
-
-<div class="map-modal" id="mapModal">
-  <button class="map-close" onclick="closeMap()">✕</button>
-  <iframe id="mapFrame"></iframe>
+        <div id="welcomeArea">
+            <div style="font-size: 50px; margin-bottom: 15px;">👋 Welcome!</div>
+            <h2>Search to get results</h2>
+            <p>Search for a city or operator to view live tracking results.</p>
+        </div>
+        <div id="busDisplayArea" class="hidden"></div>
+    </div>
 </div>
 
 <script type="module">
@@ -196,211 +146,172 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-const firebaseConfig = { 
-    apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", 
-    authDomain: "smart-bus-tracking-2ba21.firebaseapp.com", 
-    projectId: "smart-bus-tracking-2ba21" 
-};
-
+const firebaseConfig = { apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", authDomain: "smart-bus-tracking-2ba21.firebaseapp.com", projectId: "smart-bus-tracking-2ba21" };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-let data = [];
+const ADMIN_EMAIL = "admin@wintracking.com"; 
+let busDataArr = [];
 
-/* --- TIME ENGINE --- */
-function getNextOccurrence(timeStr) {
+setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString(); }, 1000);
+
+function parseTimeToDate(timeStr) {
     if (!timeStr || !timeStr.includes(" ")) return null;
-    try {
-        const now = new Date();
-        let [time, modifier] = timeStr.split(" ");
-        let [hours, minutes] = time.split(":").map(Number);
-        if (modifier.toUpperCase() === "PM" && hours !== 12) hours += 12;
-        if (modifier.toUpperCase() === "AM" && hours === 12) hours = 0;
-        let target = new Date();
-        target.setHours(hours, minutes, 0, 0);
-        if (target < now) target.setDate(target.getDate() + 1);
-        return target;
-    } catch (e) { return null; }
-}
-
-function formatCountdown(ms) {
-    if (ms < 0) return "00h 00m 00s";
-    const totalSeconds = Math.floor(ms / 1000);
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+    const now = new Date();
+    let [time, modifier] = timeStr.split(" ");
+    let [h, m] = time.split(":").map(Number);
+    if (modifier.toUpperCase() === "PM" && h !== 12) h += 12;
+    if (modifier.toUpperCase() === "AM" && h === 12) h = 0;
+    let target = new Date();
+    target.setHours(h, m, 0, 0);
+    if (target < now) target.setDate(target.getDate() + 1);
+    return target;
 }
 
 function updateDashboard() {
-    if (!data.length) return;
-    let depList = data.map(b => ({ bus: b, target: getNextOccurrence(b.depTime) })).filter(x => x.target).sort((a,b) => a.target - b.target);
-    let arrList = data.map(b => ({ bus: b, target: getNextOccurrence(b.destTime) })).filter(x => x.target).sort((a,b) => a.target - b.target);
-    if (!depList.length) return;
-    const nextD = depList[0], nextA = arrList[0];
+    if (busDataArr.length === 0) return;
+    const deps = busDataArr.map(b => ({ b, t: parseTimeToDate(b.depTime) })).filter(x => x.t).sort((a,b) => a.t - b.t);
+    const arrs = busDataArr.map(b => ({ b, t: parseTimeToDate(b.destTime) })).filter(x => x.t).sort((a,b) => a.t - b.t);
 
-    // Added Date Display
-    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    document.getElementById('depDate').innerText = nextD.target.toLocaleDateString('en-GB', options);
-    document.getElementById('arrDate').innerText = nextA.target.toLocaleDateString('en-GB', options);
-
-    document.getElementById('depInfo').innerHTML = `<div class="up-bus-name">${nextD.bus.travel}</div><div class="up-city">${nextD.bus.depCity} (${nextD.bus.depTime})</div>`;
-    document.getElementById('arrInfo').innerHTML = `<div class="up-bus-name">${nextA.bus.travel}</div><div class="up-city">${nextA.bus.destCity} (${nextA.bus.destTime})</div>`;
-
-    if (window.timerInterval) clearInterval(window.timerInterval);
-    window.timerInterval = setInterval(() => {
-        document.getElementById('depCount').innerText = formatCountdown(nextD.target - new Date());
-        document.getElementById('arrCount').innerText = formatCountdown(nextA.target - new Date());
-    }, 1000);
+    const refreshBox = (type, list) => {
+        if (list.length > 0) {
+            const next = list[0];
+            document.getElementById(type + 'Date').innerText = next.t.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            document.getElementById(type + 'BusName').innerText = next.b.travel;
+            document.getElementById(type + 'CityInfo').innerText = `${type === 'dep' ? next.b.depCity : next.b.destCity} (${type === 'dep' ? next.b.depTime : next.b.destTime})`;
+            
+            if (window[type + 'Interval']) clearInterval(window[type + 'Interval']);
+            window[type + 'Interval'] = setInterval(() => {
+                const diff = Math.max(0, Math.floor((next.t - new Date()) / 1000));
+                const h = Math.floor(diff / 3600);
+                const m = Math.floor((diff % 3600) / 60);
+                const s = diff % 60;
+                document.getElementById(type + 'Counter').innerText = `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+            }, 1000);
+        }
+    };
+    refreshBox('dep', deps); refreshBox('arr', arrs);
 }
 
-/* --- DYNAMIC SEARCH --- */
-function updateDropdowns() {
-    const ops = new Set(), cities = new Set();
-    data.forEach(b => {
-        ops.add(b.travel);
-        cities.add(b.depCity); cities.add(b.destCity);
-        if(b.route) b.route.forEach(r => cities.add(r.city));
-    });
-    const opFilter = document.getElementById('operatorFilter');
-    opFilter.innerHTML = '<option value="All">All Operators</option>';
-    Array.from(ops).sort().forEach(o => opFilter.innerHTML += `<option value="${o}">${o}</option>`);
-    const fromSelect = document.getElementById('fromCity');
-    fromSelect.innerHTML = '<option value="">Select Boarding City</option>';
-    Array.from(cities).sort().forEach(c => fromSelect.innerHTML += `<option value="${c}">${c}</option>`);
-}
+onAuthStateChanged(auth, (user) => {
+    const main = document.getElementById('mainContent'), wall = document.getElementById('authWall'), links = document.getElementById('loggedInLinks'), admin = document.getElementById('adminPortal');
+    if (user) {
+        main.classList.remove('hidden'); wall.classList.add('hidden'); links.classList.remove('hidden');
+        document.getElementById('userEmailDisplay').innerText = user.email;
+        if(user.email === ADMIN_EMAIL) admin.classList.remove('hidden'); else admin.classList.add('hidden');
+    } else {
+        clearAllSearch();
+        main.classList.add('hidden'); wall.classList.remove('hidden'); links.classList.add('hidden');
+    }
+});
 
-document.getElementById('fromCity').onchange = () => {
-    const from = document.getElementById('fromCity').value;
-    const toSelect = document.getElementById('toCity');
-    const reachable = new Set();
-    data.forEach(b => {
-        const stops = [b.depCity, ...(b.route?.map(r => r.city) || []), b.destCity];
-        const idx = stops.indexOf(from);
-        if(idx !== -1) stops.slice(idx + 1).forEach(s => reachable.add(s));
-    });
-    toSelect.innerHTML = '<option value="">Select Destination</option>';
-    Array.from(reachable).sort().forEach(s => toSelect.innerHTML += `<option value="${s}">${s}</option>`);
-    renderList();
+document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, uEmail.value, uPass.value).catch(err => alert(err.message));
+document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
+window.clearAllSearch = () => {
+    document.getElementById('searchBox').value = ""; document.getElementById('fromCity').value = ""; document.getElementById('toCity').value = ""; document.getElementById('stopTypeFilter').value = "All"; document.getElementById('sortOption').value = "none";
+    rebuildUI();
 };
 
-function renderList() {
-    const term = document.getElementById('search').value.toLowerCase();
-    const typeFilter = document.getElementById('stopType').value;
-    const op = document.getElementById('operatorFilter').value;
-    const from = document.getElementById('fromCity').value;
-    const to = document.getElementById('toCity').value;
-    const busListDiv = document.getElementById('busList');
-    const welcome = document.getElementById('welcomeArea');
+function timeToMinutes(timeStr) {
+    if(!timeStr) return 0;
+    let [time, ampm] = timeStr.split(" ");
+    let [h, m] = time.split(":").map(Number);
+    if (ampm === "PM" && h !== 12) h += 12;
+    if (ampm === "AM" && h === 12) h = 0;
+    return h * 60 + m;
+}
 
-    if (!term && !from && !to && op === "All") {
-        welcome.classList.remove('hidden');
-        busListDiv.classList.add('hidden');
-        return;
-    }
+function getStopSpecificTime(bus, targetCity) {
+    if (bus.depCity.toLowerCase() === targetCity.toLowerCase()) return timeToMinutes(bus.depTime);
+    const viaStop = bus.route?.find(r => r.city.toLowerCase() === targetCity.toLowerCase());
+    return viaStop ? timeToMinutes(viaStop.time) : timeToMinutes(bus.depTime);
+}
 
-    const filtered = data.filter(b => {
-        if(op !== "All" && b.travel !== op) return false;
-        const stops = [b.depCity, ...(b.route?.map(r => r.city) || []), b.destCity];
-        if(from && to) {
-            const fi = stops.indexOf(from), ti = stops.indexOf(to);
-            if(fi === -1 || ti === -1 || fi >= ti) return false;
-        } else if(from && !stops.includes(from)) return false;
+function rebuildUI() {
+    const term = searchBox.value.trim().toLowerCase();
+    const from = fromCity.value, to = toCity.value, stopType = stopTypeFilter.value, sort = sortOption.value, listArea = document.getElementById('busDisplayArea'), welcome = document.getElementById('welcomeArea'), isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
 
-        const matchesText = b.travel.toLowerCase().includes(term) || stops.join(' ').toLowerCase().includes(term);
+    if (!term && !from && !to) { welcome.classList.remove('hidden'); listArea.classList.add('hidden'); return; }
+    welcome.classList.add('hidden'); listArea.classList.remove('hidden');
+
+    let filtered = busDataArr.filter(b => {
+        const allCities = [b.depCity, ...(b.route?.map(r => r.city) || []), b.destCity];
+        const stopsData = [{city: b.depCity, type: 'Boarding'}, ...(b.route || []), {city: b.destCity, type: 'Dropping'}];
+        const matchText = b.travel.toLowerCase().includes(term) || allCities.join(' ').toLowerCase().includes(term);
         
-        if (typeFilter !== "All") {
-            const isBoarding = (b.depCity.toLowerCase().includes(term)) || (b.route?.some(r => r.type === "Boarding" && r.city.toLowerCase().includes(term)));
-            const isDropping = (b.destCity.toLowerCase().includes(term)) || (b.route?.some(r => r.type === "Dropping" && r.city.toLowerCase().includes(term)));
-            const typeMatch = (typeFilter === "Boarding" ? isBoarding : isDropping);
-            return matchesText && typeMatch;
+        let matchSequence = true;
+        if(from && to) {
+            const fIdx = allCities.indexOf(from), tIdx = allCities.indexOf(to);
+            matchSequence = (fIdx !== -1 && tIdx !== -1 && fIdx < tIdx);
+        } else if(from) matchSequence = allCities.includes(from);
+        else if(to) matchSequence = allCities.includes(to);
+
+        let matchType = true;
+        if (stopType !== "All") {
+            const targetCity = from || term;
+            matchType = stopsData.some(s => s.type === stopType && s.city.toLowerCase().includes(targetCity.toLowerCase()));
         }
-        return matchesText;
+        return matchText && matchSequence && matchType;
     });
 
-    welcome.classList.add('hidden');
-    busListDiv.classList.remove('hidden');
-    busListDiv.innerHTML = filtered.length ? "" : "<p style='text-align:center; padding:40px;'>No buses found matching your search.</p>";
+    if (sort !== "none") {
+        const sortCity = from || term;
+        filtered.sort((a, b) => {
+            const vA = getStopSpecificTime(a, sortCity), vB = getStopSpecificTime(b, sortCity);
+            return sort === "early" ? vA - vB : vB - vA;
+        });
+    }
 
+    listArea.innerHTML = filtered.length === 0 ? "<p style='text-align:center'>No routes found.</p>" : "";
     filtered.forEach(b => {
-        const c = document.createElement("div");
-        c.className = "card";
-        c.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:start">
+        const card = document.createElement("div"); card.className = "card";
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between">
+                <h3 style="margin:0">🚌 ${b.travel}</h3>
                 <div>
-                    <h3 style="margin:0; color:var(--secondary)">🚌 ${b.travel}</h3>
-                    <div style="color:var(--primary); font-weight:bold; margin:5px 0">${b.depCity} (${b.depTime}) ➔ ${b.destCity} (${b.destTime})</div>
+                    ${isAdmin ? `<button onclick="triggerEdit('${b.id}')" style="background:#ff9f1c; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer">Edit</button>
+                                 <button onclick="triggerDelete('${b.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; margin-left:8px">Delete</button>` : ''}
                 </div>
-                ${auth.currentUser ? `<button class="edit-btn" onclick="editBus('${b.id}')">Edit</button>` : ''}
             </div>
-            <div style="margin:10px 0; border-left:1px dashed #ccc; padding-left:10px">
+            <b>${b.depCity} (${b.depTime}) ➔ ${b.destCity} (${b.destTime})</b>
+            <div style="margin:15px 0; border-left:1px dashed #ccc; padding-left:10px">
                 ${(b.route || []).map(r => `<div class="timeline-item"><div class="dot"></div><b>${r.city}</b> - ${r.time} <span class="badge ${r.type.toLowerCase()}">${r.type}</span></div>`).join('')}
             </div>
-            <button class="track-btn" onclick="window.openMap('${b.link}')">📍 View Live Location</button>
-        `;
-        busListDiv.appendChild(c);
+            <button class="btn-main" style="width:100%" onclick="window.open('${b.link}','_blank')">📍 View Live Location</button>`;
+        listArea.appendChild(card);
     });
 }
 
-/* --- ADMIN --- */
-document.getElementById('loginBtn').onclick = () => {
-    signInWithEmailAndPassword(auth, email.value, pass.value).catch(err => alert(err.message));
-};
-window.logout = () => signOut(auth);
-
-onAuthStateChanged(auth, u => {
-    document.getElementById('loginBox').classList.toggle('hidden', !!u);
-    document.getElementById('adminPanel').classList.toggle('hidden', !u);
-    renderList();
-});
-
-window.addRouteUI = (c = "", t = "", ty = "Boarding") => {
-    const d = document.createElement("div");
-    d.className = "row stop-row"; d.style.display="flex"; d.style.gap="5px";
-    d.innerHTML = `<input class="c-city" placeholder="City" value="${c}" style="flex:2"><input class="c-time" placeholder="Time" value="${t}" style="flex:1"><select class="c-type" style="flex:1"><option value="Boarding" ${ty==='Boarding'?'selected':''}>Boarding</option><option value="Dropping" ${ty==='Dropping'?'selected':''}>Dropping</option></select><button onclick="this.parentElement.remove()" style="background:red; color:white; width:40px">X</button>`;
-    document.getElementById('routes').appendChild(d);
-};
-
-window.saveBus = async () => {
-    const id = document.getElementById('editingBusId').value, via = [];
-    document.querySelectorAll(".stop-row").forEach(r => via.push({ city: r.querySelector(".c-city").value, time: r.querySelector(".c-time").value, type: r.querySelector(".c-type").value }));
-    const obj = { travel: travel.value, depCity: depCity.value, depTime: depTime.value, destCity: destCity.value, destTime: destTime.value, link: link.value, route: via };
-    try {
-        id ? await updateDoc(doc(db, "buses", id), obj) : await addDoc(collection(db, "buses"), obj);
-        alert("Saved!"); location.reload();
-    } catch(e) { alert(e.message); }
-};
-
-window.deleteBus = async () => {
-    const id = document.getElementById('editingBusId').value;
-    if (confirm("Permanently delete this bus?") && id) {
-        await deleteDoc(doc(db, "buses", id));
-        alert("Deleted."); location.reload();
-    }
-};
-
-window.editBus = (id) => {
-    const b = data.find(x => x.id === id);
-    document.getElementById('editingBusId').value = id;
-    travel.value = b.travel; depCity.value = b.depCity; depTime.value = b.depTime; destCity.value = b.destCity; destTime.value = b.destTime; link.value = b.link;
-    document.getElementById('routes').innerHTML = ""; (b.route || []).forEach(r => addRouteUI(r.city, r.time, r.type));
-    document.getElementById('delBtn').classList.remove('hidden');
-    document.getElementById('adminPanel').scrollIntoView();
-};
-
-/* --- INIT --- */
 onSnapshot(collection(db, "buses"), snap => {
-    data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    updateDashboard(); updateDropdowns(); renderList();
+    busDataArr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const cities = new Set();
+    busDataArr.forEach(b => { 
+        cities.add(b.depCity); cities.add(b.destCity); 
+        b.route?.forEach(s => cities.add(s.city)); 
+    });
+    const opts = Array.from(cities).sort().map(c => `<option value="${c}">${c}</option>`).join('');
+    fromCity.innerHTML = '<option value="">Select Boarding City</option>' + opts;
+    toCity.innerHTML = '<option value="">Select Destination</option>' + opts;
+    updateDashboard(); rebuildUI();
 });
 
-window.openMap = u => { document.getElementById('mapFrame').src = u; document.getElementById('mapModal').style.display = "block"; };
-window.closeMap = () => { document.getElementById('mapFrame').src = ""; document.getElementById('mapModal').style.display = "none"; };
-document.getElementById('search').oninput = renderList;
-document.getElementById('operatorFilter').onchange = renderList;
-document.getElementById('toCity').onchange = renderList;
-document.getElementById('stopType').onchange = renderList;
+window.addStopField = () => {
+    const d = document.createElement("div"); d.style.display="flex"; d.style.gap="5px";
+    d.innerHTML = `<input placeholder="City" class="s-city"><input placeholder="Time" class="s-time"><select class="s-type"><option value="Boarding">Boarding</option><option value="Dropping">Dropping</option></select>`;
+    document.getElementById('dynamicStops').appendChild(d);
+};
+
+window.saveBusToFirebase = async () => {
+    const stops = [];
+    document.querySelectorAll('#dynamicStops > div').forEach(r => stops.push({city: r.querySelector('.s-city').value, time: r.querySelector('.s-time').value, type: r.querySelector('.s-type').value}));
+    const payload = { travel: travel.value, depCity: depCityInput.value, depTime: depTimeInput.value, destCity: destCityInput.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
+    await addDoc(collection(db, "buses"), payload);
+    alert("Saved!"); location.reload();
+};
+
+searchBox.oninput = rebuildUI; fromCity.onchange = rebuildUI; toCity.onchange = rebuildUI; stopTypeFilter.onchange = rebuildUI; sortOption.onchange = rebuildUI;
 </script>
 </body>
 </html>
