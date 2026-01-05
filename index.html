@@ -21,8 +21,7 @@ body {
     color: #333;
 }
 
-.container { max-width: 800px; margin: auto; padding: 20px; }
-
+.container { max-width: 900px; margin: auto; padding: 20px; }
 h2 { text-align: center; color: var(--secondary); margin-bottom: 25px; }
 
 /* INPUTS & BUTTONS */
@@ -32,20 +31,14 @@ input, select, button {
     margin: 8px 0;
     border-radius: 10px;
     border: 1px solid #ddd;
-    font-size: 16px;
+    font-size: 15px;
     box-sizing: border-box;
 }
 
-button { 
-    cursor: pointer; 
-    font-weight: bold; 
-    transition: all 0.2s; 
-    border: none;
-}
-
+button { cursor: pointer; font-weight: bold; border: none; transition: 0.2s; }
 button:active { transform: scale(0.98); }
 
-.row { display: flex; gap: 12px; }
+.row { display: flex; gap: 10px; align-items: flex-end; }
 @media(max-width: 700px) { .row { flex-direction: column; } }
 
 /* CARDS */
@@ -59,11 +52,7 @@ button:active { transform: scale(0.98); }
 }
 
 .track-btn { background: var(--primary); color: #fff; margin-top: 15px; }
-.track-btn:hover { background: #21867a; }
-
-.sort-btn { background: var(--secondary); color: #fff; }
-
-.hidden { display: none; }
+.edit-btn { background: #ff9f1c; color: white; width: auto; padding: 5px 15px; }
 
 /* UPCOMING DASHBOARD */
 .upcoming { display: flex; gap: 12px; margin-bottom: 20px; }
@@ -74,69 +63,24 @@ button:active { transform: scale(0.98); }
     border-radius: 15px;
     padding: 20px;
     text-align: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
-.up-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #a2a2a2; }
-.up-date { font-size: 14px; margin: 8px 0; color: var(--accent); }
-.count { font-size: 20px; font-weight: bold; font-family: monospace; }
+.up-title { font-size: 11px; text-transform: uppercase; color: #a2a2a2; }
+.count { font-size: 18px; font-weight: bold; font-family: monospace; color: var(--accent); }
 
-/* TIMELINE DESIGN */
-.timeline-item {
-    display: flex;
-    align-items: center;
-    position: relative;
-    padding-bottom: 15px;
-}
-.timeline-item:last-child { padding-bottom: 0; }
-.timeline-item::before {
-    content: '';
-    position: absolute;
-    left: 6px;
-    top: 15px;
-    width: 2px;
-    height: 100%;
-    background: #e0e0e0;
-}
-.timeline-item:last-child::before { display: none; }
-
-.dot {
-    width: 14px;
-    height: 14px;
-    background: var(--primary);
-    border-radius: 50%;
-    margin-right: 15px;
-    z-index: 1;
-    border: 3px solid #fff;
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
-}
+/* TIMELINE */
+.timeline-item { display: flex; align-items: center; position: relative; padding-bottom: 10px; }
+.dot { width: 10px; height: 10px; background: var(--secondary); border-radius: 50%; margin-right: 12px; }
+.badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; }
+.boarding { background: #e9f5f3; color: #2a9d8f; }
+.dropping { background: #fef2f2; color: #e63946; }
 
 /* MAP MODAL */
-.map-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    display: none;
-    z-index: 9999;
-}
-.map-close {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: var(--accent);
-    border: none;
-    font-size: 24px;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    cursor: pointer;
-}
+.map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
+.map-close { position: absolute; top: 15px; right: 15px; background: var(--accent); width: 40px; height: 40px; border-radius: 50%; }
 #mapFrame { width: 100%; height: 100%; border: none; }
 
-/* SEARCH HIGHLIGHT */
-#search {
-    border: 2px solid var(--primary);
-    background: #fff;
-}
+.hidden { display: none; }
+label { font-size: 12px; font-weight: bold; color: #666; margin-left: 5px; }
 </style>
 </head>
 
@@ -150,37 +94,52 @@ button:active { transform: scale(0.98); }
   <div class="up-box" id="upArr">Wait...</div>
 </div>
 
-<input id="search" placeholder="🔍 Search city, travels or operator...">
-
-<button id="sortBtn" class="sort-btn">⏰ Sort: Earliest First</button>
+<input id="search" placeholder="🔍 Search bus, city, or boarding point...">
 
 <div id="busList"></div>
 
-<hr style="margin: 40px 0; border: 0; border-top: 1px solid #ccc;">
+<hr style="margin: 40px 0; border: 0; border-top: 1px solid #ddd;">
 
-<h3>🔐 Admin Access</h3>
-<div id="loginBox">
+<div id="loginBox" class="card">
+  <h3>🔐 Admin Access</h3>
   <input id="email" placeholder="Admin Email">
   <input id="pass" type="password" placeholder="Password">
-  <button id="loginBtn" style="background:#023047; color:white;">Login</button>
+  <button id="loginBtn" style="background:var(--secondary); color:white;">Login</button>
 </div>
 
 <div id="adminPanel" class="hidden card" style="border-left-color: #e76f51;">
-  <h3>🛠 Admin Panel</h3>
-  <input id="travel" placeholder="Travels Name">
+  <h3 id="adminTitle">🛠 Add New Bus</h3>
   
-  <h4>Route Management</h4>
-  <div id="routes">
-    <div class="row">
-      <input class="city" placeholder="City Name">
-      <input class="time" placeholder="06:05 PM">
+  <label>Travels Name</label>
+  <input id="travel" placeholder="e.g. SRS Travels">
+  
+  <div class="row">
+    <div style="flex:1">
+      <label>Departure City (Boarding)</label>
+      <input id="depCity" placeholder="City Name">
+      <input id="depTime" placeholder="09:00 AM">
+    </div>
+    <div style="flex:1">
+      <label>Destination City (Dropping)</label>
+      <input id="destCity" placeholder="City Name">
+      <input id="destTime" placeholder="06:00 PM">
     </div>
   </div>
 
-  <button onclick="addRoute()" style="background:#eee; color:#333;">➕ Add Stop</button>
-  <input id="link" placeholder="Google Maps Tracking Link">
+  <h4>Route Via (Stops)</h4>
+  <div id="routes"></div>
+  <button onclick="addRouteUI()" style="background:#eee; color:#333; margin-top:0;">➕ Add Via Stop</button>
 
-  <button onclick="saveBus()" style="background:#2a9d8f; color:white;">💾 Save Bus to Database</button>
+  <label style="display:block; margin-top:15px;">Live Tracking Link</label>
+  <input id="link" placeholder="Google Maps Share Link">
+
+  <input type="hidden" id="editingBusId">
+  
+  <div class="row" style="margin-top:20px;">
+    <button id="saveBtn" onclick="saveBus()" style="background:var(--primary); color:white; flex:2">💾 Save Bus</button>
+    <button id="cancelEdit" class="hidden" onclick="resetAdmin()" style="background:#666; color:white; flex:1">Cancel</button>
+  </div>
+  
   <button onclick="logout()" style="background:#e63946; color:white; margin-top:20px;">Logout</button>
 </div>
 
@@ -193,182 +152,194 @@ button:active { transform: scale(0.98); }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* FIREBASE CONFIG */
-const app = initializeApp({
+const firebaseConfig = {
   apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
   authDomain: "smart-bus-tracking-2ba21.firebaseapp.com",
   projectId: "smart-bus-tracking-2ba21"
-});
+};
+
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/* STATE */
 let data = [];
-let sortAsc = true;
 
-/* TIME HELPERS */
+/* TIME CONVERSION */
 function toMin(t) {
     if(!t) return 0;
-    let [p, m] = t.split(" ");
-    let [h, mm] = p.split(":").map(Number);
-    if (m === "PM" && h !== 12) h += 12;
-    if (m === "AM" && h === 12) h = 0;
-    return h * 60 + mm;
+    let [time, modifier] = t.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+    if (modifier === "PM" && hours !== 12) hours += 12;
+    if (modifier === "AM" && hours === 12) hours = 0;
+    return hours * 60 + minutes;
 }
 
-function nextDate(time) {
-    let d = new Date();
-    const m = toMin(time);
-    d.setHours(Math.floor(m / 60), m % 60, 0, 0);
-    if (d < Date.now()) d.setDate(d.getDate() + 1);
-    return d;
-}
-
-function fmt(d) {
-    return d.toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
-}
-
-/* SEARCH & FILTER LOGIC */
-document.getElementById('search').addEventListener('input', renderList);
-document.getElementById('sortBtn').onclick = () => {
-    sortAsc = !sortAsc;
-    document.getElementById('sortBtn').innerText = sortAsc ? "⏰ Sort: Earliest First" : "⏰ Sort: Latest First";
-    renderList();
+/* ADMIN PANEL - ADD STOP UI */
+window.addRouteUI = (city = "", time = "", type = "Boarding") => {
+    const d = document.createElement("div");
+    d.className = "row stop-row";
+    d.innerHTML = `
+        <div style="flex:2"><label>City</label><input class="c-city" value="${city}"></div>
+        <div style="flex:1"><label>Time</label><input class="c-time" value="${time}"></div>
+        <div style="flex:1">
+            <label>Type</label>
+            <select class="c-type">
+                <option value="Boarding" ${type==='Boarding'?'selected':''}>Boarding</option>
+                <option value="Dropping" ${type==='Dropping'?'selected':''}>Dropping</option>
+            </select>
+        </div>
+        <button onclick="this.parentElement.remove()" style="background:#ff4d4d; color:white; width:40px; margin-bottom:8px">X</button>
+    `;
+    document.getElementById('routes').appendChild(d);
 };
 
-/* MAP FUNCTIONS */
-window.openMap = url => {
-    document.getElementById('mapFrame').src = url;
-    document.getElementById('mapModal').style.display = "block";
-}
-window.closeMap = () => {
-    document.getElementById('mapFrame').src = "";
-    document.getElementById('mapModal').style.display = "none";
-}
+/* SAVE BUS (ADD OR UPDATE) */
+window.saveBus = async () => {
+    const id = document.getElementById('editingBusId').value;
+    const viaStops = [];
+    document.querySelectorAll(".stop-row").forEach(row => {
+        viaStops.push({
+            city: row.querySelector(".c-city").value,
+            time: row.querySelector(".c-time").value,
+            type: row.querySelector(".c-type").value
+        });
+    });
+
+    const busObj = {
+        travel: document.getElementById('travel').value,
+        depCity: document.getElementById('depCity').value,
+        depTime: document.getElementById('depTime').value,
+        destCity: document.getElementById('destCity').value,
+        destTime: document.getElementById('destTime').value,
+        route: viaStops,
+        link: document.getElementById('link').value
+    };
+
+    if(!busObj.travel || !busObj.depCity) return alert("Please fill basic details");
+
+    try {
+        if (id) {
+            await updateDoc(doc(db, "buses", id), busObj);
+            alert("Updated!");
+        } else {
+            await addDoc(collection(db, "buses"), busObj);
+            alert("Added!");
+        }
+        resetAdmin();
+    } catch(e) { alert(e.message); }
+};
+
+/* EDIT MODE */
+window.editBus = (id) => {
+    const b = data.find(x => x.id === id);
+    if(!b) return;
+
+    document.getElementById('editingBusId').value = id;
+    document.getElementById('travel').value = b.travel;
+    document.getElementById('depCity').value = b.depCity;
+    document.getElementById('depTime').value = b.depTime;
+    document.getElementById('destCity').value = b.destCity;
+    document.getElementById('destTime').value = b.destTime;
+    document.getElementById('link').value = b.link;
+
+    document.getElementById('routes').innerHTML = "";
+    if(b.route) b.route.forEach(s => addRouteUI(s.city, s.time, s.type));
+
+    document.getElementById('adminTitle').innerText = "📝 Edit " + b.travel;
+    document.getElementById('cancelEdit').classList.remove('hidden');
+    document.getElementById('adminPanel').scrollIntoView({behavior:'smooth'});
+};
+
+window.resetAdmin = () => {
+    document.getElementById('editingBusId').value = "";
+    document.getElementById('adminTitle').innerText = "🛠 Add New Bus";
+    document.getElementById('cancelEdit').classList.add('hidden');
+    document.getElementById('routes').innerHTML = "";
+    document.querySelectorAll('#adminPanel input').forEach(i => i.value="");
+};
 
 /* LIST RENDERING */
 function renderList() {
     const busList = document.getElementById('busList');
-    const searchTerm = document.getElementById('search').value.toLowerCase();
+    const term = document.getElementById('search').value.toLowerCase();
+    const isAdmin = auth.currentUser !== null;
     busList.innerHTML = "";
-    
-    let list = [...data].filter(b => 
-        b.travel.toLowerCase().includes(searchTerm) || 
-        b.route.some(r => r.city.toLowerCase().includes(searchTerm))
+
+    const filtered = data.filter(b => 
+        b.travel.toLowerCase().includes(term) || 
+        b.depCity.toLowerCase().includes(term) ||
+        b.destCity.toLowerCase().includes(term)
     );
 
-    list.sort((a, b) => {
-        const timeA = toMin(a.route[0].time);
-        const timeB = toMin(b.route[0].time);
-        return sortAsc ? timeA - timeB : timeB - timeA;
-    });
-
-    list.forEach(b => {
+    filtered.forEach(b => {
         const c = document.createElement("div");
         c.className = "card";
         
-        const routeHtml = b.route.map((r, i) => `
+        const viaHtml = b.route ? b.route.map(s => `
             <div class="timeline-item">
-                <div class="dot" style="background: ${i === 0 ? '#2a9d8f' : (i === b.route.length-1 ? '#e76f51' : '#023047')}"></div>
-                <div style="flex:1"><b>${r.city}</b></div>
-                <div style="color:#666; font-size:14px">${r.time}</div>
+                <div class="dot"></div>
+                <div style="flex:1; font-size:14px"><b>${s.city}</b> - ${s.time}</div>
+                <span class="badge ${s.type.toLowerCase()}">${s.type}</span>
             </div>
-        `).join("");
+        `).join('') : '';
 
         c.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                <h3 style="margin:0; color:#023047">🚌 ${b.travel}</h3>
-                <span style="font-size:12px; background:#e9f5f3; color:#2a9d8f; padding:4px 8px; border-radius:5px; font-weight:bold">LIVE</span>
+            <div style="display:flex; justify-content:space-between; align-items:start">
+                <div>
+                    <h3 style="margin:0 0 5px 0; color:var(--secondary)">🚌 ${b.travel}</h3>
+                    <div style="font-size:15px; font-weight:bold; color:var(--primary)">
+                        ${b.depCity} (${b.depTime}) ➔ ${b.destCity} (${b.destTime})
+                    </div>
+                </div>
+                ${isAdmin ? `<button class="edit-btn" onclick="editBus('${b.id}')">Edit</button>` : ''}
             </div>
-            <div class="route-container">${routeHtml}</div>
-            <button class="track-btn" onclick="openMap('${b.link}')">📍 Track Live Location</button>
+            <div style="margin: 15px 0; padding-left:5px; border-left: 2px dashed #ccc;">
+                ${viaHtml}
+            </div>
+            <button class="track-btn" onclick="openMap('${b.link}')">📍 View Live Location</button>
         `;
         busList.appendChild(c);
     });
 }
 
-/* UPCOMING DASHBOARD LOGIC */
-function renderUpcoming() {
-    if (!data.length) return;
-    
-    function tick() {
-        let deps = data.map(b => ({ t: nextDate(b.route[0].time) })).sort((a,b) => a.t - b.t);
-        let arrs = data.map(b => ({ t: nextDate(b.route.at(-1).time) })).sort((a,b) => a.t - b.t);
-
-        const dMin = deps[0].t;
-        const aMin = arrs[0].t;
-
-        const d = Math.max(0, Math.floor((dMin - Date.now()) / 1000));
-        const a = Math.max(0, Math.floor((aMin - Date.now()) / 1000));
-
-        document.getElementById('upDep').innerHTML = `
-            <div class="up-title">Next Departure</div>
-            <div class="up-date">at ${fmt(dMin)}</div>
-            <div class="count">${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m ${d%60}s</div>
-        `;
-        document.getElementById('upArr').innerHTML = `
-            <div class="up-title">Next Arrival</div>
-            <div class="up-date">at ${fmt(aMin)}</div>
-            <div class="count">${Math.floor(a/3600)}h ${Math.floor((a%3600)/60)}m ${a%60}s</div>
-        `;
-    }
-    tick();
-    setInterval(tick, 1000);
-}
-
-/* ADMIN LOGIC */
-document.getElementById('loginBtn').onclick = () => {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('pass').value;
-    signInWithEmailAndPassword(auth, email, pass).catch(e => alert(e.message));
+/* MAP CONTROL */
+window.openMap = url => {
+    document.getElementById('mapFrame').src = url;
+    document.getElementById('mapModal').style.display = "block";
+};
+window.closeMap = () => {
+    document.getElementById('mapFrame').src = "";
+    document.getElementById('mapModal').style.display = "none";
 };
 
-window.logout = () => signOut(auth);
-
+/* AUTH & DATA LOAD */
 onAuthStateChanged(auth, u => {
-    document.getElementById('loginBox').classList.toggle("hidden", !!u);
-    document.getElementById('adminPanel').classList.toggle("hidden", !u);
-});
-
-window.addRoute = () => {
-    const d = document.createElement("div");
-    d.className = "row";
-    d.innerHTML = `<input class="city" placeholder="City Name"><input class="time" placeholder="00:00 AM/PM">`;
-    document.getElementById('routes').appendChild(d);
-}
-
-window.saveBus = async () => {
-    let route = [];
-    const cities = document.querySelectorAll(".city");
-    const times = document.querySelectorAll(".time");
-    
-    cities.forEach((c, i) => {
-        if (c.value && times[i].value) route.push({ city: c.value, time: times[i].value });
-    });
-
-    if (route.length < 2) return alert("Please add at least 2 stops");
-    
-    try {
-        await addDoc(collection(db, "buses"), {
-            travel: document.getElementById('travel').value,
-            route,
-            link: document.getElementById('link').value
-        });
-        alert("Bus Added Successfully!");
-        location.reload(); 
-    } catch(e) { alert(e.message); }
-};
-
-/* DATA INITIALIZATION */
-onSnapshot(collection(db, "buses"), snap => {
-    data = [];
-    snap.forEach(doc => data.push(doc.data()));
-    renderUpcoming();
+    document.getElementById('loginBox').classList.toggle('hidden', !!u);
+    document.getElementById('adminPanel').classList.toggle('hidden', !u);
     renderList();
 });
+
+document.getElementById('loginBtn').onclick = () => {
+    signInWithEmailAndPassword(auth, email.value, pass.value).catch(e => alert(e.message));
+};
+window.logout = () => signOut(auth);
+document.getElementById('search').oninput = renderList;
+
+onSnapshot(collection(db, "buses"), snap => {
+    data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderList();
+    updateDashboard();
+});
+
+function updateDashboard() {
+    if(!data.length) return;
+    const nextDep = data[0]; // Simplified for now
+    document.getElementById('upDep').innerHTML = `<div class="up-title">Next Departure</div><div class="count">${nextDep.depTime}</div><div style="font-size:12px">${nextDep.travel}</div>`;
+    document.getElementById('upArr').innerHTML = `<div class="up-title">Main Arrival</div><div class="count">${nextDep.destTime}</div><div style="font-size:12px">${nextDep.destCity}</div>`;
+}
 </script>
 </body>
 </html>
