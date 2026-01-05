@@ -45,23 +45,16 @@ button{cursor:pointer;font-weight:bold}
   flex:1;
   box-shadow:0 0 8px rgba(0,0,0,.2)
 }
-.upcoming-title{
-  text-align:center;
-  font-weight:bold;
-  font-size:18px;
-  margin-bottom:6px
-}
-.date-line{
-  text-align:center;
-  font-size:14px;
-  margin-bottom:10px
-}
+.upcoming-title{text-align:center;font-weight:bold;font-size:18px}
+.date-line{text-align:center;font-size:14px;margin-bottom:8px}
 .arrival-highlight{
   background:#e0f7fa;
   padding:6px;
   border-radius:6px;
   font-weight:bold
 }
+
+.hidden{display:none}
 
 /* MAP */
 .map-modal{
@@ -91,7 +84,7 @@ button{cursor:pointer;font-weight:bold}
 
 <h2>🚌 Smart Bus Tracking</h2>
 
-<!-- UPCOMING BOXES -->
+<!-- UPCOMING -->
 <div class="row">
   <div class="upcoming-box" id="upcomingDeparture"></div>
   <div class="upcoming-box" id="upcomingArrival"></div>
@@ -100,20 +93,33 @@ button{cursor:pointer;font-weight:bold}
 <input id="search" placeholder="Search city or travels">
 
 <div class="row">
-<select id="operatorSelect">
-<option value="">All Operators</option>
-</select>
-
+<select id="operatorSelect"><option value="">All Operators</option></select>
 <select id="journeyFilter">
-<option value="both">Boarding & Dropping</option>
-<option value="boarding">Boarding</option>
-<option value="dropping">Dropping</option>
+  <option value="both">Boarding & Dropping</option>
+  <option value="boarding">Boarding</option>
+  <option value="dropping">Dropping</option>
 </select>
 </div>
 
 <button id="sortBtn" class="sort-btn">⏰ Earliest First</button>
-
 <div id="busList"></div>
+
+<hr>
+
+<h3>🔐 Admin Login</h3>
+<div id="loginBox">
+  <input id="adminEmail" placeholder="Admin Email">
+  <input id="adminPass" type="password" placeholder="Password">
+  <button id="loginBtn">Login</button>
+</div>
+
+<div id="adminPanel" class="hidden">
+  <h3>Admin Panel</h3>
+  <input id="travel" placeholder="Travels Name">
+  <input id="link" placeholder="Tracking Link">
+  <button onclick="logout()">Logout</button>
+</div>
+
 </div>
 
 <!-- MAP -->
@@ -125,26 +131,31 @@ button{cursor:pointer;font-weight:bold}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const app = initializeApp({
  apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
  authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
  projectId:"smart-bus-tracking-2ba21"
 });
-const db = getFirestore(app);
+const db=getFirestore(app);
+const auth=getAuth(app);
 
 let data=[],searchTxt="",operator="",journey="both",sortOrder="asc";
 let depTimer=null,arrTimer=null;
 
-search.oninput=e=>{searchTxt=e.target.value.toLowerCase();renderAll()};
-operatorSelect.onchange=e=>{operator=e.target.value;renderAll()};
-journeyFilter.onchange=e=>{journey=e.target.value;renderAll()};
+/* EVENTS */
+search.oninput=e=>{searchTxt=e.target.value.toLowerCase();renderList()};
+operatorSelect.onchange=e=>{operator=e.target.value;renderList()};
+journeyFilter.onchange=e=>{journey=e.target.value;renderList()};
 sortBtn.onclick=()=>{
  sortOrder=sortOrder==="asc"?"desc":"asc";
  sortBtn.innerText=sortOrder==="asc"?"⏰ Earliest First":"⏰ Latest First";
  renderList();
 };
 
+/* TIME HELPERS */
 function toMin(t){
  let[p,m]=t.split(" ");
  let[h,mm]=p.split(":").map(Number);
@@ -152,46 +163,22 @@ function toMin(t){
  if(m==="AM"&&h===12)h=0;
  return h*60+mm;
 }
-function dateLabel(d){
- const today=new Date();
- const diff=Math.floor((d-today)/86400000);
- const label=diff===0?"Today":diff===1?"Tomorrow":d.toDateString();
- return label+" ("+d.toDateString()+")";
-}
 function nextTime(time){
- const mins=toMin(time);
  let d=new Date();
- d.setHours(Math.floor(mins/60),mins%60,0,0);
- if(d.getTime()<Date.now()) d.setDate(d.getDate()+1);
+ const m=toMin(time);
+ d.setHours(Math.floor(m/60),m%60,0,0);
+ if(d<Date.now()) d.setDate(d.getDate()+1);
  return d;
 }
 
-window.openMap=url=>{
- mapFrame.src=url;
- mapModal.style.display="block";
-};
-window.closeMap=()=>{
- mapFrame.src="";
- mapModal.style.display="none";
-};
-
-function filterData(){
- return data.filter(b=>{
-  if(operator && b.travel!==operator) return false;
-  if(!searchTxt) return true;
-  if(b.travel.toLowerCase().includes(searchTxt)) return true;
-  return b.route.some(r=>r.city.toLowerCase().includes(searchTxt));
- });
-}
-
+/* UPCOMING (GLOBAL – FIXED) */
 function renderUpcoming(){
  clearInterval(depTimer);clearInterval(arrTimer);
- const filtered=filterData();
 
  /* DEPARTURE */
  let deps=[];
- filtered.forEach(b=>{
-  const p=b.route.find(r=>r.type==="boarding");
+ data.forEach(b=>{
+  const p=b.route?.find(r=>r.type==="boarding");
   if(!p) return;
   const d=nextTime(p.time);
   deps.push({bus:b,point:p,time:d});
@@ -200,15 +187,13 @@ function renderUpcoming(){
  if(!deps.length){
   upcomingDeparture.innerHTML="<div class='upcoming-title'>🚨 UPCOMING DEPARTURE</div>No upcoming departure";
  }else{
-  const soon=Math.min(...deps.map(x=>x.time.getTime()));
-  const list=deps.filter(x=>x.time.getTime()===soon);
+  const soon=Math.min(...deps.map(x=>x.time));
+  const list=deps.filter(x=>x.time==soon);
   function tick(){
-   const diff=soon-Date.now();
-   if(diff<=0){renderUpcoming();return;}
-   const s=Math.floor(diff/1000);
+   const s=Math.floor((soon-Date.now())/1000);
+   if(s<=0){renderUpcoming();return;}
    upcomingDeparture.innerHTML=`
     <div class="upcoming-title">🚨 UPCOMING DEPARTURE</div>
-    <div class="date-line">📅 ${dateLabel(new Date(soon))}</div>
     ${list.map(o=>`
       🚌 ${o.bus.travel}<br>
       📍 ${o.point.city} → ${o.bus.route.at(-1).city}<br>
@@ -222,8 +207,8 @@ function renderUpcoming(){
 
  /* ARRIVAL */
  let arrs=[];
- filtered.forEach(b=>{
-  const p=[...b.route].reverse().find(r=>r.type==="dropping");
+ data.forEach(b=>{
+  const p=[...b.route||[]].reverse().find(r=>r.type==="dropping");
   if(!p) return;
   const d=nextTime(p.time);
   arrs.push({bus:b,point:p,time:d});
@@ -232,77 +217,83 @@ function renderUpcoming(){
  if(!arrs.length){
   upcomingArrival.innerHTML="<div class='upcoming-title'>🚏 UPCOMING ARRIVAL</div>No upcoming arrival";
  }else{
-  const soon=Math.min(...arrs.map(x=>x.time.getTime()));
-  const list=arrs.filter(x=>x.time.getTime()===soon);
+  const soon=Math.min(...arrs.map(x=>x.time));
+  const list=arrs.filter(x=>x.time==soon);
   function tickA(){
-   const diff=soon-Date.now();
-   if(diff<=0){renderUpcoming();return;}
-   const s=Math.floor(diff/1000);
+   const s=Math.floor((soon-Date.now())/1000);
+   if(s<=0){renderUpcoming();return;}
    upcomingArrival.innerHTML=`
     <div class="upcoming-title">🚏 UPCOMING ARRIVAL</div>
-    <div class="date-line">📅 ${dateLabel(new Date(soon))}</div>
     ${list.map(o=>`
       🚌 ${o.bus.travel}<br>
-      <div class="arrival-highlight">🏁 ${o.point.city} – ${o.point.time}</div><br>
-    `).join("")}
-    ⏳ Arrives in ${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s
+      <div class="arrival-highlight">🏁 ${o.point.city} – ${o.point.time}</div>
+    `).join("<br>")}
+    <br>⏳ Arrives in ${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s
    `;
   }
   tickA();arrTimer=setInterval(tickA,1000);
  }
 }
 
+/* LIST */
 function renderList(){
  busList.innerHTML="";
  let shown=0;
- const list=filterData().sort((a,b)=>{
-  return sortOrder==="asc"
-   ? toMin(a.route[0].time)-toMin(b.route[0].time)
-   : toMin(b.route[0].time)-toMin(a.route[0].time);
- });
+ data.forEach(bus=>{
+  if(operator && bus.travel!==operator) return;
+  if(searchTxt && !bus.travel.toLowerCase().includes(searchTxt)
+    && !bus.route.some(r=>r.city.toLowerCase().includes(searchTxt))) return;
 
- list.forEach(bus=>{
-  const matchCity=bus.route.find(r=>r.city.toLowerCase().includes(searchTxt));
-  if(matchCity){
-    if(journey==="boarding" && matchCity.type!=="boarding") return;
-    if(journey==="dropping" && matchCity.type!=="dropping") return;
+  const m=bus.route.find(r=>r.city.toLowerCase().includes(searchTxt));
+  if(m){
+    if(journey==="boarding"&&m.type!=="boarding")return;
+    if(journey==="dropping"&&m.type!=="dropping")return;
   }
+
   shown++;
-  const card=document.createElement("div");
-  card.className="card";
-  card.innerHTML=`
-   <h3>🚌 ${bus.travel}</h3>
-   ${bus.route.map(r=>`
-     ${r.type==="boarding"?"🟢":r.type==="dropping"?"🔵":"➡"}
-     ${r.city} ${r.time}
-   `).join("<br>")}
-   <br><br>
-   <button class="track-btn" onclick="openMap('${bus.link}')">Track</button>
+  const c=document.createElement("div");
+  c.className="card";
+  c.innerHTML=`
+    <h3>🚌 ${bus.travel}</h3>
+    ${bus.route.map(r=>`
+      ${r.type==="boarding"?"🟢":r.type==="dropping"?"🔵":"➡"} ${r.city} ${r.time}
+    `).join("<br>")}
+    <br><br>
+    <button class="track-btn" onclick="openMap('${bus.link}')">Track</button>
   `;
-  busList.appendChild(card);
+  busList.appendChild(c);
  });
  if(!shown) busList.innerHTML="<div class='card'>❌ No buses found</div>";
 }
 
-function renderOperators(){
- operatorSelect.innerHTML='<option value="">All Operators</option>';
- [...new Set(data.map(b=>b.travel))].forEach(o=>{
-  const op=document.createElement("option");
-  op.value=o;op.textContent=o;
-  operatorSelect.appendChild(op);
- });
-}
+/* MAP */
+window.openMap=url=>{
+ mapFrame.src=url;
+ mapModal.style.display="block";
+};
+window.closeMap=()=>{
+ mapFrame.src="";
+ mapModal.style.display="none";
+};
 
-function renderAll(){
- renderUpcoming();
- renderList();
-}
+/* AUTH */
+loginBtn.onclick=()=>{
+ signInWithEmailAndPassword(auth,adminEmail.value,adminPass.value)
+ .catch(e=>alert(e.message));
+};
+window.logout=()=>signOut(auth);
 
+onAuthStateChanged(auth,u=>{
+ loginBox.classList.toggle("hidden",!!u);
+ adminPanel.classList.toggle("hidden",!u);
+});
+
+/* FIRESTORE */
 onSnapshot(collection(db,"buses"),snap=>{
  data=[];
  snap.forEach(d=>data.push(d.data()));
- renderOperators();
- renderAll();
+ renderUpcoming();
+ renderList();
 });
 </script>
 </body>
