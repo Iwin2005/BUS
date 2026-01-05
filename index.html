@@ -54,18 +54,21 @@ button:active { transform: scale(0.98); }
 .track-btn { background: var(--primary); color: #fff; margin-top: 15px; }
 .edit-btn { background: #ff9f1c; color: white; width: auto; padding: 5px 15px; }
 
-/* UPCOMING DASHBOARD */
+/* DASHBOARD */
 .upcoming { display: flex; gap: 12px; margin-bottom: 20px; }
 .up-box {
     flex: 1;
     background: #1b263b;
     color: #fff;
     border-radius: 15px;
-    padding: 20px;
+    padding: 15px;
     text-align: center;
 }
-.up-title { font-size: 11px; text-transform: uppercase; color: #a2a2a2; }
-.count { font-size: 18px; font-weight: bold; font-family: monospace; color: var(--accent); }
+.up-title { font-size: 11px; text-transform: uppercase; color: #a2a2a2; margin-bottom: 5px; }
+.up-bus-name { font-size: 14px; font-weight: bold; color: var(--accent); }
+.up-city { font-size: 12px; margin: 4px 0; }
+.count { font-size: 20px; font-weight: bold; font-family: monospace; color: #fff; margin-top: 5px; }
+.up-date-small { font-size: 10px; color: #888; }
 
 /* TIMELINE */
 .timeline-item { display: flex; align-items: center; position: relative; padding-bottom: 10px; }
@@ -90,8 +93,16 @@ label { font-size: 12px; font-weight: bold; color: #666; margin-left: 5px; }
 <h2>🚌 Smart Bus Tracking</h2>
 
 <div class="upcoming">
-  <div class="up-box" id="upDep">Wait...</div>
-  <div class="up-box" id="upArr">Wait...</div>
+  <div class="up-box" id="upDep">
+      <div class="up-title">Next Departure</div>
+      <div id="depInfo">Calculating...</div>
+      <div class="count" id="depCount">00:00:00</div>
+  </div>
+  <div class="up-box" id="upArr">
+      <div class="up-title">Next Arrival</div>
+      <div id="arrInfo">Calculating...</div>
+      <div class="count" id="arrCount">00:00:00</div>
+  </div>
 </div>
 
 <input id="search" placeholder="🔍 Search bus, city, or boarding point...">
@@ -109,20 +120,19 @@ label { font-size: 12px; font-weight: bold; color: #666; margin-left: 5px; }
 
 <div id="adminPanel" class="hidden card" style="border-left-color: #e76f51;">
   <h3 id="adminTitle">🛠 Add New Bus</h3>
-  
   <label>Travels Name</label>
-  <input id="travel" placeholder="e.g. SRS Travels">
+  <input id="travel" placeholder="e.g. TTT Travels">
   
   <div class="row">
     <div style="flex:1">
-      <label>Departure City (Boarding)</label>
-      <input id="depCity" placeholder="City Name">
-      <input id="depTime" placeholder="09:00 AM">
+      <label>Departure City</label>
+      <input id="depCity" placeholder="Source City">
+      <input id="depTime" placeholder="05:50 PM">
     </div>
     <div style="flex:1">
-      <label>Destination City (Dropping)</label>
-      <input id="destCity" placeholder="City Name">
-      <input id="destTime" placeholder="06:00 PM">
+      <label>Destination City</label>
+      <input id="destCity" placeholder="Destination City">
+      <input id="destTime" placeholder="06:55 AM">
     </div>
   </div>
 
@@ -167,17 +177,84 @@ const auth = getAuth(app);
 
 let data = [];
 
-/* TIME CONVERSION */
-function toMin(t) {
-    if(!t) return 0;
-    let [time, modifier] = t.split(" ");
+/* --- TIME LOGIC --- */
+function getNextOccurrence(timeStr) {
+    const now = new Date();
+    let [time, modifier] = timeStr.split(" ");
     let [hours, minutes] = time.split(":").map(Number);
+    
     if (modifier === "PM" && hours !== 12) hours += 12;
     if (modifier === "AM" && hours === 12) hours = 0;
-    return hours * 60 + minutes;
+
+    let target = new Date();
+    target.setHours(hours, minutes, 0, 0);
+
+    // If time has already passed today, set it for tomorrow
+    if (target < now) {
+        target.setDate(target.getDate() + 1);
+    }
+    return target;
 }
 
-/* ADMIN PANEL - ADD STOP UI */
+function formatCountdown(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+}
+
+/* --- DASHBOARD UPDATE --- */
+function updateDashboard() {
+    if (!data.length) return;
+
+    const now = new Date();
+
+    // Map all buses to their next departure/arrival times
+    let depList = data.map(b => ({
+        bus: b,
+        targetDate: getNextOccurrence(b.depTime),
+        type: 'Departure'
+    })).sort((a, b) => a.targetDate - b.targetDate);
+
+    let arrList = data.map(b => ({
+        bus: b,
+        targetDate: getNextOccurrence(b.destTime),
+        type: 'Arrival'
+    })).sort((a, b) => a.targetDate - b.targetDate);
+
+    const nextDep = depList[0];
+    const nextArr = arrList[0];
+
+    // Update Departure UI
+    document.getElementById('depInfo').innerHTML = `
+        <div class="up-bus-name">${nextDep.bus.travel}</div>
+        <div class="up-city">${nextDep.bus.depCity} (${nextDep.bus.depTime})</div>
+        <div class="up-date-small">${nextDep.targetDate.toLocaleDateString()}</div>
+    `;
+
+    // Update Arrival UI
+    document.getElementById('arrInfo').innerHTML = `
+        <div class="up-bus-name">${nextArr.bus.travel}</div>
+        <div class="up-city">${nextArr.bus.destCity} (${nextArr.bus.destTime})</div>
+        <div class="up-date-small">${nextArr.targetDate.toLocaleDateString()}</div>
+    `;
+
+    // Static interval for countdown numbers
+    if (window.timerInterval) clearInterval(window.timerInterval);
+    window.timerInterval = setInterval(() => {
+        const dDiff = nextDep.targetDate - new Date();
+        const aDiff = nextArr.targetDate - new Date();
+        
+        document.getElementById('depCount').innerText = formatCountdown(dDiff);
+        document.getElementById('arrCount').innerText = formatCountdown(aDiff);
+        
+        // Refresh full logic if a bus just "departed" (timer hits zero)
+        if (dDiff < 0 || aDiff < 0) updateDashboard();
+    }, 1000);
+}
+
+/* --- ADMIN HANDLERS --- */
 window.addRouteUI = (city = "", time = "", type = "Boarding") => {
     const d = document.createElement("div");
     d.className = "row stop-row";
@@ -196,7 +273,6 @@ window.addRouteUI = (city = "", time = "", type = "Boarding") => {
     document.getElementById('routes').appendChild(d);
 };
 
-/* SAVE BUS (ADD OR UPDATE) */
 window.saveBus = async () => {
     const id = document.getElementById('editingBusId').value;
     const viaStops = [];
@@ -218,8 +294,6 @@ window.saveBus = async () => {
         link: document.getElementById('link').value
     };
 
-    if(!busObj.travel || !busObj.depCity) return alert("Please fill basic details");
-
     try {
         if (id) {
             await updateDoc(doc(db, "buses", id), busObj);
@@ -232,11 +306,9 @@ window.saveBus = async () => {
     } catch(e) { alert(e.message); }
 };
 
-/* EDIT MODE */
 window.editBus = (id) => {
     const b = data.find(x => x.id === id);
     if(!b) return;
-
     document.getElementById('editingBusId').value = id;
     document.getElementById('travel').value = b.travel;
     document.getElementById('depCity').value = b.depCity;
@@ -244,10 +316,8 @@ window.editBus = (id) => {
     document.getElementById('destCity').value = b.destCity;
     document.getElementById('destTime').value = b.destTime;
     document.getElementById('link').value = b.link;
-
     document.getElementById('routes').innerHTML = "";
     if(b.route) b.route.forEach(s => addRouteUI(s.city, s.time, s.type));
-
     document.getElementById('adminTitle').innerText = "📝 Edit " + b.travel;
     document.getElementById('cancelEdit').classList.remove('hidden');
     document.getElementById('adminPanel').scrollIntoView({behavior:'smooth'});
@@ -261,7 +331,7 @@ window.resetAdmin = () => {
     document.querySelectorAll('#adminPanel input').forEach(i => i.value="");
 };
 
-/* LIST RENDERING */
+/* --- UI RENDER --- */
 function renderList() {
     const busList = document.getElementById('busList');
     const term = document.getElementById('search').value.toLowerCase();
@@ -277,7 +347,6 @@ function renderList() {
     filtered.forEach(b => {
         const c = document.createElement("div");
         c.className = "card";
-        
         const viaHtml = b.route ? b.route.map(s => `
             <div class="timeline-item">
                 <div class="dot"></div>
@@ -296,26 +365,14 @@ function renderList() {
                 </div>
                 ${isAdmin ? `<button class="edit-btn" onclick="editBus('${b.id}')">Edit</button>` : ''}
             </div>
-            <div style="margin: 15px 0; padding-left:5px; border-left: 2px dashed #ccc;">
-                ${viaHtml}
-            </div>
+            <div style="margin: 15px 0; padding-left:5px; border-left: 2px dashed #ccc;">${viaHtml}</div>
             <button class="track-btn" onclick="openMap('${b.link}')">📍 View Live Location</button>
         `;
         busList.appendChild(c);
     });
 }
 
-/* MAP CONTROL */
-window.openMap = url => {
-    document.getElementById('mapFrame').src = url;
-    document.getElementById('mapModal').style.display = "block";
-};
-window.closeMap = () => {
-    document.getElementById('mapFrame').src = "";
-    document.getElementById('mapModal').style.display = "none";
-};
-
-/* AUTH & DATA LOAD */
+/* --- APP INIT --- */
 onAuthStateChanged(auth, u => {
     document.getElementById('loginBox').classList.toggle('hidden', !!u);
     document.getElementById('adminPanel').classList.toggle('hidden', !u);
@@ -334,12 +391,14 @@ onSnapshot(collection(db, "buses"), snap => {
     updateDashboard();
 });
 
-function updateDashboard() {
-    if(!data.length) return;
-    const nextDep = data[0]; // Simplified for now
-    document.getElementById('upDep').innerHTML = `<div class="up-title">Next Departure</div><div class="count">${nextDep.depTime}</div><div style="font-size:12px">${nextDep.travel}</div>`;
-    document.getElementById('upArr').innerHTML = `<div class="up-title">Main Arrival</div><div class="count">${nextDep.destTime}</div><div style="font-size:12px">${nextDep.destCity}</div>`;
-}
+window.openMap = url => {
+    document.getElementById('mapFrame').src = url;
+    document.getElementById('mapModal').style.display = "block";
+};
+window.closeMap = () => {
+    document.getElementById('mapFrame').src = "";
+    document.getElementById('mapModal').style.display = "none";
+};
 </script>
 </body>
 </html>
