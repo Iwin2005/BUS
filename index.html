@@ -10,44 +10,33 @@
         header { background: #fff; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header-right { display: flex; align-items: center; gap: 15px; }
         #liveClock { font-family: monospace; font-weight: bold; color: var(--secondary); background: #eee; padding: 5px 10px; border-radius: 5px; }
-        
         .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-main:hover { opacity: 0.9; }
         .container { max-width: 1000px; margin: auto; padding: 20px; }
         .hidden { display: none !important; }
-
-        /* SQUARE LOGIN CARD */
-        #authWall { height: 80vh; display: flex; align-items: center; justify-content: center; }
-        .auth-card { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 500px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
-        .auth-card h2 { margin-bottom: 30px; color: var(--secondary); font-size: 24px; }
-
-        .admin-panel { background: #fff; border: 2px dashed var(--primary); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
-
-        /* DASHBOARD WIDGETS */
-        .upcoming { display: flex; gap: 15px; margin-bottom: 25px; }
-        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .up-title { font-size: 10px; text-transform: uppercase; color: #aaa; margin-bottom: 8px; letter-spacing: 1px; }
-        .up-date { font-size: 11px; color: #5bc0be; font-weight: bold; margin-bottom: 8px; }
-        .up-bus-name { font-size: 16px; font-weight: bold; color: var(--accent); display: block; margin-bottom: 4px; }
-        .up-city { font-size: 12px; color: #eee; display: block; margin-bottom: 10px; }
-        .count { font-size: 28px; font-weight: bold; font-family: monospace; color: #fff; }
-
-        /* SEARCH & FILTERS */
-        .search-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; background: #fff; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
-        .city-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
         input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
 
-        /* CARDS & TIMELINE */
+        /* Dashboard Alignment */
+        .upcoming { display: flex; gap: 15px; margin-bottom: 25px; }
+        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .count { font-size: 28px; font-weight: bold; font-family: monospace; color: #fff; }
+
+        /* Search Layout */
+        .search-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; background: #fff; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
+        .city-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+
+        /* Admin Portal */
+        .admin-panel { background: #fff; border: 2px dashed var(--primary); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
+
+        /* Cards */
         .card { background: #fff; padding: 25px; border-radius: 15px; margin: 15px 0; border-left: 6px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .timeline-item { display: flex; align-items: center; padding-bottom: 10px; font-size: 13px; margin-top: 6px; border-bottom: 1px solid #f5f5f5; }
-        .dot { width: 8px; height: 8px; background: var(--secondary); border-radius: 50%; margin-right: 12px; }
-        .badge { font-size: 9px; padding: 3px 6px; border-radius: 5px; margin-left: auto; font-weight: bold; text-transform: uppercase; }
+        .badge { font-size: 9px; padding: 3px 6px; border-radius: 5px; margin-left: auto; font-weight: bold; }
         .boarding { background: #e9f5f3; color: #2a9d8f; }
         .dropping { background: #fef2f2; color: #e63946; }
-        
+
         #welcomeArea { text-align: center; padding: 80px 20px; color: var(--secondary); background: #fff; border-radius: 20px; border: 2px dashed #ddd; }
 
-        /* MAP MODAL */
+        /* Map Modal */
         .map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
         .map-close { position: absolute; top: 15px; right: 15px; background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 50%; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         #mapFrame { width: 100%; height: 100%; border: none; }
@@ -68,48 +57,50 @@
 
 <div class="container">
     <div id="authWall">
-        <div class="auth-card">
+        <div style="text-align:center; background:white; padding:40px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.1); max-width:400px; margin:80px auto;">
             <h2>Login</h2>
             <input type="email" id="uEmail" placeholder="enter login id">
             <input type="password" id="uPass" placeholder="enter password">
-            <button class="btn-main" style="width:100%; margin-top: 15px;" id="loginBtn">Login</button>
+            <button class="btn-main" style="width:100%; margin-top:15px;" id="loginBtn">Login</button>
         </div>
     </div>
 
     <div id="mainContent" class="hidden">
         <div class="upcoming">
             <div class="up-box">
-                <div class="up-title">Next Departure</div>
-                <div id="depDate" class="up-date"></div>
-                <b id="depBusName" class="up-bus-name">Ready...</b>
-                <span id="depCityInfo" class="up-city"></span>
+                <div style="font-size:10px; color:#aaa;">Next Departure</div>
+                <div id="depDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
+                <b id="depBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
+                <div id="depCityInfo" style="font-size:12px;"></div>
                 <div class="count" id="depCounter">00:00:00</div>
             </div>
             <div class="up-box">
-                <div class="up-title">Next Arrival</div>
-                <div id="arrDate" class="up-date"></div>
-                <b id="arrBusName" class="up-bus-name">Ready...</b>
-                <span id="arrCityInfo" class="up-city"></span>
+                <div style="font-size:10px; color:#aaa;">Next Arrival</div>
+                <div id="arrDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
+                <b id="arrBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
+                <div id="arrCityInfo" style="font-size:12px;"></div>
                 <div class="count" id="arrCounter">00:00:00</div>
             </div>
         </div>
 
         <div id="adminPortal" class="admin-panel hidden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                <h3 style="margin:0">🛠 Admin Portal</h3>
+                <h3 id="portalTitle">🛠 Admin Portal</h3>
                 <button onclick="exportToExcel()" class="btn-main" style="background:#0077b6; padding:8px 15px; font-size:12px">📊 Export to Excel</button>
             </div>
             <input id="travel" placeholder="Travels Name">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                <input id="depCityInput" placeholder="Departure City">
+                <select id="depCityAdmin"><option value="">Select Departure City</option></select>
                 <input id="depTimeInput" placeholder="Time (e.g. 05:50 PM)">
-                <input id="destCityInput" placeholder="Destination City">
+                <select id="destCityAdmin"><option value="">Select Destination City</option></select>
                 <input id="destTimeInput" placeholder="Time (e.g. 06:55 AM)">
             </div>
+            <button onclick="addNewCity()" class="btn-main" style="background:#6c757d; font-size:11px; padding:5px 10px; margin-top:5px;">➕ Add New City Name</button>
             <div id="dynamicStops"></div>
-            <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin-bottom:12px">➕ Add Route Stop</button>
+            <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin-bottom:12px; margin-top:10px;">➕ Add Route Stop</button>
             <input id="trackLink" placeholder="Tracking Link">
-            <button onclick="saveBusToFirebase()" class="btn-main" style="width:100%">💾 Save Bus Record</button>
+            <input type="hidden" id="editingBusId">
+            <button onclick="saveBusToFirebase()" class="btn-main" id="saveBtn" style="width:100%">💾 Save Bus Record</button>
         </div>
 
         <div class="search-grid">
@@ -132,9 +123,9 @@
         </div>
 
         <div id="welcomeArea">
-            <div style="font-size: 50px; margin-bottom: 15px;">👋 Welcome!</div>
+            <div style="font-size: 50px; margin-bottom: 15px;">🔍</div>
             <h2>Search to get results</h2>
-            <p>Search for a city or operator to view live tracking results.</p>
+            <p>Enter a bus name or select a city to see tracking details.</p>
         </div>
         <div id="busDisplayArea" class="hidden"></div>
     </div>
@@ -157,29 +148,39 @@ const auth = getAuth(app);
 
 const ADMIN_EMAIL = "admin@wintracking.com"; 
 let busDataArr = [];
+let allCities = new Set();
 
 setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString(); }, 1000);
 
-/* --- EXCEL EXPORT LOGIC --- */
-window.exportToExcel = () => {
-    if (busDataArr.length === 0) {
-        alert("No data available to export.");
-        return;
+/* --- FIXED ADMIN CHECK --- */
+onAuthStateChanged(auth, user => {
+    const main = document.getElementById('mainContent'), wall = document.getElementById('authWall'), adminPortal = document.getElementById('adminPortal');
+    if (user) {
+        main.classList.remove('hidden'); wall.classList.add('hidden'); 
+        document.getElementById('loggedInLinks').classList.remove('hidden');
+        document.getElementById('userEmailDisplay').innerText = user.email;
+        
+        // Strictly check if email matches admin
+        if(user.email === ADMIN_EMAIL) {
+            adminPortal.classList.remove('hidden');
+        } else {
+            adminPortal.classList.add('hidden');
+        }
+        rebuildUI(); // Refresh UI to show/hide Edit buttons
+    } else {
+        main.classList.add('hidden'); wall.classList.remove('hidden');
     }
-    let csv = "Travels,Source,Dep Time,Destination,Arr Time,Route Stops,Map Link\n";
-    busDataArr.forEach(b => {
-        let routeStr = (b.route || []).map(r => `${r.city}(${r.time})`).join(" | ");
-        csv += `"${b.travel}","${b.depCity}","${b.depTime}","${b.destCity}","${b.destTime}","${routeStr}","${b.link}"\n`;
-    });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `Bus_Tracking_Report_${new Date().toLocaleDateString()}.csv`;
-    link.click();
-};
+});
 
-window.openMap = (url) => { document.getElementById('mapFrame').src = url; document.getElementById('mapModal').style.display = 'block'; };
-window.closeMap = () => { document.getElementById('mapFrame').src = ''; document.getElementById('mapModal').style.display = 'none'; };
+/* --- SYSTEM UTILITIES --- */
+function parseTimeToMinutes(timeStr) {
+    if (!timeStr) return 0;
+    let [time, ampm] = timeStr.split(" ");
+    let [h, m] = time.split(":").map(Number);
+    if (ampm === "PM" && h !== 12) h += 12;
+    if (ampm === "AM" && h === 12) h = 0;
+    return h * 60 + m;
+}
 
 function parseTimeToDate(timeStr) {
     if (!timeStr || !timeStr.includes(" ")) return null;
@@ -193,83 +194,47 @@ function parseTimeToDate(timeStr) {
     return target;
 }
 
-function updateDashboard() {
-    if (busDataArr.length === 0) return;
-    const deps = busDataArr.map(b => ({ b, t: parseTimeToDate(b.depTime) })).filter(x => x.t).sort((a,b) => a.t - b.t);
-    const arrs = busDataArr.map(b => ({ b, t: parseTimeToDate(b.destTime) })).filter(x => x.t).sort((a,b) => a.t - b.t);
-
-    const refreshBox = (type, list) => {
-        if (list.length > 0) {
-            const next = list[0];
-            document.getElementById(type + 'Date').innerText = next.t.toLocaleDateString('en-GB');
-            document.getElementById(type + 'BusName').innerText = next.b.travel;
-            document.getElementById(type + 'CityInfo').innerText = `${type === 'dep' ? next.b.depCity : next.b.destCity} (${type === 'dep' ? next.b.depTime : next.b.destTime})`;
-            if (window[type + 'Int']) clearInterval(window[type + 'Int']);
-            window[type + 'Int'] = setInterval(() => {
-                const diff = Math.max(0, Math.floor((next.t - new Date()) / 1000));
-                const h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60), s = diff%60;
-                document.getElementById(type + 'Counter').innerText = `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
-            }, 1000);
-        }
-    };
-    refreshBox('dep', deps); refreshBox('arr', arrs);
+function getTargetTime(bus, cityName) {
+    if (!cityName) return parseTimeToMinutes(bus.depTime);
+    if (bus.depCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.depTime);
+    if (bus.destCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.destTime);
+    const stop = bus.route?.find(r => r.city.toLowerCase() === cityName.toLowerCase());
+    return stop ? parseTimeToMinutes(stop.time) : parseTimeToMinutes(bus.depTime);
 }
 
-onAuthStateChanged(auth, (user) => {
-    const main = document.getElementById('mainContent'), wall = document.getElementById('authWall'), links = document.getElementById('loggedInLinks'), admin = document.getElementById('adminPortal');
-    if (user) {
-        main.classList.remove('hidden'); wall.classList.add('hidden'); links.classList.remove('hidden');
-        document.getElementById('userEmailDisplay').innerText = user.email;
-        if(user.email === ADMIN_EMAIL) admin.classList.remove('hidden'); else admin.classList.add('hidden');
-    } else {
-        clearAllSearch(); main.classList.add('hidden'); wall.classList.remove('hidden'); links.classList.add('hidden');
-    }
-});
-
-document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, uEmail.value, uPass.value).catch(err => alert(err.message));
-document.getElementById('logoutBtn').onclick = () => signOut(auth);
-
-window.clearAllSearch = () => {
-    document.getElementById('searchBox').value = ""; document.getElementById('fromCity').value = ""; document.getElementById('toCity').value = ""; document.getElementById('stopTypeFilter').value = "All"; document.getElementById('sortOption').value = "none";
-    rebuildUI();
-};
-
-function timeToMinutes(timeStr) {
-    if(!timeStr) return 0;
-    let [t, ampm] = timeStr.split(" ");
-    let [h, m] = t.split(":").map(Number);
-    if (ampm === "PM" && h !== 12) h += 12;
-    if (ampm === "AM" && h === 12) h = 0;
-    return h * 60 + m;
-}
-
-function getStopSpecificTime(bus, targetCity) {
-    if (bus.depCity.toLowerCase() === targetCity.toLowerCase()) return timeToMinutes(bus.depTime);
-    const stop = bus.route?.find(r => r.city.toLowerCase() === targetCity.toLowerCase());
-    return stop ? timeToMinutes(stop.time) : timeToMinutes(bus.depTime);
-}
-
+/* --- RESULT ENGINE --- */
 function rebuildUI() {
     const term = searchBox.value.trim().toLowerCase();
-    const from = fromCity.value, to = toCity.value, stopType = stopTypeFilter.value, sort = sortOption.value, listArea = document.getElementById('busDisplayArea'), welcome = document.getElementById('welcomeArea'), isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
+    const from = fromCity.value, to = toCity.value, stopType = stopTypeFilter.value, sort = sortOption.value, listArea = document.getElementById('busDisplayArea'), welcome = document.getElementById('welcomeArea');
+    const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
+    
     if (!term && !from && !to) { welcome.classList.remove('hidden'); listArea.classList.add('hidden'); return; }
     welcome.classList.add('hidden'); listArea.classList.remove('hidden');
+
     let filtered = busDataArr.filter(b => {
-        const all = [b.depCity, ...(b.route?.map(r => r.city) || []), b.destCity];
         const stopsData = [{city: b.depCity, type: 'Boarding'}, ...(b.route || []), {city: b.destCity, type: 'Dropping'}];
-        const matchText = b.travel.toLowerCase().includes(term) || all.join(' ').toLowerCase().includes(term);
+        const cityNames = stopsData.map(s => s.city.toLowerCase());
+        const matchText = b.travel.toLowerCase().includes(term) || cityNames.some(c => c.includes(term));
+        
         let seq = true;
-        if(from && to) { const fIdx = all.indexOf(from), tIdx = all.indexOf(to); seq = (fIdx !== -1 && tIdx !== -1 && fIdx < tIdx); }
-        else if(from) seq = all.includes(from); else if(to) seq = all.includes(to);
+        if(from && to) {
+            const fIdx = cityNames.indexOf(from.toLowerCase());
+            const tIdx = cityNames.indexOf(to.toLowerCase());
+            seq = (fIdx !== -1 && tIdx !== -1 && fIdx < tIdx);
+        } else if(from) seq = cityNames.includes(from.toLowerCase());
+        else if(to) seq = cityNames.includes(to.toLowerCase());
+
         let matchT = (stopType === "All") ? true : stopsData.some(s => s.type === stopType && s.city.toLowerCase().includes((from || term).toLowerCase()));
         return matchText && seq && matchT;
     });
+
     if (sort !== "none") {
         const city = from || term;
-        filtered.sort((a, b) => getStopSpecificTime(a, city) - getStopSpecificTime(b, city));
-        if(sort === "late") filtered.reverse();
+        filtered.sort((a, b) => getTargetTime(a, city) - getTargetTime(b, city));
+        if (sort === "late") filtered.reverse();
     }
-    listArea.innerHTML = filtered.length === 0 ? "<p style='text-align:center'>No routes found.</p>" : "";
+
+    listArea.innerHTML = filtered.length === 0 ? "<p style='text-align:center; padding:20px;'>No routes found.</p>" : "";
     filtered.forEach(b => {
         const card = document.createElement("div"); card.className = "card";
         card.innerHTML = `
@@ -277,39 +242,87 @@ function rebuildUI() {
                 <h3 style="margin:0">🚌 ${b.travel}</h3>
                 <div>${isAdmin ? `<button onclick="triggerEdit('${b.id}')" style="background:#ff9f1c; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer">Edit</button> <button onclick="triggerDelete('${b.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; margin-left:8px">Delete</button>` : ''}</div>
             </div>
-            <b>${b.depCity} (${b.depTime}) ➔ ${b.destCity} (${b.destTime})</b>
-            <div style="margin:15px 0; border-left:1px dashed #ccc; padding-left:10px">
+            <b>${b.depCity} ➔ ${b.destCity}</b>
+            <div style="margin:10px 0; border-left:1px dashed #ccc; padding-left:10px">
                 ${(b.route || []).map(r => `<div class="timeline-item"><div class="dot"></div><b>${r.city}</b> - ${r.time} <span class="badge ${r.type.toLowerCase()}">${r.type}</span></div>`).join('')}
             </div>
-            <button class="btn-main" style="width:100%" onclick="openMap('${b.link}')">📍 View Live Location</button>`;
+            <button class="btn-main" style="width:100%" onclick="openMap('${b.link}')">📍 View Location</button>`;
         listArea.appendChild(card);
     });
 }
 
+function updateDashboard() {
+    const deps = busDataArr.map(b => ({ b, t: parseTimeToDate(b.depTime) })).filter(x => x.t).sort((a,b) => a.t - b.t);
+    const arrs = busDataArr.map(b => ({ b, t: parseTimeToDate(b.destTime) })).filter(x => x.t).sort((a,b) => a.t - b.t);
+    const refreshBox = (type, list) => {
+        if (list.length > 0) {
+            const next = list[0];
+            document.getElementById(type + 'Date').innerText = next.t.toLocaleDateString('en-GB');
+            document.getElementById(type + 'BusName').innerText = next.b.travel;
+            document.getElementById(type + 'CityInfo').innerText = `${type==='dep'?next.b.depCity:next.b.destCity} (${type==='dep'?next.b.depTime:next.b.destTime})`;
+            if (window[type+'Int']) clearInterval(window[type+'Int']);
+            window[type+'Int'] = setInterval(() => {
+                const diff = Math.max(0, Math.floor((next.t - new Date()) / 1000));
+                const h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60), s = diff%60;
+                document.getElementById(type+'Counter').innerText = `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+            }, 1000);
+        }
+    };
+    refreshBox('dep', deps); refreshBox('arr', arrs);
+}
+
 onSnapshot(collection(db, "buses"), snap => {
     busDataArr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const cities = new Set();
-    busDataArr.forEach(b => { cities.add(b.depCity); cities.add(b.destCity); b.route?.forEach(s => cities.add(s.city)); });
-    const opts = Array.from(cities).sort().map(c => `<option value="${c}">${c}</option>`).join('');
-    fromCity.innerHTML = '<option value="">Select Boarding City</option>' + opts;
-    toCity.innerHTML = '<option value="">Select Destination</option>' + opts;
+    allCities.clear();
+    busDataArr.forEach(b => { 
+        allCities.add(b.depCity); allCities.add(b.destCity); 
+        b.route?.forEach(s => allCities.add(s.city)); 
+    });
+    const sorted = Array.from(allCities).sort();
+    const opts = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('depCityAdmin').innerHTML = `<option value="">Select Departure</option>` + opts;
+    document.getElementById('destCityAdmin').innerHTML = `<option value="">Select Destination</option>` + opts;
+    document.getElementById('fromCity').innerHTML = `<option value="">Select Boarding City</option>` + opts;
+    document.getElementById('toCity').innerHTML = `<option value="">Select Destination</option>` + opts;
     updateDashboard(); rebuildUI();
 });
 
+/* --- ADMIN ACTIONS --- */
+window.triggerEdit = (id) => {
+    const bus = busDataArr.find(b => b.id === id);
+    document.getElementById('editingBusId').value = id;
+    document.getElementById('travel').value = bus.travel;
+    document.getElementById('depCityAdmin').value = bus.depCity;
+    document.getElementById('depTimeInput').value = bus.depTime;
+    document.getElementById('destCityAdmin').value = bus.destCity;
+    document.getElementById('destTimeInput').value = bus.destTime;
+    document.getElementById('trackLink').value = bus.link;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.triggerDelete = async (id) => { if(confirm("Delete?")) await deleteDoc(doc(db, "buses", id)); };
+window.saveBusToFirebase = async () => {
+    const id = document.getElementById('editingBusId').value;
+    const stops = [];
+    document.querySelectorAll('.stop-entry').forEach(r => stops.push({city: r.querySelector('.s-city').value, time: r.querySelector('.s-time').value, type: r.querySelector('.s-type').value}));
+    const payload = { travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value, destCity: destCityAdmin.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
+    id ? await updateDoc(doc(db, "buses", id), payload) : await addDoc(collection(db, "buses"), payload);
+    location.reload();
+};
+
+window.addNewCity = () => { const c = prompt("City Name:"); if(c) { allCities.add(c); rebuildUI(); } };
 window.addStopField = () => {
-    const d = document.createElement("div"); d.style.display="flex"; d.style.gap="5px";
-    d.innerHTML = `<input placeholder="City" class="s-city"><input placeholder="Time" class="s-time"><select class="s-type"><option value="Boarding">Boarding</option><option value="Dropping">Dropping</option></select>`;
+    const d = document.createElement("div"); d.style.display="flex"; d.style.gap="5px"; d.className="stop-entry";
+    d.innerHTML = `<select class="s-city">${Array.from(allCities).sort().map(c=>`<option value="${c}">${c}</option>`).join('')}</select><input placeholder="Time" class="s-time"><select class="s-type"><option value="Boarding">Boarding</option><option value="Dropping">Dropping</option></select><button onclick="this.parentElement.remove()" style="background:red; color:white; width:40px; border:none; border-radius:5px">X</button>`;
     document.getElementById('dynamicStops').appendChild(d);
 };
 
-window.saveBusToFirebase = async () => {
-    const stops = [];
-    document.querySelectorAll('#dynamicStops > div').forEach(r => stops.push({city: r.querySelector('.s-city').value, time: r.querySelector('.s-time').value, type: r.querySelector('.s-type').value}));
-    const payload = { travel: travel.value, depCity: depCityInput.value, depTime: depTimeInput.value, destCity: destCityInput.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
-    await addDoc(collection(db, "buses"), payload);
-    alert("Saved!"); location.reload();
-};
-
+/* --- UI HANDLERS --- */
+document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, uEmail.value, uPass.value);
+document.getElementById('logoutBtn').onclick = () => signOut(auth);
+window.clearAllSearch = () => { searchBox.value = ""; fromCity.value = ""; toCity.value = ""; stopTypeFilter.value = "All"; sortOption.value = "none"; rebuildUI(); };
+window.openMap = (u) => { mapFrame.src = u; mapModal.style.display = 'block'; };
+window.closeMap = () => { mapFrame.src = ''; mapModal.style.display = 'none'; };
 searchBox.oninput = rebuildUI; fromCity.onchange = rebuildUI; toCity.onchange = rebuildUI; stopTypeFilter.onchange = rebuildUI; sortOption.onchange = rebuildUI;
 </script>
 </body>
