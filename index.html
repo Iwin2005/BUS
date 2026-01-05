@@ -27,7 +27,7 @@ input,select,button{
     font-size:16px;
 }
 
-button{font-weight:bold;cursor:pointer}
+button{cursor:pointer;font-weight:bold}
 .sort-btn{background:#023047;color:#fff}
 .track-btn{background:#2a9d8f;color:#fff}
 
@@ -42,9 +42,6 @@ button{font-weight:bold;cursor:pointer}
 .row{display:flex;gap:10px}
 @media(max-width:600px){.row{flex-direction:column}}
 
-.hidden{display:none}
-
-/* NEXT DEPARTURE */
 #nextDeparture{
     background:#fff;
     border-left:6px solid #2a9d8f;
@@ -67,12 +64,13 @@ button{font-weight:bold;cursor:pointer}
     padding:10px;
     display:flex;
     justify-content:space-between;
+    align-items:center;
     font-weight:bold
 }
 .map-header button{
     background:none;
     border:none;
-    font-size:20px;
+    font-size:22px;
     cursor:pointer
 }
 #mapFrame{
@@ -91,7 +89,6 @@ button{font-weight:bold;cursor:pointer}
 <!-- NEXT DEPARTURE -->
 <div id="nextDeparture"></div>
 
-<!-- SEARCH -->
 <input id="search" placeholder="Search city or travels">
 
 <div class="row">
@@ -109,10 +106,9 @@ button{font-weight:bold;cursor:pointer}
 <button id="sortBtn" class="sort-btn">⏰ Earliest First</button>
 
 <div id="busList"></div>
-
 </div>
 
-<!-- MAP MODAL -->
+<!-- MAP -->
 <div id="mapModal" class="map-modal">
     <div class="map-header">
         <span>🗺 Live Bus Tracking</span>
@@ -122,14 +118,14 @@ button{font-weight:bold;cursor:pointer}
 </div>
 
 <script type="module">
-/* 🔥 FIREBASE */
+/* FIREBASE */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig={
  apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
  authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
- projectId:"smart-bus-tracking-2ba21",
+ projectId:"smart-bus-tracking-2ba21"
 };
 
 const app=initializeApp(firebaseConfig);
@@ -140,7 +136,7 @@ let data=[];
 let sortOrder="asc";
 let activeSearch="";
 let activeOperator="";
-let travelMode="departure";
+let travelMode="both";
 
 /* ELEMENTS */
 const busList=document.getElementById("busList");
@@ -151,21 +147,21 @@ const sortBtn=document.getElementById("sortBtn");
 
 /* EVENTS */
 search.oninput=e=>{
-    activeSearch=e.target.value.toLowerCase().trim();
-    render();
+ activeSearch=e.target.value.toLowerCase().trim();
+ render();
 };
 operatorSelect.onchange=e=>{
-    activeOperator=e.target.value;
-    render();
+ activeOperator=e.target.value;
+ render();
 };
 travelModeSelect.onchange=e=>{
-    travelMode=e.target.value;
-    render();
+ travelMode=e.target.value;
+ render();
 };
 sortBtn.onclick=()=>{
-    sortOrder=sortOrder==="asc"?"desc":"asc";
-    sortBtn.innerText=sortOrder==="asc"?"⏰ Earliest First":"⏰ Latest First";
-    render();
+ sortOrder=sortOrder==="asc"?"desc":"asc";
+ sortBtn.innerText=sortOrder==="asc"?"⏰ Earliest First":"⏰ Latest First";
+ render();
 };
 
 /* HELPERS */
@@ -228,13 +224,16 @@ function render(){
      }
      else if(travelMode==="both"){
         show=true;
-        label = cityMatch.city===first.city?"🟢 Departs from "+first.city
-             : cityMatch.city===last.city?"🔵 Arrives at "+last.city
-             : "➡ Via "+cityMatch.city;
+        label = cityMatch.city===first.city
+          ? "🟢 Departs from "+first.city
+          : cityMatch.city===last.city
+          ? "🔵 Arrives at "+last.city
+          : "➡ Via "+cityMatch.city;
      }
    }
    else if(operatorMatch){
-     show=true; label="🚌 Operator match";
+     show=true;
+     label="🚌 Operator match";
    }
 
    if(!show) return;
@@ -256,11 +255,18 @@ function render(){
    busList.appendChild(card);
  });
 
- /* AUTO FIX EMPTY RESULT */
- if(shown===0 && activeSearch && travelMode!=="both"){
-   travelMode="both";
-   travelModeSelect.value="both";
-   render();
+ if(shown===0){
+   busList.innerHTML=`
+     <div class="card">
+       ❌ No buses found<br><br>
+       Try changing:
+       <ul>
+         <li>Departure / Arrival</li>
+         <li>Operator</li>
+         <li>Search city</li>
+       </ul>
+     </div>
+   `;
  }
 }
 
@@ -269,9 +275,10 @@ function renderOperators(){
  const ops=[...new Set(data.map(b=>b.travel))];
  operatorSelect.innerHTML='<option value="">All Operators</option>';
  ops.forEach(o=>{
-   const op=document.createElement("option");
-   op.value=o; op.textContent=o;
-   operatorSelect.appendChild(op);
+   const opt=document.createElement("option");
+   opt.value=o;
+   opt.textContent=o;
+   operatorSelect.appendChild(opt);
  });
 }
 
@@ -282,7 +289,8 @@ function renderNext(){
 
  let future=data.map(b=>{
    let t=toMin(b.route[0].time);
-   let d=new Date(); d.setHours(Math.floor(t/60),t%60,0,0);
+   let d=new Date();
+   d.setHours(Math.floor(t/60),t%60,0,0);
    return {bus:b,time:d.getTime()};
  }).filter(x=>x.time>now);
 
