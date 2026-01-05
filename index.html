@@ -93,12 +93,12 @@ label { font-size: 12px; font-weight: bold; color: #666; margin-left: 5px; }
 <h2>🚌 Smart Bus Tracking</h2>
 
 <div class="upcoming">
-  <div class="up-box" id="upDep">
+  <div class="up-box" id="upDepBox">
       <div class="up-title">Next Departure</div>
       <div id="depInfo">Calculating...</div>
       <div class="count" id="depCount">00:00:00</div>
   </div>
-  <div class="up-box" id="upArr">
+  <div class="up-box" id="upArrBox">
       <div class="up-title">Next Arrival</div>
       <div id="arrInfo">Calculating...</div>
       <div class="count" id="arrCount">00:00:00</div>
@@ -147,7 +147,7 @@ label { font-size: 12px; font-weight: bold; color: #666; margin-left: 5px; }
   
   <div class="row" style="margin-top:20px;">
     <button id="saveBtn" onclick="saveBus()" style="background:var(--primary); color:white; flex:2">💾 Save Bus</button>
-    <button id="cancelEdit" class="hidden" onclick="resetAdmin()" style="background:#666; color:white; flex:1">Cancel</button>
+    <button id="cancelEdit" class="hidden" onclick="resetAdmin()" style="background:#666; color:white; flex:1">Cancel Edit</button>
   </div>
   
   <button onclick="logout()" style="background:#e63946; color:white; margin-top:20px;">Logout</button>
@@ -197,6 +197,7 @@ function getNextOccurrence(timeStr) {
 }
 
 function formatCountdown(ms) {
+    if (ms < 0) return "00h 00m 00s";
     const totalSeconds = Math.floor(ms / 1000);
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
@@ -208,19 +209,15 @@ function formatCountdown(ms) {
 function updateDashboard() {
     if (!data.length) return;
 
-    const now = new Date();
-
     // Map all buses to their next departure/arrival times
     let depList = data.map(b => ({
         bus: b,
-        targetDate: getNextOccurrence(b.depTime),
-        type: 'Departure'
+        targetDate: getNextOccurrence(b.depTime)
     })).sort((a, b) => a.targetDate - b.targetDate);
 
     let arrList = data.map(b => ({
         bus: b,
-        targetDate: getNextOccurrence(b.destTime),
-        type: 'Arrival'
+        targetDate: getNextOccurrence(b.destTime)
     })).sort((a, b) => a.targetDate - b.targetDate);
 
     const nextDep = depList[0];
@@ -230,27 +227,30 @@ function updateDashboard() {
     document.getElementById('depInfo').innerHTML = `
         <div class="up-bus-name">${nextDep.bus.travel}</div>
         <div class="up-city">${nextDep.bus.depCity} (${nextDep.bus.depTime})</div>
-        <div class="up-date-small">${nextDep.targetDate.toLocaleDateString()}</div>
+        <div class="up-date-small">${nextDep.targetDate.toLocaleDateString('en-GB')}</div>
     `;
 
     // Update Arrival UI
     document.getElementById('arrInfo').innerHTML = `
         <div class="up-bus-name">${nextArr.bus.travel}</div>
         <div class="up-city">${nextArr.bus.destCity} (${nextArr.bus.destTime})</div>
-        <div class="up-date-small">${nextArr.targetDate.toLocaleDateString()}</div>
+        <div class="up-date-small">${nextArr.targetDate.toLocaleDateString('en-GB')}</div>
     `;
 
-    // Static interval for countdown numbers
     if (window.timerInterval) clearInterval(window.timerInterval);
     window.timerInterval = setInterval(() => {
-        const dDiff = nextDep.targetDate - new Date();
-        const aDiff = nextArr.targetDate - new Date();
+        const now = new Date();
+        const dDiff = nextDep.targetDate - now;
+        const aDiff = nextArr.targetDate - now;
         
         document.getElementById('depCount').innerText = formatCountdown(dDiff);
         document.getElementById('arrCount').innerText = formatCountdown(aDiff);
         
-        // Refresh full logic if a bus just "departed" (timer hits zero)
-        if (dDiff < 0 || aDiff < 0) updateDashboard();
+        // Refresh logic if a timer hits zero
+        if (dDiff <= 0 || aDiff <= 0) {
+            clearInterval(window.timerInterval);
+            updateDashboard();
+        }
     }, 1000);
 }
 
@@ -277,11 +277,15 @@ window.saveBus = async () => {
     const id = document.getElementById('editingBusId').value;
     const viaStops = [];
     document.querySelectorAll(".stop-row").forEach(row => {
-        viaStops.push({
-            city: row.querySelector(".c-city").value,
-            time: row.querySelector(".c-time").value,
-            type: row.querySelector(".c-type").value
-        });
+        const cityVal = row.querySelector(".c-city").value;
+        const timeVal = row.querySelector(".c-time").value;
+        if(cityVal && timeVal) {
+            viaStops.push({
+                city: cityVal,
+                time: timeVal,
+                type: row.querySelector(".c-type").value
+            });
+        }
     });
 
     const busObj = {
@@ -294,13 +298,15 @@ window.saveBus = async () => {
         link: document.getElementById('link').value
     };
 
+    if(!busObj.travel || !busObj.depCity) return alert("Fill required fields!");
+
     try {
         if (id) {
             await updateDoc(doc(db, "buses", id), busObj);
-            alert("Updated!");
+            alert("Bus Updated!");
         } else {
             await addDoc(collection(db, "buses"), busObj);
-            alert("Added!");
+            alert("Bus Added!");
         }
         resetAdmin();
     } catch(e) { alert(e.message); }
