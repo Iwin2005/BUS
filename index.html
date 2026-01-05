@@ -11,7 +11,7 @@ body{
   font-family:Arial,sans-serif;
   background:linear-gradient(to right,#fff3b0,#ffd60a);
 }
-.container{max-width:1000px;margin:auto;padding:15px}
+.container{max-width:1100px;margin:auto;padding:15px}
 h2{text-align:center;color:#3a2f00}
 
 input,select,button{
@@ -24,8 +24,8 @@ input,select,button{
 }
 button{cursor:pointer;font-weight:bold}
 
-.track-btn{background:#2a9d8f;color:#fff}
-.sort-btn{background:#023047;color:#fff}
+.row{display:flex;gap:12px}
+@media(max-width:700px){.row{flex-direction:column}}
 
 .card{
   background:#fff8dc;
@@ -35,31 +35,27 @@ button{cursor:pointer;font-weight:bold}
   box-shadow:0 0 8px rgba(0,0,0,.2)
 }
 
-.row{display:flex;gap:12px}
-@media(max-width:700px){.row{flex-direction:column}}
+.track-btn{background:#2a9d8f;color:#fff}
+.sort-btn{background:#023047;color:#fff}
 
-.upcoming-box{
+.hidden{display:none}
+
+/* UPCOMING */
+.upcoming{
+  display:flex;
+  gap:12px;
+  margin-bottom:10px
+}
+.up-box{
+  flex:1;
   background:#1f1f1f;
   color:#fff;
   border-radius:12px;
-  padding:15px;
-  flex:1;
+  padding:15px
 }
-.upcoming-title{
-  text-align:center;
-  font-weight:bold;
-  font-size:18px;
-  margin-bottom:5px
-}
-.date-line{text-align:center;font-size:14px;margin-bottom:10px}
-.arrival-highlight{
-  background:#2a9d8f;
-  padding:6px;
-  border-radius:6px;
-  font-weight:bold
-}
-
-.hidden{display:none}
+.up-title{text-align:center;font-size:18px;font-weight:bold}
+.up-date{text-align:center;font-size:14px;margin:6px 0}
+.count{margin-top:6px;font-weight:bold}
 
 /* MAP */
 .map-modal{
@@ -90,73 +86,79 @@ button{cursor:pointer;font-weight:bold}
 <h2>🚌 Smart Bus Tracking</h2>
 
 <!-- UPCOMING -->
-<div class="row">
-  <div class="upcoming-box" id="upcomingDeparture"></div>
-  <div class="upcoming-box" id="upcomingArrival"></div>
+<div class="upcoming">
+  <div class="up-box" id="upDep"></div>
+  <div class="up-box" id="upArr"></div>
 </div>
 
 <input id="search" placeholder="Search city or travels">
 
 <div class="row">
-<select id="operatorSelect"><option value="">All Operators</option></select>
-<select id="journeyFilter">
-  <option value="both">Boarding & Dropping</option>
-  <option value="boarding">Boarding</option>
-  <option value="dropping">Dropping</option>
-</select>
+  <select id="operator"><option value="">All Operators</option></select>
 </div>
 
 <button id="sortBtn" class="sort-btn">⏰ Earliest First</button>
+
 <div id="busList"></div>
 
 <hr>
 
 <h3>🔐 Admin Login</h3>
 <div id="loginBox">
-  <input id="adminEmail" placeholder="Admin Email">
-  <input id="adminPass" type="password" placeholder="Password">
+  <input id="email" placeholder="Admin Email">
+  <input id="pass" type="password" placeholder="Password">
   <button id="loginBtn">Login</button>
 </div>
 
-<div id="adminPanel" class="hidden">
-  <h3>Admin Panel</h3>
+<div id="adminPanel" class="hidden card">
+  <h3>✅ Admin Panel</h3>
+
+  <input id="travel" placeholder="Travels Name">
+
+  <h4>Route</h4>
+  <div id="routes">
+    <div class="row">
+      <input class="city" placeholder="City">
+      <input class="time" placeholder="06:05 PM">
+    </div>
+  </div>
+
+  <button onclick="addRoute()">➕ Add Stop</button>
+
+  <input id="link" placeholder="Tracking Link">
+
+  <button onclick="saveBus()">💾 Save Bus</button>
   <button onclick="logout()">Logout</button>
 </div>
 
 </div>
 
 <!-- MAP -->
-<div id="mapModal" class="map-modal">
-<button class="map-close" onclick="closeMap()">✖</button>
-<iframe id="mapFrame"></iframe>
+<div class="map-modal" id="mapModal">
+  <button class="map-close" onclick="closeMap()">✖</button>
+  <iframe id="mapFrame"></iframe>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc }
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
+/* FIREBASE */
 const app = initializeApp({
- apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
- authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
- projectId:"smart-bus-tracking-2ba21"
+  apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
+  authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
+  projectId:"smart-bus-tracking-2ba21"
 });
 const db=getFirestore(app);
 const auth=getAuth(app);
 
-let data=[],searchTxt="",operator="",journey="both",sortOrder="asc";
-let depTimer=null,arrTimer=null;
+/* STATE */
+let data=[],sortAsc=true;
 
-search.oninput=e=>{searchTxt=e.target.value.toLowerCase();renderList()};
-operatorSelect.onchange=e=>{operator=e.target.value;renderList()};
-journeyFilter.onchange=e=>{journey=e.target.value;renderList()};
-sortBtn.onclick=()=>{
- sortOrder=sortOrder==="asc"?"desc":"asc";
- sortBtn.innerText=sortOrder==="asc"?"⏰ Earliest First":"⏰ Latest First";
- renderList();
-};
-
+/* HELPERS */
 function toMin(t){
  let[p,m]=t.split(" ");
  let[h,mm]=p.split(":").map(Number);
@@ -164,112 +166,109 @@ function toMin(t){
  if(m==="AM"&&h===12)h=0;
  return h*60+mm;
 }
-function nextTime(time){
+function nextDate(time){
  let d=new Date();
  const m=toMin(time);
  d.setHours(Math.floor(m/60),m%60,0,0);
  if(d<Date.now()) d.setDate(d.getDate()+1);
  return d;
 }
+function fmt(d){
+ return d.toLocaleDateString("en-GB")+" "+d.toLocaleTimeString("en-GB");
+}
 
+/* MAP */
 window.openMap=url=>{
  mapFrame.src=url;
  mapModal.style.display="block";
-};
+}
 window.closeMap=()=>{
  mapFrame.src="";
  mapModal.style.display="none";
-};
-
-/* UPCOMING (ALWAYS WORKS) */
-function renderUpcoming(){
- clearInterval(depTimer);clearInterval(arrTimer);
-
- let deps=[],arrs=[];
- data.forEach(bus=>{
-  const b=bus.route.find(r=>r.type==="boarding");
-  const d=[...bus.route].reverse().find(r=>r.type==="dropping");
-  if(b) deps.push({bus,point:b,time:nextTime(b.time)});
-  if(d) arrs.push({bus,point:d,time:nextTime(d.time)});
- });
-
- const depSoon=Math.min(...deps.map(x=>x.time));
- const arrSoon=Math.min(...arrs.map(x=>x.time));
-
- function tickDep(){
-  const s=Math.floor((depSoon-Date.now())/1000);
-  const date=new Date(depSoon).toLocaleDateString("en-GB");
-  const list=deps.filter(x=>x.time.getTime()===depSoon);
-  upcomingDeparture.innerHTML=`
-   <div class="upcoming-title">🚨 UPCOMING DEPARTURE</div>
-   <div class="date-line">📅 ${date}</div>
-   ${list.map(o=>`
-    🚌 ${o.bus.travel}<br>
-    📍 ${o.point.city} → ${o.bus.route.at(-1).city}<br>
-    ⏰ ${o.point.time}<br><br>
-   `).join("")}
-   ⏳ Departs in ${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s
-  `;
- }
- tickDep(); depTimer=setInterval(tickDep,1000);
-
- function tickArr(){
-  const s=Math.floor((arrSoon-Date.now())/1000);
-  const date=new Date(arrSoon).toLocaleDateString("en-GB");
-  const list=arrs.filter(x=>x.time.getTime()===arrSoon);
-  upcomingArrival.innerHTML=`
-   <div class="upcoming-title">🚏 UPCOMING ARRIVAL</div>
-   <div class="date-line">📅 ${date}</div>
-   ${list.map(o=>`
-    🚌 ${o.bus.travel}<br>
-    <div class="arrival-highlight">🏁 ${o.point.city} – ${o.point.time}</div>
-   `).join("<br>")}
-   <br>⏳ Arrives in ${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s
-  `;
- }
- tickArr(); arrTimer=setInterval(tickArr,1000);
 }
 
+/* UPCOMING */
+function renderUpcoming(){
+ if(!data.length){upDep.innerHTML="";upArr.innerHTML="";return}
+
+ let deps=[],arrs=[];
+ data.forEach(b=>{
+  deps.push({bus:b,time:nextDate(b.route[0].time)});
+  arrs.push({bus:b,time:nextDate(b.route.at(-1).time)});
+ });
+
+ const dMin=Math.min(...deps.map(x=>x.time));
+ const aMin=Math.min(...arrs.map(x=>x.time));
+
+ function tick(){
+  const d=Math.max(0,Math.floor((dMin-Date.now())/1000));
+  const a=Math.max(0,Math.floor((aMin-Date.now())/1000));
+
+  upDep.innerHTML=`
+   <div class="up-title">🚨 UPCOMING DEPARTURE</div>
+   <div class="up-date">📅 ${fmt(new Date(dMin))}</div>
+   ⏳ ${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m ${d%60}s
+  `;
+  upArr.innerHTML=`
+   <div class="up-title">🚏 UPCOMING ARRIVAL</div>
+   <div class="up-date">📅 ${fmt(new Date(aMin))}</div>
+   ⏳ ${Math.floor(a/3600)}h ${Math.floor((a%3600)/60)}m ${a%60}s
+  `;
+ }
+ tick();
+ setInterval(tick,1000);
+}
+
+/* LIST */
 function renderList(){
  busList.innerHTML="";
- let shown=0;
- data.forEach(bus=>{
-  if(operator && bus.travel!==operator) return;
-  if(searchTxt && !bus.travel.toLowerCase().includes(searchTxt)
-    && !bus.route.some(r=>r.city.toLowerCase().includes(searchTxt))) return;
+ let list=[...data];
+ if(!sortAsc) list.reverse();
 
-  const m=bus.route.find(r=>r.city.toLowerCase().includes(searchTxt));
-  if(m){
-    if(journey==="boarding"&&m.type!=="boarding")return;
-    if(journey==="dropping"&&m.type!=="dropping")return;
-  }
-
-  shown++;
+ list.forEach(b=>{
   const c=document.createElement("div");
   c.className="card";
   c.innerHTML=`
-    <h3>🚌 ${bus.travel}</h3>
-    ${bus.route.map(r=>`
-      ${r.type==="boarding"?"🟢":r.type==="dropping"?"🔵":"➡"} ${r.city} ${r.time}
-    `).join("<br>")}
-    <br><br>
-    <button class="track-btn" onclick="openMap('${bus.link}')">Track</button>
+   <h3>🚌 ${b.travel}</h3>
+   ${b.route.map(r=>`➡ ${r.city} ${r.time}`).join("<br>")}
+   <br><br>
+   <button class="track-btn" onclick="openMap('${b.link}')">Track</button>
   `;
   busList.appendChild(c);
  });
- if(!shown) busList.innerHTML="<div class='card'>❌ No buses found</div>";
 }
 
-/* AUTH */
-loginBtn.onclick=()=>{
- signInWithEmailAndPassword(auth,adminEmail.value,adminPass.value)
+/* ADMIN */
+loginBtn.onclick=()=>signInWithEmailAndPassword(auth,email.value,pass.value)
  .catch(e=>alert(e.message));
-};
 window.logout=()=>signOut(auth);
+
 onAuthStateChanged(auth,u=>{
  loginBox.classList.toggle("hidden",!!u);
  adminPanel.classList.toggle("hidden",!u);
 });
+
+/* ADD BUS */
+window.addRoute=()=>{
+ const d=document.createElement("div");
+ d.className="row";
+ d.innerHTML=`<input class="city"><input class="time">`;
+ routes.appendChild(d);
+}
+window.saveBus=async()=>{
+ let route=[];
+ document.querySelectorAll(".city").forEach((c,i)=>{
+  const t=document.querySelectorAll(".time")[i];
+  if(c.value&&t.value) route.push({city:c.value,time:t.value});
+ });
+ if(route.length<2)return alert("Add at least 2 stops");
+ await addDoc(collection(db,"buses"),{
+  travel:travel.value,
+  route,
+  link:link.value
+ });
+ alert("Bus Added");
+};
 
 /* DATA */
 onSnapshot(collection(db,"buses"),snap=>{
