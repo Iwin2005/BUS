@@ -266,7 +266,7 @@
             listArea.innerHTML = filtered.length === 0 ? "<p style='text-align:center; padding:20px;'>No routes found.</p>" : "";
             filtered.forEach(b => {
                 const card = document.createElement("div"); card.className = "card";
-                const progress = Math.min(((b.live_km || 0) / 650) * 100, 100);
+                const progress = Math.min(((b.live_km || 0) / 650) * 100, 100); // Progress bar calculation
 
                 card.innerHTML = `
             <div class="bus-header">
@@ -369,11 +369,12 @@
 
         window.triggerDelete = async (id) => { if (confirm("Delete?")) await deleteDoc(doc(db, "buses", id)); };
         
+        // UPDATED SAVE FUNCTION
         window.saveBusToFirebase = async () => {
             const id = document.getElementById('editingBusId').value;
             const link = document.getElementById('trackLink').value;
             
-            // Extract a Target ID from link for the watcher
+            // Extract a Target ID from link for the watcher script
             const targetId = link.split('/').pop() || "NEW_BUS";
 
             const stops = [];
@@ -392,13 +393,13 @@
                 destTime: destTimeInput.value, 
                 link: link, 
                 route: stops,
-                live_km: 0,
-                status: "Stationary"
+                live_km: 0,        // Sync with watcher
+                status: "Stationary" // Initial status
             };
 
-            // Use setDoc to force the ID to match our watcher target
+            // Use setDoc to ensure document ID matches watcher target
             await setDoc(doc(db, "buses", targetId), payload);
-            alert("Bus Record Saved as: " + targetId);
+            alert("Bus Record Saved successfully as: " + targetId);
             location.reload();
         };
 
@@ -406,7 +407,7 @@
             const c = prompt("City Name:");
             if (c && c.trim() !== '') {
                 allCities.add(c.trim());
-                updateCityDropdowns(); // This now updates all dynamic stop dropdowns too
+                updateCityDropdowns(); // Refreshes all dropdowns including route stops
             }
         };
 
