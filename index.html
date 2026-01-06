@@ -8,51 +8,32 @@
         :root { --primary: #2a9d8f; --secondary: #023047; --accent: #ffd60a; --bg: #f0f2f5; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; }
         header { background: #fff; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header-right { display: flex; align-items: center; gap: 15px; }
-        #liveClock { font-family: monospace; font-weight: bold; color: var(--secondary); background: #eee; padding: 5px 10px; border-radius: 5px; }
-        .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        #liveClock { font-family: monospace; font-weight: bold; background: #eee; padding: 5px 10px; border-radius: 5px; }
+        .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
         .container { max-width: 1000px; margin: auto; padding: 20px; }
         .hidden { display: none !important; }
-        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
+        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; }
 
         /* Dashboard Boxes */
         .upcoming { display: flex; gap: 15px; margin-bottom: 25px; }
-        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .count { font-size: 24px; font-weight: bold; font-family: monospace; color: var(--accent); }
+        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; }
+        .count { font-size: 24px; font-weight: bold; color: var(--accent); }
 
-        /* Search Layout */
-        .search-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; background: #fff; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
-        .city-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
-
-        /* Admin Panel */
         .admin-panel { background: #fff; border: 2px dashed var(--primary); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
 
         /* BUS CARD UI */
-        .card { background: #fff; padding: 22px; border-radius: 20px; margin: 15px 0; box-shadow: 0 6px 18px rgba(0,0,0,0.06); border: 1px solid #edf2f7; transition: transform 0.2s; }
+        .card { background: #fff; padding: 22px; border-radius: 20px; margin: 15px 0; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
         .bus-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .travel-name { font-size: 18px; font-weight: 800; color: var(--secondary); text-transform: uppercase; }
-        .status-badge { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
-        .status-waiting { background: #f3f4f6; color: #6b7280; }
-        .status-on-route { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
-        .dot { height: 8px; width: 8px; background-color: #10b981; border-radius: 50%; display: inline-block; animation: blink 1.2s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        .status-badge { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: bold; }
+        .status-on-route { background: #d1fae5; color: #065f46; }
         
-        /* Live Progress Section */
         .progress-container { background: #f0f7ff; padding: 12px; border-radius: 12px; margin: 15px 0; border: 1px solid #e0efff; }
-        .progress-bar-bg { width: 100%; height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; margin: 8px 0; }
-        .progress-fill { height: 100%; background: #2a9d8f; transition: width 1.5s ease-in-out; }
+        .bar-bg { width: 100%; height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; margin: 8px 0; }
+        .bar-fill { height: 100%; background: #2a9d8f; transition: width 1.5s ease-in-out; }
         
         .route-visual { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; }
-        .point { text-align: center; flex: 1; }
-        .point b { font-size: 17px; display: block; color: #1a202c; }
-        .line { flex: 1.5; height: 2px; background: #cbd5e0; position: relative; margin: 0 15px; }
-        .line::after { content: '▶'; position: absolute; top: -8px; left: 45%; color: var(--primary); font-size: 12px; background: #fff; padding: 0 4px; }
-
-        .stops-preview { background: #f7fafc; border-radius: 12px; padding: 12px; margin-bottom: 15px; border: 1px solid #edf2f7; }
-        .timeline-item { display: flex; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #edf2f7; }
-        .badge { font-size: 9px; padding: 3px 6px; border-radius: 5px; margin-left: auto; font-weight: bold; }
-        .boarding { background: #e9f5f3; color: #2a9d8f; }
-        .dropping { background: #fef2f2; color: #e63946; }
+        .point b { font-size: 17px; display: block; }
+        .line { flex: 1.5; height: 2px; background: #cbd5e0; margin: 0 15px; }
 
         .map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
         #mapFrame { width: 100%; height: 100%; border: none; }
@@ -60,22 +41,16 @@
 </head>
 <body>
     <header>
-        <h3 style="margin:0; color:var(--secondary)">🚍 BUS TRACKING</h3>
-        <div class="header-right">
-            <div id="liveClock">00:00:00</div>
-            <div id="loggedInLinks" class="hidden">
-                <span id="userEmailDisplay" style="font-size: 13px; color: #666;"></span>
-                <button id="logoutBtn" class="btn-main" style="background:#e63946 !important; padding: 8px 15px;">Log Out</button>
-            </div>
-        </div>
+        <h3>🚍 BUS TRACKING</h3>
+        <div id="liveClock">00:00:00</div>
     </header>
 
     <div class="container">
         <div id="authWall">
-            <div style="text-align:center; background:white; padding:40px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.1); max-width:400px; margin:80px auto;">
-                <h2>Login</h2>
-                <input type="email" id="uEmail" placeholder="enter login id">
-                <input type="password" id="uPass" placeholder="enter password">
+            <div style="text-align:center; background:white; padding:40px; border-radius:20px; max-width:400px; margin:80px auto;">
+                <h2>Admin Login</h2>
+                <input type="email" id="uEmail" placeholder="email">
+                <input type="password" id="uPass" placeholder="password">
                 <button class="btn-main" style="width:100%; margin-top:15px;" id="loginBtn">Login</button>
             </div>
         </div>
@@ -83,47 +58,29 @@
         <div id="mainContent" class="hidden">
             <div class="upcoming">
                 <div class="up-box">
-                    <div style="font-size:10px; color:#aaa;">Next Departure</div>
-                    <b id="depBusName" style="color:var(--accent); font-size:16px;">Waiting...</b>
-                    <div id="depCityInfo" style="font-size:12px;"></div>
+                    <small>Next Departure</small><br>
+                    <b id="depBusName">---</b>
                     <div class="count" id="depCounter">00:00:00</div>
                 </div>
                 <div class="up-box">
-                    <div style="font-size:10px; color:#aaa;">Next Arrival</div>
-                    <b id="arrBusName" style="color:var(--accent); font-size:16px;">Waiting...</b>
-                    <div id="arrCityInfo" style="font-size:12px;"></div>
+                    <small>Next Arrival</small><br>
+                    <b id="arrBusName">---</b>
                     <div class="count" id="arrCounter">00:00:00</div>
                 </div>
             </div>
 
             <div id="adminPortal" class="admin-panel hidden">
-                <h3>🛠 Admin Portal</h3>
                 <input id="travel" placeholder="Travels Name">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                    <select id="depCityAdmin"><option value="">Select Departure City</option></select>
-                    <input id="depTimeInput" placeholder="Time (e.g. 05:50 PM)">
-                    <select id="destCityAdmin"><option value="">Select Destination City</option></select>
-                    <input id="destTimeInput" placeholder="Time (e.g. 06:55 AM)">
+                    <select id="depCityAdmin"><option value="">Departure</option></select>
+                    <input id="depTimeInput" placeholder="Time">
+                    <select id="destCityAdmin"><option value="">Destination</option></select>
+                    <input id="destTimeInput" placeholder="Time">
                 </div>
-                <button onclick="addNewCity()" class="btn-main" style="background:#6c757d; font-size:11px; padding:5px 10px; margin-top:5px;">➕ Add New City Name</button>
                 <div id="dynamicStops"></div>
-                <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin:10px 0;">➕ Add Route Stop</button>
+                <button onclick="addStopField()" style="width:100%; margin:10px 0;">+ Add Route Stop</button>
                 <input id="trackLink" placeholder="Tracking Link">
-                <button onclick="saveBusToFirebase()" class="btn-main" id="saveBtn" style="width:100%">💾 Save Bus Record</button>
-            </div>
-
-            <div class="search-grid">
-                <input id="searchBox" placeholder="🔍 Search bus name or city...">
-                <select id="stopTypeFilter">
-                    <option value="All">All Stops</option>
-                    <option value="Boarding">Boarding Points</option>
-                    <option value="Dropping">Dropping Points</option>
-                </select>
-                <button onclick="clearAllSearch()" class="btn-main" style="background:#555">Clear All</button>
-            </div>
-            <div class="city-filter-row">
-                <select id="fromCity"><option value="">Select Boarding City</option></select>
-                <select id="toCity"><option value="">Select Destination</option></select>
+                <button onclick="saveBusToFirebase()" class="btn-main" style="width:100%">Save Bus Record</button>
             </div>
 
             <div id="busDisplayArea"></div>
@@ -131,209 +88,126 @@
     </div>
 
     <div class="map-modal" id="mapModal">
-        <button style="position:absolute; top:20px; right:20px; z-index:10000;" onclick="closeMap()">✕ Close</button>
+        <button style="position:absolute; top:20px; right:20px; z-index:10" onclick="closeMap()">✕ Close</button>
         <iframe id="mapFrame"></iframe>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", authDomain: "smart-bus-tracking-2ba21.firebaseapp.com", projectId: "smart-bus-tracking-2ba21" };
+        const firebaseConfig = { apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", projectId: "smart-bus-tracking-2ba21" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        const ADMIN_EMAIL = "admin@wintracking.com";
         let busDataArr = [];
         let allCities = new Set();
 
-        // AUTH & INITIAL LOAD
         onAuthStateChanged(auth, user => {
-            const main = document.getElementById('mainContent'), wall = document.getElementById('authWall'), adminPortal = document.getElementById('adminPortal');
             if (user) {
-                main.classList.remove('hidden'); wall.classList.add('hidden');
-                document.getElementById('loggedInLinks').classList.remove('hidden');
-                document.getElementById('userEmailDisplay').innerText = user.email;
-                if (user.email === ADMIN_EMAIL) adminPortal.classList.remove('hidden');
+                mainContent.classList.remove('hidden'); authWall.classList.add('hidden');
+                if (user.email === "admin@wintracking.com") adminPortal.classList.remove('hidden');
                 rebuildUI();
-            } else {
-                main.classList.add('hidden'); wall.classList.remove('hidden');
             }
         });
 
-        // TIME UTILITY
-        function parseTimeToDate(timeStr) {
-            if (!timeStr || !timeStr.includes(" ")) return null;
-            const now = new Date();
-            let [time, mod] = timeStr.split(" ");
+        // TIME PARSER
+        function parseTime(t) {
+            if (!t || !t.includes(" ")) return null;
+            let [time, mod] = t.split(" ");
             let [h, m] = time.split(":").map(Number);
-            if (mod.toUpperCase() === "PM" && h !== 12) h += 12;
-            if (mod.toUpperCase() === "AM" && h === 12) h = 0;
-            let target = new Date(); target.setHours(h, m, 0, 0);
-            if (target < now && target.getHours() < 12) target.setDate(target.getDate() + 1);
-            return target;
+            if (mod === "PM" && h !== 12) h += 12;
+            let d = new Date(); d.setHours(h, m, 0);
+            return d;
         }
 
-        // SMART UI REBUILD
+        // UI SYNC
         window.rebuildUI = function() {
             const listArea = document.getElementById('busDisplayArea');
-            const term = searchBox.value.trim().toLowerCase();
-            const from = fromCity.value, to = toCity.value;
-            const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
-            
             listArea.innerHTML = "";
 
-            let filtered = busDataArr.filter(b => {
-                const cities = [b.depCity, b.destCity, ...(b.route || []).map(r => r.city)].map(c => c ? c.toLowerCase() : "");
-                const matchText = b.travel.toLowerCase().includes(term) || cities.some(c => c.includes(term));
-                const matchFrom = !from || b.depCity === from;
-                const matchTo = !to || b.destCity === to;
-                return matchText && matchFrom && matchTo;
-            });
-
-            filtered.forEach(b => {
+            busDataArr.forEach(b => {
                 const card = document.createElement("div"); card.className = "card";
                 const totalDist = 650;
                 const progress = Math.min(((b.live_km || 0) / totalDist) * 100, 100);
-
-                // Identify Next Stop
-                let nextStop = b.destCity, nextTime = b.destTime;
+                
+                // Next Stop Logic
+                let nextStop = b.destCity;
                 if(b.route && b.live_km > 0) {
                     const upcoming = b.route.find(s => (s.km_marker || 0) > b.live_km);
-                    if(upcoming) { nextStop = upcoming.city; nextTime = upcoming.time; }
+                    if(upcoming) nextStop = upcoming.city;
                 }
 
-                // ETA Logic (45km/h avg)
-                const remKm = Math.max(0, totalDist - (b.live_km || 0));
-                const etaTime = b.final_eta || (new Date(Date.now() + (remKm/45)*3600000)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-
                 card.innerHTML = `
-                    <div class="bus-header">
-                        <div class="travel-name">🚍 ${b.travel}</div>
-                        <div class="status-badge ${b.live_km > 0.5 ? 'status-on-route':'status-waiting'}">
-                            <span class="${b.live_km > 0.5 ? 'dot':''}"></span> ${b.status || (b.live_km > 0.5 ? 'Moving':'Stationary')}
-                        </div>
-                        ${isAdmin ? `<button onclick="triggerDelete('${b.id}')" style="background:red; color:white; border:none; padding:5px; border-radius:5px; cursor:pointer">Del</button>`:''}
+                <div class="bus-header">
+                    <b style="font-size:18px">🚍 ${b.travel}</b>
+                    <div class="status-badge status-on-route">${b.status || 'Stationary'}</div>
+                </div>
+                <div class="progress-container">
+                    <div style="display:flex; justify-content:space-between; font-size:12px;">
+                        <span>Progress: <b>${b.live_km || 0} KM</b></span>
+                        <span style="color:#e63946">Remaining: <b>${(totalDist - (b.live_km || 0)).toFixed(1)} KM</b></span>
                     </div>
-
-                    <div class="progress-container">
-                        <div style="display:flex; justify-content:space-between; font-size:12px;">
-                            <span>Distance: <b>${b.live_km || 0} KM</b></span>
-                            <span style="color:#e63946">Remaining: <b>${remKm.toFixed(1)} KM</b></span>
-                        </div>
-                        <div class="progress-bar-bg"><div class="progress-fill" style="width: ${progress}%"></div></div>
-                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:5px; color:#555;">
-                            <span>Next: <b>${nextStop}</b> (${nextTime})</span>
-                            <span>Final Arrival: <b>${etaTime}</b></span>
-                        </div>
+                    <div class="bar-bg"><div class="bar-fill" style="width: ${progress}%"></div></div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#555;">
+                        <span>Next: <b>${nextStop}</b></span>
+                        <span>Final Arrival: <b>${b.final_eta || '--'}</b></span>
                     </div>
-
-                    <div class="route-visual">
-                        <div class="point"><b>${b.depCity}</b><br><small>${b.depTime}</small></div>
-                        <div class="line"></div>
-                        <div class="point"><b>${b.destCity}</b><br><small>${b.destTime}</small></div>
-                    </div>
-
-                    <div class="stops-preview">
-                        ${(b.route || []).map(r => `
-                            <div class="timeline-item">
-                                <span>• <b>${r.city}</b></span>
-                                <span class="badge ${r.type ? r.type.toLowerCase() : 'boarding'}">${r.type || 'Point'}</span>
-                                <span style="margin-left:auto">${r.time}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <button class="btn-main" style="width:100%" onclick="openMap('${b.link}')">📍 Track Live Location</button>
-                `;
+                </div>
+                <div class="route-visual">
+                    <div class="point"><b>${b.depCity}</b><small>${b.depTime}</small></div>
+                    <div class="line"></div>
+                    <div class="point"><b>${b.destCity}</b><small>${b.destTime}</small></div>
+                </div>
+                <button class="btn-main" style="width:100%" onclick="openMap('${b.link}')">📍 Track Live Map</button>`;
                 listArea.appendChild(card);
             });
+            updateDashboard();
         };
 
-        // DASHBOARD COUNTERS
         function updateDashboard() {
             const now = new Date();
-            const deps = busDataArr.map(b => ({b, t: parseTimeToDate(b.depTime)})).filter(x => x.t && x.t > now).sort((a,b)=>a.t-b.t);
-            const arrs = busDataArr.map(b => ({b, t: parseTimeToDate(b.destTime)})).filter(x => x.t && x.t > now).sort((a,b)=>a.t-b.t);
-
+            const deps = busDataArr.map(b => ({b, t: parseTime(b.depTime)})).filter(x => x.t > now).sort((a,b)=>a.t-b.t);
             if(deps.length > 0) {
-                document.getElementById('depBusName').innerText = deps[0].b.travel;
-                document.getElementById('depCityInfo').innerText = deps[0].b.depCity;
-                updateCounter('depCounter', deps[0].t);
-            }
-            if(arrs.length > 0) {
-                document.getElementById('arrBusName').innerText = arrs[0].b.travel;
-                document.getElementById('arrCityInfo').innerText = arrs[0].b.destCity;
-                updateCounter('arrCounter', arrs[0].t);
+                depBusName.innerText = deps[0].b.travel;
+                const diff = Math.max(0, Math.floor((deps[0].t - now) / 1000));
+                depCounter.innerText = `${Math.floor(diff/3600)}h ${Math.floor((diff%3600)/60)}m`;
             }
         }
 
-        function updateCounter(id, target) {
-            const diff = Math.max(0, Math.floor((target - new Date()) / 1000));
-            const h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60), s = diff%60;
-            document.getElementById(id).innerText = `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
-        }
-
-        // DATABASE LISTENER
         onSnapshot(collection(db, "buses"), snap => {
             busDataArr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            allCities.clear();
-            busDataArr.forEach(b => { 
-                if(b.depCity) allCities.add(b.depCity); 
-                if(b.destCity) allCities.add(b.destCity); 
-                (b.route || []).forEach(s => allCities.add(s.city)); 
-            });
-            updateCityDropdowns(); rebuildUI();
+            rebuildUI();
         });
 
-        // ADMIN SAVE LOGIC
         window.saveBusToFirebase = async () => {
             const link = document.getElementById('trackLink').value;
-            const targetId = link.split('/').pop() || "BUS_" + Date.now();
+            const targetId = link.split('/').pop() || "NEW_BUS";
             const stops = [];
             document.querySelectorAll('.stop-entry').forEach(r => {
                 const city = r.querySelector('.s-city').value;
-                stops.push({ 
-                    city, 
-                    time: r.querySelector('.s-time').value, 
-                    type: r.querySelector('.s-type').value,
-                    km_marker: parseInt(prompt(`Enter KM distance for ${city} from start:`)) || 0 
-                });
+                stops.push({ city, time: r.querySelector('.s-time').value, km_marker: parseInt(prompt(`KM for ${city}:`)) || 0 });
             });
-
             await setDoc(doc(db, "buses", targetId), {
                 travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value,
                 destCity: destCityAdmin.value, destTime: destTimeInput.value, link: link,
-                route: stops, live_km: 0, status: "Stationary", remaining_km: 650
+                route: stops, live_km: 0, status: "Stationary"
             });
-            alert("Saved and Tracking ID set as: " + targetId);
             location.reload();
         };
 
-        // UI HELPERS
-        window.updateCityDropdowns = () => {
-            const opts = `<option value="">Select City</option>` + Array.from(allCities).sort().map(c => `<option value="${c}">${c}</option>`).join('');
-            ['depCityAdmin', 'destCityAdmin', 'fromCity', 'toCity'].forEach(id => { const el = document.getElementById(id); const v = el.value; el.innerHTML = opts; el.value = v; });
-        };
-
         window.addStopField = () => {
-            const d = document.createElement("div"); d.className = "stop-entry"; d.style.display="flex"; d.style.gap="5px"; d.style.marginBottom="5px";
-            d.innerHTML = `<select class="s-city">${Array.from(allCities).map(c => `<option value="${c}">${c}</option>`).join('')}</select><input class="s-time" placeholder="Time"><select class="s-type"><option value="Boarding">Boarding</option><option value="Dropping">Dropping</option></select><button onclick="this.parentElement.remove()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px;">X</button>`;
+            const d = document.createElement("div"); d.className = "stop-entry"; d.style.display="flex"; d.style.gap="5px";
+            d.innerHTML = `<input class="s-city" placeholder="City"><input class="s-time" placeholder="Time">`;
             document.getElementById('dynamicStops').appendChild(d);
         };
 
-        window.triggerDelete = async (id) => { if (confirm("Delete bus?")) await deleteDoc(doc(db, "buses", id)); };
-        window.openMap = (u) => { if(!u) return alert("No link"); mapFrame.src = u; mapModal.style.display = 'block'; };
+        window.openMap = (u) => { mapFrame.src = u; mapModal.style.display = 'block'; };
         window.closeMap = () => { mapModal.style.display = 'none'; mapFrame.src = ''; };
-        window.addNewCity = () => { const c = prompt("New City Name:"); if(c) { allCities.add(c); updateCityDropdowns(); } };
-        window.clearAllSearch = () => { searchBox.value = ""; fromCity.value = ""; toCity.value = ""; rebuildUI(); };
-
-        loginBtn.onclick = () => signInWithEmailAndPassword(auth, uEmail.value.trim(), uPass.value).catch(e => alert(e.message));
-        logoutBtn.onclick = () => signOut(auth).then(() => location.reload());
-        setInterval(() => { liveClock.innerText = new Date().toLocaleTimeString(); if(busDataArr.length > 0) updateDashboard(); }, 1000);
-        searchBox.oninput = rebuildUI; fromCity.onchange = rebuildUI; toCity.onchange = rebuildUI;
+        loginBtn.onclick = () => signInWithEmailAndPassword(auth, uEmail.value, uPass.value);
+        setInterval(() => { liveClock.innerText = new Date().toLocaleTimeString(); }, 1000);
     </script>
 </body>
 </html>
