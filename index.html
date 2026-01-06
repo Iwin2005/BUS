@@ -202,6 +202,25 @@ function getTargetTime(bus, cityName) {
     return stop ? parseTimeToMinutes(stop.time) : parseTimeToMinutes(bus.depTime);
 }
 
+/* --- HELPER FUNCTION TO UPDATE CITY DROPDOWNS --- */
+function updateCityDropdowns() {
+    const sorted = Array.from(allCities).sort();
+    const opts = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
+    
+    // Update all city dropdowns
+    document.getElementById('depCityAdmin').innerHTML = `<option value="">Select Departure</option>` + opts;
+    document.getElementById('destCityAdmin').innerHTML = `<option value="">Select Destination</option>` + opts;
+    document.getElementById('fromCity').innerHTML = `<option value="">Select Boarding City</option>` + opts;
+    document.getElementById('toCity').innerHTML = `<option value="">Select Destination</option>` + opts;
+    
+    // Also update the stop entry dropdowns that already exist
+    document.querySelectorAll('.s-city').forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = opts;
+        select.value = currentValue; // Try to preserve the selected value
+    });
+}
+
 /* --- RESULT ENGINE --- */
 function rebuildUI() {
     const term = searchBox.value.trim().toLowerCase();
@@ -275,16 +294,16 @@ onSnapshot(collection(db, "buses"), snap => {
     busDataArr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     allCities.clear();
     busDataArr.forEach(b => { 
-        allCities.add(b.depCity); allCities.add(b.destCity); 
+        allCities.add(b.depCity); 
+        allCities.add(b.destCity); 
         b.route?.forEach(s => allCities.add(s.city)); 
     });
-    const sorted = Array.from(allCities).sort();
-    const opts = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('depCityAdmin').innerHTML = `<option value="">Select Departure</option>` + opts;
-    document.getElementById('destCityAdmin').innerHTML = `<option value="">Select Destination</option>` + opts;
-    document.getElementById('fromCity').innerHTML = `<option value="">Select Boarding City</option>` + opts;
-    document.getElementById('toCity').innerHTML = `<option value="">Select Destination</option>` + opts;
-    updateDashboard(); rebuildUI();
+    
+    // Use the helper function to update all dropdowns
+    updateCityDropdowns();
+    
+    updateDashboard(); 
+    rebuildUI();
 });
 
 /* --- ADMIN ACTIONS --- */
@@ -297,6 +316,16 @@ window.triggerEdit = (id) => {
     document.getElementById('destCityAdmin').value = bus.destCity;
     document.getElementById('destTimeInput').value = bus.destTime;
     document.getElementById('trackLink').value = bus.link;
+    
+    // Clear and repopulate dynamic stops
+    const dynamicStops = document.getElementById('dynamicStops');
+    dynamicStops.innerHTML = '';
+    if (bus.route && bus.route.length > 0) {
+        bus.route.forEach(stop => {
+            addStopField(stop.city, stop.time, stop.type);
+        });
+    }
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -304,26 +333,129 @@ window.triggerDelete = async (id) => { if(confirm("Delete?")) await deleteDoc(do
 window.saveBusToFirebase = async () => {
     const id = document.getElementById('editingBusId').value;
     const stops = [];
-    document.querySelectorAll('.stop-entry').forEach(r => stops.push({city: r.querySelector('.s-city').value, time: r.querySelector('.s-time').value, type: r.querySelector('.s-type').value}));
-    const payload = { travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value, destCity: destCityAdmin.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
-    id ? await updateDoc(doc(db, "buses", id), payload) : await addDoc(collection(db, "buses"), payload);
-    location.reload();
+    document.querySelectorAll('.stop-entry').forEach(r => {
+        const city = r.querySelector('.s-city').value;
+        const time = r.querySelector('.s-time').value;
+        const type = r.querySelector('.s-type').value;
+        if (city && time && type) {
+            stops.push({city: city, time: time, type: type});
+        }
+    });
+    const payload = { 
+        travel: travel.value, 
+        depCity: depCityAdmin.value, 
+        depTime: depTimeInput.value, 
+        destCity: destCityAdmin.value, 
+        destTime: destTimeInput.value, 
+        link: trackLink.value, 
+        route: stops 
+    };
+    
+    if (id) {
+        await updateDoc(doc(db, "buses", id), payload);
+    } else {
+        await addDoc(collection(db, "buses"), payload);
+    }
+    
+    // Clear the form
+    document.getElementById('editingBusId').value = '';
+    document.getElementById('travel').value = '';
+    document.getElementById('depCityAdmin').value = '';
+    document.getElementById('depTimeInput').value = '';
+    document.getElementById('destCityAdmin').value = '';
+    document.getElementById('destTimeInput').value = '';
+    document.getElementById('trackLink').value = '';
+    document.getElementById('dynamicStops').innerHTML = '';
 };
 
-window.addNewCity = () => { const c = prompt("City Name:"); if(c) { allCities.add(c); rebuildUI(); } };
-window.addStopField = () => {
-    const d = document.createElement("div"); d.style.display="flex"; d.style.gap="5px"; d.className="stop-entry";
-    d.innerHTML = `<select class="s-city">${Array.from(allCities).sort().map(c=>`<option value="${c}">${c}</option>`).join('')}</select><input placeholder="Time" class="s-time"><select class="s-type"><option value="Boarding">Boarding</option><option value="Dropping">Dropping</option></select><button onclick="this.parentElement.remove()" style="background:red; color:white; width:40px; border:none; border-radius:5px">X</button>`;
+window.addNewCity = () => { 
+    const c = prompt("City Name:"); 
+    if(c && c.trim() !== '') { 
+        allCities.add(c.trim()); 
+        updateCityDropdowns(); // Update all dropdowns
+        rebuildUI(); 
+        alert(`City "${c}" added successfully!`);
+    } else if (c !== null) {
+        alert("City name cannot be empty!");
+    }
+};
+
+window.addStopField = (city = '', time = '', type = 'Boarding') => {
+    const d = document.createElement("div"); 
+    d.style.display = "flex"; 
+    d.style.gap = "5px"; 
+    d.style.marginBottom = "5px";
+    d.className = "stop-entry";
+    
+    // Get the latest sorted cities for options
+    const sorted = Array.from(allCities).sort();
+    const opts = sorted.map(c => `<option value="${c}" ${c === city ? 'selected' : ''}>${c}</option>`).join('');
+    
+    d.innerHTML = `
+        <select class="s-city" style="flex: 1;">
+            <option value="">Select City</option>
+            ${opts}
+        </select>
+        <input placeholder="Time (e.g. 08:30 PM)" class="s-time" style="flex: 1;" value="${time}">
+        <select class="s-type" style="flex: 1;">
+            <option value="Boarding" ${type === 'Boarding' ? 'selected' : ''}>Boarding</option>
+            <option value="Dropping" ${type === 'Dropping' ? 'selected' : ''}>Dropping</option>
+        </select>
+        <button onclick="this.parentElement.remove()" style="background:red; color:white; width:40px; border:none; border-radius:5px; cursor:pointer">X</button>
+    `;
     document.getElementById('dynamicStops').appendChild(d);
 };
 
 /* --- UI HANDLERS --- */
-document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, uEmail.value, uPass.value);
+document.getElementById('loginBtn').onclick = () => {
+    const email = uEmail.value.trim();
+    const password = uPass.value;
+    if (email && password) {
+        signInWithEmailAndPassword(auth, email, password)
+            .catch(error => {
+                alert("Login failed: " + error.message);
+            });
+    } else {
+        alert("Please enter both email and password");
+    }
+};
+
 document.getElementById('logoutBtn').onclick = () => signOut(auth);
-window.clearAllSearch = () => { searchBox.value = ""; fromCity.value = ""; toCity.value = ""; stopTypeFilter.value = "All"; sortOption.value = "none"; rebuildUI(); };
-window.openMap = (u) => { mapFrame.src = u; mapModal.style.display = 'block'; };
-window.closeMap = () => { mapFrame.src = ''; mapModal.style.display = 'none'; };
-searchBox.oninput = rebuildUI; fromCity.onchange = rebuildUI; toCity.onchange = rebuildUI; stopTypeFilter.onchange = rebuildUI; sortOption.onchange = rebuildUI;
+
+window.clearAllSearch = () => { 
+    searchBox.value = ""; 
+    fromCity.value = ""; 
+    toCity.value = ""; 
+    stopTypeFilter.value = "All"; 
+    sortOption.value = "none"; 
+    rebuildUI(); 
+};
+
+window.openMap = (u) => { 
+    if (!u) {
+        alert("No tracking link available for this bus.");
+        return;
+    }
+    mapFrame.src = u; 
+    mapModal.style.display = 'block'; 
+};
+
+window.closeMap = () => { 
+    mapFrame.src = ''; 
+    mapModal.style.display = 'none'; 
+};
+
+window.exportToExcel = () => {
+    alert("Export to Excel functionality would be implemented here.");
+    // This would typically generate and download an Excel file
+};
+
+// Add event listeners
+searchBox.oninput = rebuildUI; 
+fromCity.onchange = rebuildUI; 
+toCity.onchange = rebuildUI; 
+stopTypeFilter.onchange = rebuildUI; 
+sortOption.onchange = rebuildUI;
 </script>
 </body>
 </html>
