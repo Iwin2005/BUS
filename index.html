@@ -41,6 +41,12 @@
         .status-on-route { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
         .dot { height: 8px; width: 8px; background-color: #10b981; border-radius: 50%; display: inline-block; animation: blink 1.2s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        
+        /* Progress Bar Styling */
+        .progress-container { background: #f0f7ff; padding: 12px; border-radius: 12px; margin: 15px 0; border: 1px solid #e0efff; }
+        .progress-bar-bg { width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { height: 100%; background: #2a9d8f; transition: width 1s ease-in-out; }
+
         .route-visual { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; }
         .point { text-align: center; flex: 1; }
         .point b { font-size: 17px; display: block; color: #1a202c; }
@@ -155,7 +161,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = { apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", authDomain: "smart-bus-tracking-2ba21.firebaseapp.com", projectId: "smart-bus-tracking-2ba21" };
@@ -190,15 +196,6 @@
             }
         });
 
-        function parseTimeToMinutes(timeStr) {
-            if (!timeStr) return 0;
-            let [time, ampm] = timeStr.split(" ");
-            let [h, m] = time.split(":").map(Number);
-            if (ampm === "PM" && h !== 12) h += 12;
-            if (ampm === "AM" && h === 12) h = 0;
-            return h * 60 + m;
-        }
-
         function parseTimeToDate(timeStr) {
             if (!timeStr || !timeStr.includes(" ")) return null;
             const now = new Date();
@@ -222,25 +219,9 @@
                 if (diffHrs <= 5) return `<div class="status-badge status-scheduled">Scheduled to depart</div>`;
                 return `<div class="status-badge status-waiting">Waiting</div>`;
             } else if (now >= depTime && now < arrTime) {
-                let nextStop = bus.destCity;
-                if (bus.route) {
-                    for (let stop of bus.route) {
-                        const sTime = parseTimeToDate(stop.time);
-                        if (sTime < depTime) sTime.setDate(sTime.getDate() + 1);
-                        if (now < sTime) { nextStop = stop.city; break; }
-                    }
-                }
-                return `<div class="status-badge status-on-route"><span class="dot"></span> Departed: Next Stop ${nextStop}</div>`;
+                return `<div class="status-badge status-on-route"><span class="dot"></span> ${bus.status || 'On Route'}</div>`;
             }
-            return `<div class="status-badge status-arrived">Reached Destination</div>`;
-        }
-
-        function getTargetTime(bus, cityName) {
-            if (!cityName) return parseTimeToMinutes(bus.depTime);
-            if (bus.depCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.depTime);
-            if (bus.destCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.destTime);
-            const stop = bus.route?.find(r => r.city.toLowerCase() === cityName.toLowerCase());
-            return stop ? parseTimeToMinutes(stop.time) : parseTimeToMinutes(bus.depTime);
+            return `<div class="status-badge status-waiting">Reached Destination</div>`;
         }
 
         function updateCityDropdowns() {
@@ -250,6 +231,13 @@
             document.getElementById('destCityAdmin').innerHTML = `<option value="">Select Destination</option>` + opts;
             document.getElementById('fromCity').innerHTML = `<option value="">Select Boarding City</option>` + opts;
             document.getElementById('toCity').innerHTML = `<option value="">Select Destination</option>` + opts;
+
+            // CRITICAL FIX: Refresh options for existing dynamic stop fields too
+            document.querySelectorAll('.s-city').forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = `<option value="">City</option>` + opts;
+                select.value = currentVal;
+            });
         }
 
         function rebuildUI() {
@@ -275,17 +263,11 @@
                 return matchText && seq && matchT;
             });
 
-            if (sort !== "none") {
-                const city = from || term;
-                filtered.sort((a, b) => getTargetTime(a, city) - getTargetTime(b, city));
-                if (sort === "late") filtered.reverse();
-            }
-
             listArea.innerHTML = filtered.length === 0 ? "<p style='text-align:center; padding:20px;'>No routes found.</p>" : "";
             filtered.forEach(b => {
                 const card = document.createElement("div"); card.className = "card";
+                const progress = Math.min(((b.live_km || 0) / 650) * 100, 100);
 
-                // CHANGED: Removed .slice(0, 3) and moreStopsCount logic to show all stops
                 card.innerHTML = `
             <div class="bus-header">
                 <div>
@@ -293,6 +275,16 @@
                     ${getBusStatus(b)}
                 </div>
                 <div>${isAdmin ? `<button onclick="triggerEdit('${b.id}')" style="background:#ff9f1c; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer">Edit</button> <button onclick="triggerDelete('${b.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; margin-left:8px">Delete</button>` : ''}</div>
+            </div>
+
+            <div class="progress-container">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
+                    <span style="color: #555;">Live Journey Distance:</span>
+                    <span style="font-weight: bold; color: #2a9d8f;">${b.live_km || 0} KM</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-fill" style="width: ${progress}%"></div>
+                </div>
             </div>
             
             <div class="route-visual">
@@ -376,8 +368,14 @@
         };
 
         window.triggerDelete = async (id) => { if (confirm("Delete?")) await deleteDoc(doc(db, "buses", id)); };
+        
         window.saveBusToFirebase = async () => {
             const id = document.getElementById('editingBusId').value;
+            const link = document.getElementById('trackLink').value;
+            
+            // Extract a Target ID from link for the watcher
+            const targetId = link.split('/').pop() || "NEW_BUS";
+
             const stops = [];
             document.querySelectorAll('.stop-entry').forEach(r => {
                 const city = r.querySelector('.s-city').value;
@@ -385,8 +383,22 @@
                 const type = r.querySelector('.s-type').value;
                 if (city && time && type) stops.push({ city, time, type });
             });
-            const payload = { travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value, destCity: destCityAdmin.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
-            id ? await updateDoc(doc(db, "buses", id), payload) : await addDoc(collection(db, "buses"), payload);
+
+            const payload = { 
+                travel: travel.value, 
+                depCity: depCityAdmin.value, 
+                depTime: depTimeInput.value, 
+                destCity: destCityAdmin.value, 
+                destTime: destTimeInput.value, 
+                link: link, 
+                route: stops,
+                live_km: 0,
+                status: "Stationary"
+            };
+
+            // Use setDoc to force the ID to match our watcher target
+            await setDoc(doc(db, "buses", targetId), payload);
+            alert("Bus Record Saved as: " + targetId);
             location.reload();
         };
 
@@ -394,8 +406,7 @@
             const c = prompt("City Name:");
             if (c && c.trim() !== '') {
                 allCities.add(c.trim());
-                updateCityDropdowns();
-                rebuildUI();
+                updateCityDropdowns(); // This now updates all dynamic stop dropdowns too
             }
         };
 
@@ -405,14 +416,14 @@
             d.style.display = "flex"; d.style.gap = "5px"; d.style.marginBottom = "5px";
             const opts = Array.from(allCities).sort().map(c => `<option value="${c}" ${c === city ? 'selected' : ''}>${c}</option>`).join('');
             d.innerHTML = `
-        <select class="s-city" style="flex:1"><option value="">City</option>${opts}</select>  
-        <input placeholder="Time" class="s-time" style="flex:1" value="${time}">  
-        <select class="s-type" style="flex:1">  
-            <option value="Boarding" ${type === 'Boarding' ? 'selected' : ''}>Boarding</option>  
-            <option value="Dropping" ${type === 'Dropping' ? 'selected' : ''}>Dropping</option>  
-        </select>  
-        <button onclick="this.parentElement.remove()" style="background:red; color:white; border:none; border-radius:5px; width:40px">X</button>  
-    `;
+                <select class="s-city" style="flex:1"><option value="">City</option>${opts}</select>  
+                <input placeholder="Time" class="s-time" style="flex:1" value="${time}">  
+                <select class="s-type" style="flex:1">  
+                    <option value="Boarding" ${type === 'Boarding' ? 'selected' : ''}>Boarding</option>  
+                    <option value="Dropping" ${type === 'Dropping' ? 'selected' : ''}>Dropping</option>  
+                </select>  
+                <button onclick="this.parentElement.remove()" style="background:red; color:white; border:none; border-radius:5px; width:40px">X</button>  
+            `;
             document.getElementById('dynamicStops').appendChild(d);
         };
 
