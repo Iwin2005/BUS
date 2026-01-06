@@ -4,12 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BUS TRACKING</title>
+
 <style>
-:root { --primary:#2a9d8f; --secondary:#023047; --accent:#ffd60a; --bg:#f0f2f5; }
-body { margin:0; font-family:'Segoe UI',sans-serif; background:var(--bg); }
-.hidden{display:none!important}
-.btn-main{background:var(--primary);color:#fff;padding:10px 20px;border:none;border-radius:8px;cursor:pointer}
+:root {
+  --primary:#2a9d8f;
+  --secondary:#023047;
+  --accent:#ffd60a;
+  --bg:#f0f2f5;
+}
+body{margin:0;font-family:'Segoe UI',sans-serif;background:var(--bg)}
+.hidden{display:none}
+header{background:#fff;padding:10px 30px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.btn-main{background:var(--primary);color:#fff;padding:10px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
 .container{max-width:1000px;margin:auto;padding:20px}
+input,select{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #ddd}
+.card{background:#fff;padding:20px;border-radius:15px;margin:15px 0;border-left:6px solid var(--primary)}
+.admin-panel{background:#fff;padding:20px;border:2px dashed var(--primary);border-radius:15px;margin-bottom:20px}
+.timeline-item{display:flex;justify-content:space-between;font-size:13px;border-bottom:1px solid #eee;padding:5px 0}
+.map-modal{position:fixed;inset:0;background:#000c;display:none}
+.map-close{position:absolute;top:15px;right:15px;background:yellow;border:none;width:40px;height:40px;border-radius:50%;font-weight:bold}
 </style>
 </head>
 
@@ -17,60 +30,73 @@ body { margin:0; font-family:'Segoe UI',sans-serif; background:var(--bg); }
 
 <header>
 <h3>🚍 BUS TRACKING</h3>
-<div id="loggedInLinks" class="hidden">
-<span id="userEmailDisplay"></span>
-<button id="logoutBtn" class="btn-main">Logout</button>
+<div>
+<span id="liveClock"></span>
+<button id="logoutBtn" class="btn-main hidden">Logout</button>
 </div>
 </header>
 
 <div class="container">
 
+<!-- LOGIN -->
 <div id="authWall">
-<input id="uEmail" placeholder="email">
-<input id="uPass" type="password" placeholder="password">
-<button id="loginBtn" class="btn-main">Login</button>
+  <input id="uEmail" placeholder="Email">
+  <input id="uPass" type="password" placeholder="Password">
+  <button id="loginBtn" class="btn-main">Login</button>
 </div>
 
+<!-- MAIN -->
 <div id="mainContent" class="hidden">
 
-<div id="adminPortal" class="hidden">
+<!-- ADMIN -->
+<div id="adminPortal" class="admin-panel hidden">
 <h3>🛠 Admin Portal</h3>
 
 <input id="travel" placeholder="Travels Name">
 
 <select id="depCityAdmin"></select>
-<input id="depTimeInput" placeholder="Time">
+<input id="depTimeInput" placeholder="Departure Time">
 
 <select id="destCityAdmin"></select>
-<input id="destTimeInput" placeholder="Time">
+<input id="destTimeInput" placeholder="Arrival Time">
 
-<button onclick="addNewCity()" class="btn-main">➕ Add New City Name</button>
+<button onclick="addNewCity()" class="btn-main" style="background:#555">➕ Add New City</button>
 
 <div id="dynamicStops"></div>
+<button onclick="addStopField()" class="btn-main" style="background:#ddd;color:#000">➕ Add Route Stop</button>
 
 <input id="trackLink" placeholder="Tracking Link">
 <input type="hidden" id="editingBusId">
 
-<button onclick="saveBusToFirebase()" class="btn-main">Save</button>
+<button onclick="saveBus()" class="btn-main">💾 Save Bus</button>
 </div>
+
+<!-- SEARCH -->
+<input id="searchBox" placeholder="Search bus or city">
 
 <select id="fromCity"></select>
 <select id="toCity"></select>
 
-<div id="busDisplayArea"></div>
+<div id="busDisplay"></div>
 
 </div>
+</div>
+
+<!-- MAP -->
+<div id="mapModal" class="map-modal">
+<button class="map-close" onclick="closeMap()">X</button>
+<iframe id="mapFrame" style="width:100%;height:100%"></iframe>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
-apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
-authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
-projectId:"smart-bus-tracking-2ba21"
+ apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
+ authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
+ projectId:"smart-bus-tracking-2ba21"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -78,54 +104,113 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 const ADMIN_EMAIL="admin@wintracking.com";
-let busDataArr=[];
-let allCities=new Set();
 
-/* 🔧 FIX START */
-function refreshCityDropdowns(){
-const sorted=[...allCities].sort();
-const opts=sorted.map(c=>`<option value="${c}">${c}</option>`).join('');
-depCityAdmin.innerHTML=`<option value="">Select Departure City</option>`+opts;
-destCityAdmin.innerHTML=`<option value="">Select Destination City</option>`+opts;
-fromCity.innerHTML=`<option value="">Select Boarding City</option>`+opts;
-toCity.innerHTML=`<option value="">Select Destination</option>`+opts;
-}
+let busData=[];
+let cityList=[];
 
-window.addNewCity=()=>{
-const c=prompt("City Name:");
-if(!c) return;
-allCities.add(c.trim());
-refreshCityDropdowns();
-};
-/* 🔧 FIX END */
+/* CLOCK */
+setInterval(()=>liveClock.innerText=new Date().toLocaleTimeString(),1000);
 
+/* AUTH */
 onAuthStateChanged(auth,user=>{
-if(user){
-mainContent.classList.remove('hidden');
-authWall.classList.add('hidden');
-loggedInLinks.classList.remove('hidden');
-userEmailDisplay.innerText=user.email;
-user.email===ADMIN_EMAIL ? adminPortal.classList.remove('hidden') : adminPortal.classList.add('hidden');
-}else{
-mainContent.classList.add('hidden');
-authWall.classList.remove('hidden');
-}
+ if(user){
+  authWall.classList.add('hidden');
+  mainContent.classList.remove('hidden');
+  logoutBtn.classList.remove('hidden');
+  if(user.email===ADMIN_EMAIL) adminPortal.classList.remove('hidden');
+ } else {
+  authWall.classList.remove('hidden');
+  mainContent.classList.add('hidden');
+ }
 });
 
-onSnapshot(collection(db,"buses"),snap=>{
-busDataArr=snap.docs.map(d=>d.data());
-allCities.clear();
-busDataArr.forEach(b=>{
-allCities.add(b.depCity);
-allCities.add(b.destCity);
-b.route?.forEach(r=>allCities.add(r.city));
-});
-refreshCityDropdowns();
-});
-
+/* LOGIN */
 loginBtn.onclick=()=>signInWithEmailAndPassword(auth,uEmail.value,uPass.value);
 logoutBtn.onclick=()=>signOut(auth);
 
+/* LOAD CITIES */
+onSnapshot(collection(db,"cities"),snap=>{
+ cityList=snap.docs.map(d=>d.data().name);
+ refreshCityDropdowns();
+});
+
+/* LOAD BUSES */
+onSnapshot(collection(db,"buses"),snap=>{
+ busData=snap.docs.map(d=>({id:d.id,...d.data()}));
+ renderBuses();
+});
+
+/* REFRESH DROPDOWNS */
+function refreshCityDropdowns(){
+ const opts=cityList.sort().map(c=>`<option value="${c}">${c}</option>`).join('');
+ depCityAdmin.innerHTML=`<option value="">Departure</option>`+opts;
+ destCityAdmin.innerHTML=`<option value="">Destination</option>`+opts;
+ fromCity.innerHTML=`<option value="">From</option>`+opts;
+ toCity.innerHTML=`<option value="">To</option>`+opts;
+}
+
+/* ADD CITY */
+window.addNewCity=async()=>{
+ const city=prompt("Enter City Name");
+ if(!city) return;
+ if(cityList.some(c=>c.toLowerCase()===city.toLowerCase())){
+  alert("City already exists");
+  return;
+ }
+ await addDoc(collection(db,"cities"),{name:city.trim()});
+};
+
+/* ADD STOP */
+window.addStopField=()=>{
+ const d=document.createElement("div");
+ d.innerHTML=`
+ <select class="s-city">${cityList.map(c=>`<option>${c}</option>`)}</select>
+ <input class="s-time" placeholder="Time">
+ <select class="s-type"><option>Boarding</option><option>Dropping</option></select>
+ <button onclick="this.parentElement.remove()">X</button>
+ `;
+ dynamicStops.appendChild(d);
+};
+
+/* SAVE BUS */
+window.saveBus=async()=>{
+ const stops=[...document.querySelectorAll('.s-city')].map((_,i)=>({
+  city:document.querySelectorAll('.s-city')[i].value,
+  time:document.querySelectorAll('.s-time')[i].value,
+  type:document.querySelectorAll('.s-type')[i].value
+ }));
+ const payload={
+  travel:travel.value,
+  depCity:depCityAdmin.value,
+  depTime:depTimeInput.value,
+  destCity:destCityAdmin.value,
+  destTime:destTimeInput.value,
+  link:trackLink.value,
+  route:stops
+ };
+ editingBusId.value
+ ? await updateDoc(doc(db,"buses",editingBusId.value),payload)
+ : await addDoc(collection(db,"buses"),payload);
+
+ alert("Saved");
+};
+
+/* RENDER */
+function renderBuses(){
+ busDisplay.innerHTML='';
+ busData.forEach(b=>{
+  busDisplay.innerHTML+=`
+  <div class="card">
+   <b>${b.travel}</b><br>
+   ${b.depCity} ➜ ${b.destCity}
+   <button class="btn-main" onclick="openMap('${b.link}')">Track</button>
+  </div>`;
+ });
+}
+
+/* MAP */
+window.openMap=u=>{mapFrame.src=u;mapModal.style.display="block"};
+window.closeMap=()=>{mapFrame.src="";mapModal.style.display="none"};
 </script>
 </body>
 </html>
