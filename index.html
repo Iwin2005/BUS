@@ -9,31 +9,34 @@
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; }
         header { background: #fff; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         #liveClock { font-family: monospace; font-weight: bold; background: #eee; padding: 5px 10px; border-radius: 5px; }
-        .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .container { max-width: 1000px; margin: auto; padding: 20px; }
         .hidden { display: none !important; }
-        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; }
+        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
 
         /* Dashboard Boxes */
         .upcoming { display: flex; gap: 15px; margin-bottom: 25px; }
-        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; }
+        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .count { font-size: 24px; font-weight: bold; color: var(--accent); }
 
         .admin-panel { background: #fff; border: 2px dashed var(--primary); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
 
-        /* BUS CARD UI */
+        /* BUS CARD UI - RESTORED */
         .card { background: #fff; padding: 22px; border-radius: 20px; margin: 15px 0; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
         .bus-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .status-badge { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: bold; }
-        .status-on-route { background: #d1fae5; color: #065f46; }
+        .status-badge { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+        .status-on-route { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+        .status-waiting { background: #f3f4f6; color: #6b7280; }
         
         .progress-container { background: #f0f7ff; padding: 12px; border-radius: 12px; margin: 15px 0; border: 1px solid #e0efff; }
         .bar-bg { width: 100%; height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; margin: 8px 0; }
         .bar-fill { height: 100%; background: #2a9d8f; transition: width 1.5s ease-in-out; }
         
         .route-visual { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; }
-        .point b { font-size: 17px; display: block; }
-        .line { flex: 1.5; height: 2px; background: #cbd5e0; margin: 0 15px; }
+        .point { text-align: center; flex: 1; }
+        .point b { font-size: 17px; display: block; color: #1a202c; }
+        .point small { font-size: 12px; color: #718096; }
+        .line { flex: 1.5; height: 2px; background: #cbd5e0; position: relative; margin: 0 15px; }
 
         .map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
         #mapFrame { width: 100%; height: 100%; border: none; }
@@ -47,7 +50,7 @@
 
     <div class="container">
         <div id="authWall">
-            <div style="text-align:center; background:white; padding:40px; border-radius:20px; max-width:400px; margin:80px auto;">
+            <div style="text-align:center; background:white; padding:40px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.1); max-width:400px; margin:80px auto;">
                 <h2>Admin Login</h2>
                 <input type="email" id="uEmail" placeholder="email">
                 <input type="password" id="uPass" placeholder="password">
@@ -70,15 +73,16 @@
             </div>
 
             <div id="adminPortal" class="admin-panel hidden">
+                <h3>🛠 Admin Portal</h3>
                 <input id="travel" placeholder="Travels Name">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                    <select id="depCityAdmin"><option value="">Departure</option></select>
-                    <input id="depTimeInput" placeholder="Time">
-                    <select id="destCityAdmin"><option value="">Destination</option></select>
-                    <input id="destTimeInput" placeholder="Time">
+                    <select id="depCityAdmin"><option value="">Departure City</option></select>
+                    <input id="depTimeInput" placeholder="Time (e.g. 05:00 PM)">
+                    <select id="destCityAdmin"><option value="">Destination City</option></select>
+                    <input id="destTimeInput" placeholder="Time (e.g. 05:00 AM)">
                 </div>
                 <div id="dynamicStops"></div>
-                <button onclick="addStopField()" style="width:100%; margin:10px 0;">+ Add Route Stop</button>
+                <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin:10px 0;">+ Add Route Stop</button>
                 <input id="trackLink" placeholder="Tracking Link">
                 <button onclick="saveBusToFirebase()" class="btn-main" style="width:100%">Save Bus Record</button>
             </div>
@@ -88,7 +92,7 @@
     </div>
 
     <div class="map-modal" id="mapModal">
-        <button style="position:absolute; top:20px; right:20px; z-index:10" onclick="closeMap()">✕ Close</button>
+        <button style="position:absolute; top:20px; right:20px; z-index:10000; background:var(--accent); border:none; padding:10px; cursor:pointer;" onclick="closeMap()">✕ Close</button>
         <iframe id="mapFrame"></iframe>
     </div>
 
@@ -103,7 +107,6 @@
         const auth = getAuth(app);
 
         let busDataArr = [];
-        let allCities = new Set();
 
         onAuthStateChanged(auth, user => {
             if (user) {
@@ -113,17 +116,16 @@
             }
         });
 
-        // TIME PARSER
         function parseTime(t) {
             if (!t || !t.includes(" ")) return null;
             let [time, mod] = t.split(" ");
             let [h, m] = time.split(":").map(Number);
-            if (mod === "PM" && h !== 12) h += 12;
+            if (mod.toUpperCase() === "PM" && h !== 12) h += 12;
+            if (mod.toUpperCase() === "AM" && h === 12) h = 0;
             let d = new Date(); d.setHours(h, m, 0);
             return d;
         }
 
-        // UI SYNC
         window.rebuildUI = function() {
             const listArea = document.getElementById('busDisplayArea');
             listArea.innerHTML = "";
@@ -133,7 +135,6 @@
                 const totalDist = 650;
                 const progress = Math.min(((b.live_km || 0) / totalDist) * 100, 100);
                 
-                // Next Stop Logic
                 let nextStop = b.destCity;
                 if(b.route && b.live_km > 0) {
                     const upcoming = b.route.find(s => (s.km_marker || 0) > b.live_km);
@@ -142,8 +143,10 @@
 
                 card.innerHTML = `
                 <div class="bus-header">
-                    <b style="font-size:18px">🚍 ${b.travel}</b>
-                    <div class="status-badge status-on-route">${b.status || 'Stationary'}</div>
+                    <b class="travel-name" style="font-size:18px">🚍 ${b.travel}</b>
+                    <div class="status-badge ${b.live_km > 0 ? 'status-on-route' : 'status-waiting'}">
+                        ${b.live_km > 0 ? 'On Route' : 'Stationary'}
+                    </div>
                 </div>
                 <div class="progress-container">
                     <div style="display:flex; justify-content:space-between; font-size:12px;">
@@ -151,15 +154,15 @@
                         <span style="color:#e63946">Remaining: <b>${(totalDist - (b.live_km || 0)).toFixed(1)} KM</b></span>
                     </div>
                     <div class="bar-bg"><div class="bar-fill" style="width: ${progress}%"></div></div>
-                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#555;">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#555; margin-top:5px;">
                         <span>Next: <b>${nextStop}</b></span>
                         <span>Final Arrival: <b>${b.final_eta || '--'}</b></span>
                     </div>
                 </div>
                 <div class="route-visual">
-                    <div class="point"><b>${b.depCity}</b><small>${b.depTime}</small></div>
+                    <div class="point"><b>${b.depCity}</b><br><small>${b.depTime}</small></div>
                     <div class="line"></div>
-                    <div class="point"><b>${b.destCity}</b><small>${b.destTime}</small></div>
+                    <div class="point"><b>${b.destCity}</b><br><small>${b.destTime}</small></div>
                 </div>
                 <button class="btn-main" style="width:100%" onclick="openMap('${b.link}')">📍 Track Live Map</button>`;
                 listArea.appendChild(card);
@@ -169,11 +172,12 @@
 
         function updateDashboard() {
             const now = new Date();
-            const deps = busDataArr.map(b => ({b, t: parseTime(b.depTime)})).filter(x => x.t > now).sort((a,b)=>a.t-b.t);
+            const deps = busDataArr.map(b => ({b, t: parseTime(b.depTime)})).filter(x => x.t && x.t > now).sort((a,b)=>a.t-b.t);
             if(deps.length > 0) {
                 depBusName.innerText = deps[0].b.travel;
                 const diff = Math.max(0, Math.floor((deps[0].t - now) / 1000));
-                depCounter.innerText = `${Math.floor(diff/3600)}h ${Math.floor((diff%3600)/60)}m`;
+                const h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60);
+                depCounter.innerText = `${h}h ${m}m`;
             }
         }
 
@@ -188,19 +192,20 @@
             const stops = [];
             document.querySelectorAll('.stop-entry').forEach(r => {
                 const city = r.querySelector('.s-city').value;
-                stops.push({ city, time: r.querySelector('.s-time').value, km_marker: parseInt(prompt(`KM for ${city}:`)) || 0 });
+                stops.push({ city, time: r.querySelector('.s-time').value, km_marker: parseInt(prompt(`KM distance from start for ${city}:`)) || 0 });
             });
             await setDoc(doc(db, "buses", targetId), {
                 travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value,
                 destCity: destCityAdmin.value, destTime: destTimeInput.value, link: link,
-                route: stops, live_km: 0, status: "Stationary"
+                route: stops, live_km: 0
             });
+            alert("Saved as: " + targetId);
             location.reload();
         };
 
         window.addStopField = () => {
             const d = document.createElement("div"); d.className = "stop-entry"; d.style.display="flex"; d.style.gap="5px";
-            d.innerHTML = `<input class="s-city" placeholder="City"><input class="s-time" placeholder="Time">`;
+            d.innerHTML = `<input class="s-city" placeholder="City" style="flex:1"><input class="s-time" placeholder="Time" style="flex:1">`;
             document.getElementById('dynamicStops').appendChild(d);
         };
 
