@@ -5,66 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BUS TRACKING</title>
     <style>
-        :root { --primary: #2a9d8f; --secondary: #023047; --accent: #ffd60a; --bg: #0f172a; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f8fafc; }
-        header { background: #1e293b; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); position: sticky; top: 0; z-index: 1000; }
+        :root { --primary: #2a9d8f; --secondary: #023047; --accent: #ffd60a; --bg: #f0f2f5; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; }
+        header { background: #fff; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header-right { display: flex; align-items: center; gap: 15px; }
-        #liveClock { font-family: monospace; font-weight: bold; color: var(--accent); background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 5px; }
+        #liveClock { font-family: monospace; font-weight: bold; color: var(--secondary); background: #eee; padding: 5px 10px; border-radius: 5px; }
         .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .container { max-width: 1000px; margin: auto; padding: 20px; }
         .hidden { display: none !important; }
-        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #334155; box-sizing: border-box; font-size: 14px; background: #1e293b; color: white; }
+        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
 
         /* Dashboard Alignment */
         .upcoming { display: flex; gap: 15px; margin-bottom: 25px; }
-        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.2); border: 1px solid #334155; }
+        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .count { font-size: 28px; font-weight: bold; font-family: monospace; color: #fff; }
 
-        /* Modern Card Styling */
-        .card { background: #1e293b; padding: 25px; border-radius: 25px; margin: 15px 0; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        /* Search Layout */
+        .search-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; background: #fff; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
+        .city-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+
+        /* Admin Portal */
+        .admin-panel { background: #fff; border: 2px dashed var(--primary); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
+
+        /* --- MODERN BUS CARD CSS --- */
+        .card { 
+            background: #fff; 
+            padding: 22px; 
+            border-radius: 20px; 
+            margin: 15px 0; 
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06); 
+            border: 1px solid #edf2f7;
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-3px); }
         .bus-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .travel-name { font-size: 22px; font-weight: 800; color: #fff; text-transform: uppercase; }
+        .travel-name { font-size: 18px; font-weight: 800; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         
-        .status-badge { font-size: 11px; padding: 6px 15px; border-radius: 20px; font-weight: bold; display: inline-block; margin-top: 5px; }
-        .status-scheduled { background: rgba(255, 214, 10, 0.1); color: var(--accent); border: 1px solid var(--accent); }
-        .status-on-route { background: rgba(42, 157, 143, 0.1); color: var(--primary); border: 1px solid var(--primary); }
+        .status-badge { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+        .status-waiting { background: #f3f4f6; color: #6b7280; }
+        .status-scheduled { background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
+        .status-on-route { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+        .dot { height: 8px; width: 8px; background-color: #10b981; border-radius: 50%; display: inline-block; animation: blink 1.2s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
-        .route-visual { display: flex; align-items: center; justify-content: space-between; margin: 25px 0; }
+        .route-visual { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; }
         .point { text-align: center; flex: 1; }
-        .point b { font-size: 20px; display: block; color: #fff; }
-        .point span { font-size: 13px; color: #94a3b8; }
-        .line { flex: 1.5; height: 2px; background: #334155; position: relative; margin: 0 15px; }
-        .line::after { content: '▶'; position: absolute; top: -8px; left: 45%; color: var(--primary); font-size: 14px; background: #1e293b; padding: 0 5px; }
+        .point b { font-size: 17px; display: block; color: #1a202c; }
+        .point span { font-size: 12px; color: #718096; font-weight: 600; }
+        .line { flex: 1.5; height: 2px; background: #cbd5e0; position: relative; margin: 0 15px; }
+        .line::after { content: '▶'; position: absolute; top: -8px; left: 45%; color: var(--primary); font-size: 12px; background: #fff; padding: 0 4px; }
 
-        .stops-preview { background: rgba(0,0,0,0.2); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
-        .timeline-item { display: flex; align-items: center; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #334155; }
+        .stops-preview { background: #f7fafc; border-radius: 12px; padding: 12px; margin-bottom: 15px; border: 1px solid #edf2f7; }
+        .timeline-item { display: flex; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #edf2f7; }
         .timeline-item:last-child { border-bottom: none; }
-        .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; margin-left: auto; font-weight: bold; }
-        .boarding { color: var(--primary); }
-        .dropping { color: #ef4444; }
+        .badge { font-size: 9px; padding: 3px 6px; border-radius: 5px; margin-left: auto; font-weight: bold; }
+        .boarding { background: #e9f5f3; color: #2a9d8f; }
+        .dropping { background: #fef2f2; color: #e63946; }
 
-        #welcomeArea { text-align: center; padding: 60px 20px; color: #94a3b8; background: #1e293b; border-radius: 25px; border: 2px dashed #334155; }
+        #welcomeArea { text-align: center; padding: 80px 20px; color: var(--secondary); background: #fff; border-radius: 20px; border: 2px dashed #ddd; }
+
+        /* Map Modal */
         .map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
+        .map-close { position: absolute; top: 15px; right: 15px; background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 50%; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #mapFrame { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <h3 style="margin:0; color:#fff">🚍 WIN BUS TRACKING</h3>
+    <h3 style="margin:0; color:var(--secondary)">🚍 BUS TRACKING</h3>
     <div class="header-right">
         <div id="liveClock">00:00:00</div>
         <div id="loggedInLinks" class="hidden">
-            <button id="logoutBtn" class="btn-main" style="background:#ef4444;">Log Out</button>
+            <span id="userEmailDisplay" style="font-size: 13px; color: #666;"></span>
+            <button id="logoutBtn" class="btn-main" style="background:#e63946 !important; padding: 8px 15px;">Log Out</button>
         </div>
     </div>
 </header>
 
 <div class="container">
     <div id="authWall">
-        <div style="text-align:center; background:#1e293b; padding:40px; border-radius:25px; max-width:400px; margin:80px auto;">
+        <div style="text-align:center; background:white; padding:40px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.1); max-width:400px; margin:80px auto;">
             <h2>Login</h2>
-            <input type="email" id="uEmail" placeholder="Login ID">
-            <input type="password" id="uPass" placeholder="Password">
+            <input type="email" id="uEmail" placeholder="enter login id">
+            <input type="password" id="uPass" placeholder="enter password">
             <button class="btn-main" style="width:100%; margin-top:15px;" id="loginBtn">Login</button>
         </div>
     </div>
@@ -72,50 +96,72 @@
     <div id="mainContent" class="hidden">
         <div class="upcoming">
             <div class="up-box">
-                <div style="font-size:11px; color:#94a3b8;">Next Departure</div>
-                <div id="depDate" style="font-size:12px; font-weight:bold; color:var(--primary);">06/01/2026</div>
-                <b id="depBusName" style="color:var(--accent); font-size:18px;">Ready...</b>
-                <div id="depCounter" class="count">00h 00m 00s</div>
+                <div style="font-size:10px; color:#aaa;">Next Departure</div>
+                <div id="depDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
+                <b id="depBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
+                <div id="depCityInfo" style="font-size:12px;"></div>
+                <div class="count" id="depCounter">00:00:00</div>
             </div>
             <div class="up-box">
-                <div style="font-size:11px; color:#94a3b8;">Next Arrival</div>
-                <div id="arrDate" style="font-size:12px; font-weight:bold; color:var(--primary);">Ready...</div>
-                <b id="arrBusName" style="color:var(--accent); font-size:18px;">Ready...</b>
-                <div id="arrCounter" class="count">00:00:00</div>
+                <div style="font-size:10px; color:#aaa;">Next Arrival</div>
+                <div id="arrDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
+                <b id="arrBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
+                <div id="arrCityInfo" style="font-size:12px;"></div>
+                <div class="count" id="arrCounter">00:00:00</div>
             </div>
         </div>
 
         <div id="adminPortal" class="admin-panel hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                <h3 id="portalTitle">🛠 Admin Portal</h3>
+                <button onclick="exportToExcel()" class="btn-main" style="background:#0077b6; padding:8px 15px; font-size:12px">📊 Export to Excel</button>
+            </div>
             <input id="travel" placeholder="Travels Name">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                <select id="depCityAdmin"></select>
-                <input id="depTimeInput" placeholder="Dep Time (07:00 PM)">
-                <select id="destCityAdmin"></select>
-                <input id="destTimeInput" placeholder="Arr Time (08:00 AM)">
+                <select id="depCityAdmin"><option value="">Select Departure City</option></select>
+                <input id="depTimeInput" placeholder="Time (e.g. 05:50 PM)">
+                <select id="destCityAdmin"><option value="">Select Destination City</option></select>
+                <input id="destTimeInput" placeholder="Time (e.g. 06:55 AM)">
             </div>
+            <button onclick="addNewCity()" class="btn-main" style="background:#6c757d; font-size:11px; padding:5px 10px; margin-top:5px;">➕ Add New City Name</button>
             <div id="dynamicStops"></div>
-            <button onclick="addStopField()" style="width:100%; margin:10px 0; background:#334155; color:white; padding:10px; border-radius:10px; border:none;">+ Add Route Stop</button>
+            <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin-bottom:12px; margin-top:10px;">➕ Add Route Stop</button>
             <input id="trackLink" placeholder="Tracking Link">
             <input type="hidden" id="editingBusId">
-            <button onclick="saveBusToFirebase()" class="btn-main" style="width:100%">💾 Save Bus Record</button>
+            <button onclick="saveBusToFirebase()" class="btn-main" id="saveBtn" style="width:100%">💾 Save Bus Record</button>
         </div>
 
-        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px; margin-bottom:20px;">
+        <div class="search-grid">
             <input id="searchBox" placeholder="🔍 Search bus name or city...">
-            <select id="fromCity"><option value="">Boarding City</option></select>
+            <select id="stopTypeFilter">
+                <option value="All">All Stops</option>
+                <option value="Boarding">Boarding Points</option>
+                <option value="Dropping">Dropping Points</option>
+            </select>
+            <select id="sortOption">
+                <option value="none">Sort By</option>
+                <option value="early">Early Departure</option>
+                <option value="late">Late Departure</option>
+            </select>
+            <button onclick="clearAllSearch()" class="btn-main" style="background:#555">Clear All</button>
+        </div>
+        <div class="city-filter-row">
+            <select id="fromCity"><option value="">Select Boarding City</option></select>
+            <select id="toCity"><option value="">Select Destination</option></select>
         </div>
 
         <div id="welcomeArea">
             <div style="font-size: 50px; margin-bottom: 15px;">🔍</div>
             <h2>Search to get results</h2>
+            <p>Enter a bus name or select a city to see tracking details.</p>
         </div>
-        <div id="busDisplayArea"></div>
+        <div id="busDisplayArea" class="hidden"></div>
     </div>
 </div>
 
 <div class="map-modal" id="mapModal">
-    <iframe id="mapFrame" style="width:100%; height:100%; border:none;"></iframe>
-    <button onclick="closeMap()" style="position:absolute; top:20px; right:20px; padding:10px; background:var(--accent); border:none; border-radius:50%; cursor:pointer;">✕</button>
+    <button class="map-close" onclick="closeMap()">✕</button>
+    <iframe id="mapFrame"></iframe>
 </div>
 
 <script type="module">
@@ -134,21 +180,38 @@ let allCities = new Set();
 
 setInterval(() => { 
     document.getElementById('liveClock').innerText = new Date().toLocaleTimeString(); 
-    updateDashboard(); // Refresh timers every second
+    // Auto-refresh UI statuses every minute based on clock
+    if(!document.getElementById('busDisplayArea').classList.contains('hidden')) rebuildUI();
 }, 1000);
 
+/* --- FIXED ADMIN CHECK --- */
 onAuthStateChanged(auth, user => {
+    const main = document.getElementById('mainContent'), wall = document.getElementById('authWall'), adminPortal = document.getElementById('adminPortal');
     if (user) {
-        document.getElementById('mainContent').classList.remove('hidden');
-        document.getElementById('authWall').classList.add('hidden');
+        main.classList.remove('hidden'); wall.classList.add('hidden'); 
         document.getElementById('loggedInLinks').classList.remove('hidden');
-        if(user.email === ADMIN_EMAIL) document.getElementById('adminPortal').classList.remove('hidden');
+        document.getElementById('userEmailDisplay').innerText = user.email;
+        
+        if(user.email === ADMIN_EMAIL) {
+            adminPortal.classList.remove('hidden');
+        } else {
+            adminPortal.classList.add('hidden');
+        }
         rebuildUI();
     } else {
-        document.getElementById('mainContent').classList.add('hidden');
-        document.getElementById('authWall').classList.remove('hidden');
+        main.classList.add('hidden'); wall.classList.remove('hidden');
     }
 });
+
+/* --- SYSTEM UTILITIES --- */
+function parseTimeToMinutes(timeStr) {
+    if (!timeStr) return 0;
+    let [time, ampm] = timeStr.split(" ");
+    let [h, m] = time.split(":").map(Number);
+    if (ampm === "PM" && h !== 12) h += 12;
+    if (ampm === "AM" && h === 12) h = 0;
+    return h * 60 + m;
+}
 
 function parseTimeToDate(timeStr) {
     if (!timeStr || !timeStr.includes(" ")) return null;
@@ -157,41 +220,86 @@ function parseTimeToDate(timeStr) {
     let [h, m] = time.split(":").map(Number);
     if (mod.toUpperCase() === "PM" && h !== 12) h += 12;
     if (mod.toUpperCase() === "AM" && h === 12) h = 0;
-    let target = new Date();
-    target.setHours(h, m, 0, 0);
+    let target = new Date(); target.setHours(h, m, 0, 0);
+    if (target < now) target.setDate(target.getDate() + 1);
     return target;
 }
 
 function getBusStatus(bus) {
     const now = new Date();
     const depTime = parseTimeToDate(bus.depTime);
-    if (now < depTime) return `<span class="status-badge status-scheduled">Scheduled to depart</span>`;
-    return `<span class="status-badge status-on-route">On Route</span>`;
+    const arrTime = parseTimeToDate(bus.destTime);
+    if (arrTime < depTime) arrTime.setDate(arrTime.getDate() + 1);
+    const diffHrs = (depTime - now) / (1000 * 60 * 60);
+
+    if (now < depTime) {
+        if (diffHrs <= 5) return `<div class="status-badge status-scheduled">Scheduled to depart</div>`;
+        return `<div class="status-badge status-waiting">Waiting</div>`;
+    } else if (now >= depTime && now < arrTime) {
+        let nextStop = bus.destCity;
+        if (bus.route) {
+            for (let stop of bus.route) {
+                const sTime = parseTimeToDate(stop.time);
+                if (sTime < depTime) sTime.setDate(sTime.getDate() + 1);
+                if (now < sTime) { nextStop = stop.city; break; }
+            }
+        }
+        return `<div class="status-badge status-on-route"><span class="dot"></span> Departed: Next Stop ${nextStop}</div>`;
+    }
+    return `<div class="status-badge status-arrived">Reached Destination</div>`;
 }
 
+function getTargetTime(bus, cityName) {
+    if (!cityName) return parseTimeToMinutes(bus.depTime);
+    if (bus.depCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.depTime);
+    if (bus.destCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.destTime);
+    const stop = bus.route?.find(r => r.city.toLowerCase() === cityName.toLowerCase());
+    return stop ? parseTimeToMinutes(stop.time) : parseTimeToMinutes(bus.depTime);
+}
+
+function updateCityDropdowns() {
+    const sorted = Array.from(allCities).sort();
+    const opts = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('depCityAdmin').innerHTML = `<option value="">Select Departure</option>` + opts;
+    document.getElementById('destCityAdmin').innerHTML = `<option value="">Select Destination</option>` + opts;
+    document.getElementById('fromCity').innerHTML = `<option value="">Select Boarding City</option>` + opts;
+    document.getElementById('toCity').innerHTML = `<option value="">Select Destination</option>` + opts;
+}
+
+/* --- RESULT ENGINE (UPGRADED BUS CARD) --- */
 function rebuildUI() {
-    const term = searchBox.value.toLowerCase();
-    const from = fromCity.value;
-    const listArea = document.getElementById('busDisplayArea');
+    const term = searchBox.value.trim().toLowerCase();
+    const from = fromCity.value, to = toCity.value, stopType = stopTypeFilter.value, sort = sortOption.value, listArea = document.getElementById('busDisplayArea'), welcome = document.getElementById('welcomeArea');
     const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
     
-    if (!term && !from) { 
-        document.getElementById('welcomeArea').classList.remove('hidden'); 
-        listArea.innerHTML = ""; 
-        return; 
+    if (!term && !from && !to) { welcome.classList.remove('hidden'); listArea.classList.add('hidden'); return; }
+    welcome.classList.add('hidden'); listArea.classList.remove('hidden');
+
+    let filtered = busDataArr.filter(b => {
+        const stopsData = [{city: b.depCity, type: 'Boarding'}, ...(b.route || []), {city: b.destCity, type: 'Dropping'}];
+        const cityNames = stopsData.map(s => s.city.toLowerCase());
+        const matchText = b.travel.toLowerCase().includes(term) || cityNames.some(c => c.includes(term));
+        let seq = true;
+        if(from && to) {
+            const fIdx = cityNames.indexOf(from.toLowerCase());
+            const tIdx = cityNames.indexOf(to.toLowerCase());
+            seq = (fIdx !== -1 && tIdx !== -1 && fIdx < tIdx);
+        } else if(from) seq = cityNames.includes(from.toLowerCase());
+        else if(to) seq = cityNames.includes(to.toLowerCase());
+        let matchT = (stopType === "All") ? true : stopsData.some(s => s.type === stopType && s.city.toLowerCase().includes((from || term).toLowerCase()));
+        return matchText && seq && matchT;
+    });
+
+    if (sort !== "none") {
+        const city = from || term;
+        filtered.sort((a, b) => getTargetTime(a, city) - getTargetTime(b, city));
+        if (sort === "late") filtered.reverse();
     }
-    document.getElementById('welcomeArea').classList.add('hidden');
 
-    const filtered = busDataArr.filter(b => b.travel.toLowerCase().includes(term) || b.depCity.toLowerCase().includes(term));
-    listArea.innerHTML = "";
-
+    listArea.innerHTML = filtered.length === 0 ? "<p style='text-align:center; padding:20px;'>No routes found.</p>" : "";
     filtered.forEach(b => {
-        const card = document.createElement("div"); 
-        card.className = "card";
-        
-        // BUG FIX: Correct calculation for +X more stops
-        const totalStops = b.route ? b.route.length : 0;
-        const moreStopsCount = totalStops > 3 ? totalStops - 3 : 0;
+        const card = document.createElement("div"); card.className = "card";
+        const stopsCount = b.route ? b.route.length : 0;
 
         card.innerHTML = `
             <div class="bus-header">
@@ -199,58 +307,60 @@ function rebuildUI() {
                     <div class="travel-name">🚍 ${b.travel}</div>
                     ${getBusStatus(b)}
                 </div>
-                ${isAdmin ? `<div><button onclick="triggerEdit('${b.id}')" style="color:var(--primary); background:none; border:none; cursor:pointer;">Edit</button></div>` : ''}
+                <div>${isAdmin ? `<button onclick="triggerEdit('${b.id}')" style="background:#ff9f1c; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer">Edit</button> <button onclick="triggerDelete('${b.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; margin-left:8px">Delete</button>` : ''}</div>
             </div>
+            
             <div class="route-visual">
                 <div class="point"><span>${b.depTime}</span><b>${b.depCity}</b></div>
                 <div class="line"></div>
                 <div class="point"><span>${b.destTime}</span><b>${b.destCity}</b></div>
             </div>
+
             <div class="stops-preview">
-                <div style="font-size:11px; color:#94a3b8; margin-bottom:10px; text-transform:uppercase;">Route Highlights</div>
+                <div style="font-size:10px; color:#999; margin-bottom:5px; text-transform:uppercase">Route Highlights</div>
                 ${(b.route || []).slice(0, 3).map(r => `
                     <div class="timeline-item">
-                        <span style="color:var(--primary); margin-right:10px">•</span>
+                        <span style="color:var(--primary); margin-right:8px">•</span>
                         <span style="flex:1"><b>${r.city}</b></span>
-                        <span style="color:#94a3b8; margin-right:15px">${r.time}</span>
+                        <span style="color:#666; margin-right:10px">${r.time}</span>
                         <span class="badge ${r.type.toLowerCase()}">${r.type}</span>
                     </div>
                 `).join('')}
-                ${moreStopsCount > 0 ? `<div style="text-align:center; font-size:12px; color:#94a3b8; padding-top:10px;">+ ${moreStopsCount} more stops</div>` : ''}
+                ${stopsCount > 3 ? `<div style="text-align:center; font-size:10px; color:#aaa; padding-top:5px;">+ ${stopsCount - 3} more stops</div>` : ''}
             </div>
-            <button class="btn-main" style="width:100%" onclick="openMap('${b.link}')">📍 Track Live Location</button>
-        `;
+
+            <button class="btn-main" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="openMap('${b.link}')">
+                📍 Track Live Location
+            </button>`;
         listArea.appendChild(card);
     });
 }
 
 function updateDashboard() {
-    const now = new Date();
-    const deps = busDataArr.map(b => ({ b, t: parseTimeToDate(b.depTime) })).filter(x => x.t && x.t > now).sort((a,b) => a.t - b.t);
+    const deps = busDataArr.map(b => ({ b, t: parseTimeToDate(b.depTime) })).filter(x => x.t).sort((a,b) => a.t - b.t);
+    const refreshBox = (type, list) => {
+        if (list.length > 0) {
+            const next = list[0];
+            document.getElementById(type + 'Date').innerText = next.t.toLocaleDateString('en-GB');
+            document.getElementById(type + 'BusName').innerText = next.b.travel;
+            document.getElementById(type + 'CityInfo').innerText = `${type==='dep'?next.b.depCity:next.b.destCity} (${type==='dep'?next.b.depTime:next.b.destTime})`;
+            if (window[type+'Int']) clearInterval(window[type+'Int']);
+            window[type+'Int'] = setInterval(() => {
+                const diff = Math.max(0, Math.floor((next.t - new Date()) / 1000));
+                const h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60), s = diff%60;
+                document.getElementById(type+'Counter').innerText = `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+            }, 1000);
+        }
+    };
+    refreshBox('dep', deps);
+    // Arrival logic follows similar sorted filter
     const arrs = busDataArr.map(b => {
         let t = parseTimeToDate(b.destTime);
         let d = parseTimeToDate(b.depTime);
         if (t < d) t.setDate(t.getDate() + 1);
         return { b, t };
-    }).filter(x => x.t && x.t > now).sort((a,b) => a.t - b.t);
-
-    if (deps.length > 0) {
-        document.getElementById('depBusName').innerText = deps[0].b.travel;
-        const diff = Math.floor((deps[0].t - now) / 1000);
-        document.getElementById('depCounter').innerText = formatTime(diff);
-    }
-    if (arrs.length > 0) {
-        document.getElementById('arrBusName').innerText = arrs[0].b.travel;
-        const diff = Math.floor((arrs[0].t - now) / 1000);
-        document.getElementById('arrCounter').innerText = formatTime(diff);
-    }
-}
-
-function formatTime(seconds) {
-    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${h}h ${m}m ${s}s`;
+    }).filter(x => x.t > new Date()).sort((a,b) => a.t - b.t);
+    refreshBox('arr', arrs);
 }
 
 onSnapshot(collection(db, "buses"), snap => {
@@ -260,52 +370,80 @@ onSnapshot(collection(db, "buses"), snap => {
         allCities.add(b.depCity); allCities.add(b.destCity); 
         b.route?.forEach(s => allCities.add(s.city)); 
     });
-    const opts = `<option value="">Boarding City</option>` + Array.from(allCities).sort().map(c => `<option value="${c}">${c}</option>`).join('');
-    ['fromCity', 'depCityAdmin', 'destCityAdmin'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.innerHTML = opts;
-    });
+    updateCityDropdowns();
+    updateDashboard(); 
     rebuildUI();
 });
 
+/* --- ADMIN ACTIONS --- */
+window.triggerEdit = (id) => {
+    const bus = busDataArr.find(b => b.id === id);
+    document.getElementById('editingBusId').value = id;
+    document.getElementById('travel').value = bus.travel;
+    document.getElementById('depCityAdmin').value = bus.depCity;
+    document.getElementById('depTimeInput').value = bus.depTime;
+    document.getElementById('destCityAdmin').value = bus.destCity;
+    document.getElementById('destTimeInput').value = bus.destTime;
+    document.getElementById('trackLink').value = bus.link;
+    const dynamicStops = document.getElementById('dynamicStops');
+    dynamicStops.innerHTML = '';
+    if (bus.route && bus.route.length > 0) {
+        bus.route.forEach(stop => addStopField(stop.city, stop.time, stop.type));
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.triggerDelete = async (id) => { if(confirm("Delete?")) await deleteDoc(doc(db, "buses", id)); };
 window.saveBusToFirebase = async () => {
     const id = document.getElementById('editingBusId').value;
     const stops = [];
-    document.querySelectorAll('.stop-entry').forEach(row => {
-        stops.push({ city: row.querySelector('.s-city').value, time: row.querySelector('.s-time').value, type: row.querySelector('.s-type').value });
+    document.querySelectorAll('.stop-entry').forEach(r => {
+        const city = r.querySelector('.s-city').value;
+        const time = r.querySelector('.s-time').value;
+        const type = r.querySelector('.s-type').value;
+        if (city && time && type) stops.push({city, time, type});
     });
-    const data = { travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value, destCity: destCityAdmin.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
-    id ? await updateDoc(doc(db, "buses", id), data) : await addDoc(collection(db, "buses"), data);
+    const payload = { travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value, destCity: destCityAdmin.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
+    id ? await updateDoc(doc(db, "buses", id), payload) : await addDoc(collection(db, "buses"), payload);
     location.reload();
 };
 
-window.addStopField = (city='', time='', type='Boarding') => {
-    const div = document.createElement("div");
-    div.className = "stop-entry";
-    div.style.display = "flex"; div.style.gap="5px"; div.style.marginTop="5px";
-    div.innerHTML = `<input class="s-city" placeholder="City" value="${city}" style="flex:1"><input class="s-time" placeholder="Time" value="${time}" style="flex:1"><select class="s-type" style="flex:1"><option value="Boarding" ${type==='Boarding'?'selected':''}>Boarding</option><option value="Dropping" ${type==='Dropping'?'selected':''}>Dropping</option></select><button onclick="this.parentElement.remove()" style="background:red; color:white; border:none; padding:5px; border-radius:5px;">X</button>`;
-    document.getElementById('dynamicStops').appendChild(div);
+window.addNewCity = () => { 
+    const c = prompt("City Name:"); 
+    if(c && c.trim() !== '') { 
+        allCities.add(c.trim()); 
+        updateCityDropdowns(); 
+        rebuildUI(); 
+    }
 };
 
-window.triggerEdit = (id) => {
-    const b = busDataArr.find(x => x.id === id);
-    document.getElementById('editingBusId').value = id;
-    document.getElementById('travel').value = b.travel;
-    document.getElementById('depCityAdmin').value = b.depCity;
-    document.getElementById('depTimeInput').value = b.depTime;
-    document.getElementById('destCityAdmin').value = b.destCity;
-    document.getElementById('destTimeInput').value = b.destTime;
-    document.getElementById('trackLink').value = b.link;
-    document.getElementById('dynamicStops').innerHTML = "";
-    b.route?.forEach(r => addStopField(r.city, r.time, r.type));
+window.addStopField = (city = '', time = '', type = 'Boarding') => {
+    const d = document.createElement("div"); 
+    d.className = "stop-entry";
+    d.style.display = "flex"; d.style.gap = "5px"; d.style.marginBottom = "5px";
+    const opts = Array.from(allCities).sort().map(c => `<option value="${c}" ${c === city ? 'selected' : ''}>${c}</option>`).join('');
+    d.innerHTML = `
+        <select class="s-city" style="flex:1"><option value="">City</option>${opts}</select>
+        <input placeholder="Time" class="s-time" style="flex:1" value="${time}">
+        <select class="s-type" style="flex:1">
+            <option value="Boarding" ${type === 'Boarding' ? 'selected' : ''}>Boarding</option>
+            <option value="Dropping" ${type === 'Dropping' ? 'selected' : ''}>Dropping</option>
+        </select>
+        <button onclick="this.parentElement.remove()" style="background:red; color:white; border:none; border-radius:5px; width:40px">X</button>
+    `;
+    document.getElementById('dynamicStops').appendChild(d);
 };
 
-window.openMap = (url) => { if(!url) return alert("No link"); document.getElementById('mapFrame').src = url; document.getElementById('mapModal').style.display='block'; };
-window.closeMap = () => { document.getElementById('mapModal').style.display='none'; document.getElementById('mapFrame').src=""; };
-loginBtn.onclick = () => signInWithEmailAndPassword(auth, uEmail.value, uPass.value).catch(e => alert(e.message));
-logoutBtn.onclick = () => signOut(auth);
-searchBox.oninput = rebuildUI;
-fromCity.onchange = rebuildUI;
+/* --- UI HANDLERS --- */
+document.getElementById('loginBtn').onclick = () => {
+    signInWithEmailAndPassword(auth, uEmail.value.trim(), uPass.value).catch(error => alert("Login failed: " + error.message));
+};
+document.getElementById('logoutBtn').onclick = () => signOut(auth);
+window.clearAllSearch = () => { searchBox.value = ""; fromCity.value = ""; toCity.value = ""; rebuildUI(); };
+window.openMap = (u) => { if (!u) return alert("No link"); mapFrame.src = u; mapModal.style.display = 'block'; };
+window.closeMap = () => { mapFrame.src = ''; mapModal.style.display = 'none'; };
+
+searchBox.oninput = rebuildUI; fromCity.onchange = rebuildUI; toCity.onchange = rebuildUI; stopTypeFilter.onchange = rebuildUI; sortOption.onchange = rebuildUI;
 </script>
 </body>
 </html>
