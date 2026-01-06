@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BUS TRACKING</title>
+<title>BUS TRACKING SYSTEM</title>
 
 <style>
 :root {
@@ -15,14 +15,16 @@
 body{margin:0;font-family:'Segoe UI',sans-serif;background:var(--bg)}
 .hidden{display:none}
 header{background:#fff;padding:10px 30px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.1)}
-.btn-main{background:var(--primary);color:#fff;padding:10px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
+.btn-main{background:var(--primary);color:#fff;padding:10px;border:none;border-radius:8px;cursor:pointer;font-weight:bold; transition: 0.3s;}
+.btn-main:hover{opacity: 0.8;}
 .container{max-width:1000px;margin:auto;padding:20px}
-input,select{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #ddd}
-.card{background:#fff;padding:20px;border-radius:15px;margin:15px 0;border-left:6px solid var(--primary)}
+input,select{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #ddd; box-sizing: border-box;}
+.card{background:#fff;padding:20px;border-radius:15px;margin:15px 0;border-left:6px solid var(--primary); display: flex; justify-content: space-between; align-items: center;}
 .admin-panel{background:#fff;padding:20px;border:2px dashed var(--primary);border-radius:15px;margin-bottom:20px}
-.timeline-item{display:flex;justify-content:space-between;font-size:13px;border-bottom:1px solid #eee;padding:5px 0}
-.map-modal{position:fixed;inset:0;background:#000c;display:none}
-.map-close{position:absolute;top:15px;right:15px;background:yellow;border:none;width:40px;height:40px;border-radius:50%;font-weight:bold}
+.stop-row{display:flex; gap: 5px; margin-bottom: 5px;}
+.stop-row select, .stop-row input{padding: 8px;}
+.map-modal{position:fixed;inset:0;background:#000c;display:none; z-index: 1000;}
+.map-close{position:absolute;top:15px;right:15px;background:var(--accent);border:none;width:40px;height:40px;border-radius:50%;font-weight:bold;cursor:pointer; z-index: 1001;}
 </style>
 </head>
 
@@ -31,61 +33,70 @@ input,select{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px s
 <header>
 <h3>🚍 BUS TRACKING</h3>
 <div>
-<span id="liveClock"></span>
+<span id="liveClock" style="margin-right:15px; font-weight:bold"></span>
 <button id="logoutBtn" class="btn-main hidden">Logout</button>
 </div>
 </header>
 
 <div class="container">
 
-<!-- LOGIN -->
-<div id="authWall">
-  <input id="uEmail" placeholder="Email">
+<div id="authWall" class="card" style="flex-direction: column; border-left: none;">
+  <h2>Login to System</h2>
+  <input id="uEmail" placeholder="Email (admin@wintracking.com)">
   <input id="uPass" type="password" placeholder="Password">
-  <button id="loginBtn" class="btn-main">Login</button>
+  <button id="loginBtn" class="btn-main" style="width:100%; margin-top:10px">Login</button>
 </div>
 
-<!-- MAIN -->
 <div id="mainContent" class="hidden">
 
-<!-- ADMIN -->
 <div id="adminPortal" class="admin-panel hidden">
-<h3>🛠 Admin Portal</h3>
+    <h3>🛠 Admin Portal</h3>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <input id="travel" placeholder="Travels Name">
+        <button onclick="addNewCity()" class="btn-main" style="background:#555">➕ Add New City</button>
+    </div>
 
-<input id="travel" placeholder="Travels Name">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+            <label>Departure</label>
+            <select id="depCityAdmin"></select>
+            <input id="depTimeInput" placeholder="Departure Time (e.g. 09:00 PM)">
+        </div>
+        <div>
+            <label>Arrival</label>
+            <select id="destCityAdmin"></select>
+            <input id="destTimeInput" placeholder="Arrival Time (e.g. 06:00 AM)">
+        </div>
+    </div>
 
-<select id="depCityAdmin"></select>
-<input id="depTimeInput" placeholder="Departure Time">
+    <h4>Route Details (Stops)</h4>
+    <div id="dynamicStops"></div>
+    <button onclick="addStopField()" class="btn-main" style="background:#eee;color:#333; margin-bottom: 15px;">➕ Add Route Stop</button>
 
-<select id="destCityAdmin"></select>
-<input id="destTimeInput" placeholder="Arrival Time">
+    <input id="trackLink" placeholder="Google Maps Tracking URL">
+    <input type="hidden" id="editingBusId">
 
-<button onclick="addNewCity()" class="btn-main" style="background:#555">➕ Add New City</button>
-
-<div id="dynamicStops"></div>
-<button onclick="addStopField()" class="btn-main" style="background:#ddd;color:#000">➕ Add Route Stop</button>
-
-<input id="trackLink" placeholder="Tracking Link">
-<input type="hidden" id="editingBusId">
-
-<button onclick="saveBus()" class="btn-main">💾 Save Bus</button>
+    <button onclick="saveBus()" class="btn-main" style="width: 100%; padding: 15px; font-size: 1.1em;">💾 Save Bus Details</button>
 </div>
 
-<!-- SEARCH -->
-<input id="searchBox" placeholder="Search bus or city">
-
-<select id="fromCity"></select>
-<select id="toCity"></select>
+<div class="card" style="border-left: 6px solid var(--secondary)">
+    <div style="width:100%">
+        <h4>Find a Bus</h4>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+            <select id="fromCity"><option>From</option></select>
+            <select id="toCity"><option>To</option></select>
+        </div>
+    </div>
+</div>
 
 <div id="busDisplay"></div>
 
 </div>
 </div>
 
-<!-- MAP -->
 <div id="mapModal" class="map-modal">
-<button class="map-close" onclick="closeMap()">X</button>
-<iframe id="mapFrame" style="width:100%;height:100%"></iframe>
+    <button class="map-close" onclick="closeMap()">X</button>
+    <iframe id="mapFrame" style="width:100%;height:100%; border:none;"></iframe>
 </div>
 
 <script type="module">
@@ -94,123 +105,179 @@ import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
- apiKey:"AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
- authDomain:"smart-bus-tracking-2ba21.firebaseapp.com",
- projectId:"smart-bus-tracking-2ba21"
+    apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0",
+    authDomain: "smart-bus-tracking-2ba21.firebaseapp.com",
+    projectId: "smart-bus-tracking-2ba21"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const ADMIN_EMAIL="admin@wintracking.com";
-
-let busData=[];
-let cityList=[];
+const ADMIN_EMAIL = "admin@wintracking.com";
+let cityList = [];
+let busData = [];
 
 /* CLOCK */
-setInterval(()=>liveClock.innerText=new Date().toLocaleTimeString(),1000);
+const clockEl = document.getElementById('liveClock');
+setInterval(() => {
+    clockEl.innerText = new Date().toLocaleTimeString();
+}, 1000);
 
-/* AUTH */
-onAuthStateChanged(auth,user=>{
- if(user){
-  authWall.classList.add('hidden');
-  mainContent.classList.remove('hidden');
-  logoutBtn.classList.remove('hidden');
-  if(user.email===ADMIN_EMAIL) adminPortal.classList.remove('hidden');
- } else {
-  authWall.classList.remove('hidden');
-  mainContent.classList.add('hidden');
- }
+/* AUTH STATE */
+onAuthStateChanged(auth, user => {
+    if (user) {
+        document.getElementById('authWall').classList.add('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+        document.getElementById('logoutBtn').classList.remove('hidden');
+        if (user.email === ADMIN_EMAIL) {
+            document.getElementById('adminPortal').classList.remove('hidden');
+        }
+    } else {
+        document.getElementById('authWall').classList.remove('hidden');
+        document.getElementById('mainContent').classList.add('hidden');
+        document.getElementById('logoutBtn').classList.add('hidden');
+    }
 });
 
-/* LOGIN */
-loginBtn.onclick=()=>signInWithEmailAndPassword(auth,uEmail.value,uPass.value);
-logoutBtn.onclick=()=>signOut(auth);
+/* LOGIN/LOGOUT */
+document.getElementById('loginBtn').onclick = () => {
+    const email = document.getElementById('uEmail').value;
+    const pass = document.getElementById('uPass').value;
+    signInWithEmailAndPassword(auth, email, pass).catch(err => alert(err.message));
+};
+document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
-/* LOAD CITIES */
-onSnapshot(collection(db,"cities"),snap=>{
- cityList=snap.docs.map(d=>d.data().name);
- refreshCityDropdowns();
+/* SYNC CITIES */
+onSnapshot(collection(db, "cities"), snap => {
+    cityList = snap.docs.map(d => d.data().name).sort();
+    refreshCityDropdowns();
 });
 
-/* LOAD BUSES */
-onSnapshot(collection(db,"buses"),snap=>{
- busData=snap.docs.map(d=>({id:d.id,...d.data()}));
- renderBuses();
+/* SYNC BUSES */
+onSnapshot(collection(db, "buses"), snap => {
+    busData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderBuses();
 });
 
-/* REFRESH DROPDOWNS */
-function refreshCityDropdowns(){
- const opts=cityList.sort().map(c=>`<option value="${c}">${c}</option>`).join('');
- depCityAdmin.innerHTML=`<option value="">Departure</option>`+opts;
- destCityAdmin.innerHTML=`<option value="">Destination</option>`+opts;
- fromCity.innerHTML=`<option value="">From</option>`+opts;
- toCity.innerHTML=`<option value="">To</option>`+opts;
+function refreshCityDropdowns() {
+    const options = cityList.map(c => `<option value="${c}">${c}</option>`).join('');
+    const selects = ['depCityAdmin', 'destCityAdmin', 'fromCity', 'toCity'];
+    selects.forEach(id => {
+        const el = document.getElementById(id);
+        const placeholder = el.firstElementChild ? el.firstElementChild.innerText : "Select City";
+        el.innerHTML = `<option value="">${placeholder}</option>` + options;
+    });
 }
 
-/* ADD CITY */
-window.addNewCity=async()=>{
- const city=prompt("Enter City Name");
- if(!city) return;
- if(cityList.some(c=>c.toLowerCase()===city.toLowerCase())){
-  alert("City already exists");
-  return;
- }
- await addDoc(collection(db,"cities"),{name:city.trim()});
+/* ADD NEW CITY (FIXED) */
+window.addNewCity = async () => {
+    const cityName = prompt("Enter New City Name:");
+    if (!cityName || cityName.trim() === "") return;
+    
+    const formattedCity = cityName.trim();
+    if (cityList.some(c => c.toLowerCase() === formattedCity.toLowerCase())) {
+        alert("This city already exists in the database.");
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, "cities"), { name: formattedCity });
+    } catch (e) {
+        alert("Error adding city: " + e.message);
+    }
 };
 
-/* ADD STOP */
-window.addStopField=()=>{
- const d=document.createElement("div");
- d.innerHTML=`
- <select class="s-city">${cityList.map(c=>`<option>${c}</option>`)}</select>
- <input class="s-time" placeholder="Time">
- <select class="s-type"><option>Boarding</option><option>Dropping</option></select>
- <button onclick="this.parentElement.remove()">X</button>
- `;
- dynamicStops.appendChild(d);
+/* ADD STOP FIELD */
+window.addStopField = () => {
+    const container = document.getElementById('dynamicStops');
+    const div = document.createElement("div");
+    div.className = "stop-row";
+    div.innerHTML = `
+        <select class="s-city">${cityList.map(c => `<option value="${c}">${c}</option>`).join('')}</select>
+        <input class="s-time" placeholder="Time">
+        <select class="s-type"><option>Boarding</option><option>Dropping</option></select>
+        <button class="btn-main" style="background:#e63946" onclick="this.parentElement.remove()">X</button>
+    `;
+    container.appendChild(div);
 };
 
 /* SAVE BUS */
-window.saveBus=async()=>{
- const stops=[...document.querySelectorAll('.s-city')].map((_,i)=>({
-  city:document.querySelectorAll('.s-city')[i].value,
-  time:document.querySelectorAll('.s-time')[i].value,
-  type:document.querySelectorAll('.s-type')[i].value
- }));
- const payload={
-  travel:travel.value,
-  depCity:depCityAdmin.value,
-  depTime:depTimeInput.value,
-  destCity:destCityAdmin.value,
-  destTime:destTimeInput.value,
-  link:trackLink.value,
-  route:stops
- };
- editingBusId.value
- ? await updateDoc(doc(db,"buses",editingBusId.value),payload)
- : await addDoc(collection(db,"buses"),payload);
+window.saveBus = async () => {
+    const travelName = document.getElementById('travel').value;
+    const depCity = document.getElementById('depCityAdmin').value;
+    const destCity = document.getElementById('destCityAdmin').value;
 
- alert("Saved");
+    if (!travelName || !depCity || !destCity) {
+        alert("Please fill Travels name and basic route details");
+        return;
+    }
+
+    const stops = [...document.querySelectorAll('.stop-row')].map(row => ({
+        city: row.querySelector('.s-city').value,
+        time: row.querySelector('.s-time').value,
+        type: row.querySelector('.s-type').value
+    }));
+
+    const payload = {
+        travel: travelName,
+        depCity: depCity,
+        depTime: document.getElementById('depTimeInput').value,
+        destCity: destCity,
+        destTime: document.getElementById('destTimeInput').value,
+        link: document.getElementById('trackLink').value,
+        route: stops
+    };
+
+    const editId = document.getElementById('editingBusId').value;
+    
+    try {
+        if (editId) {
+            await updateDoc(doc(db, "buses", editId), payload);
+        } else {
+            await addDoc(collection(db, "buses"), payload);
+        }
+        alert("Bus Route Saved Successfully!");
+        // Reset Form
+        document.getElementById('travel').value = "";
+        document.getElementById('dynamicStops').innerHTML = "";
+        document.getElementById('trackLink').value = "";
+    } catch (e) {
+        alert("Error saving: " + e.message);
+    }
 };
 
-/* RENDER */
-function renderBuses(){
- busDisplay.innerHTML='';
- busData.forEach(b=>{
-  busDisplay.innerHTML+=`
-  <div class="card">
-   <b>${b.travel}</b><br>
-   ${b.depCity} ➜ ${b.destCity}
-   <button class="btn-main" onclick="openMap('${b.link}')">Track</button>
-  </div>`;
- });
+/* RENDER BUS CARDS */
+function renderBuses() {
+    const container = document.getElementById('busDisplay');
+    container.innerHTML = '';
+    
+    busData.forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <div>
+                <b style="font-size: 1.2em; color: var(--secondary)">${b.travel}</b><br>
+                <span>${b.depCity} (${b.depTime}) ➜ ${b.destCity} (${b.destTime})</span>
+            </div>
+            <button class="btn-main" onclick="openMap('${b.link}')">📍 Track Live</button>
+        `;
+        container.appendChild(card);
+    });
 }
 
-/* MAP */
-window.openMap=u=>{mapFrame.src=u;mapModal.style.display="block"};
-window.closeMap=()=>{mapFrame.src="";mapModal.style.display="none"};
+/* MAP ACTIONS */
+window.openMap = (url) => {
+    if(!url) return alert("No tracking link available for this bus.");
+    document.getElementById('mapFrame').src = url;
+    document.getElementById('mapModal').style.display = "block";
+};
+
+window.closeMap = () => {
+    document.getElementById('mapFrame').src = "";
+    document.getElementById('mapModal').style.display = "none";
+};
 </script>
+
 </body>
 </html>
