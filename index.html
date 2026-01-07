@@ -73,6 +73,34 @@
         .timeline-done { background: #f0fff4; color: #276749; }
         .timeline-done .badge { background: #c6f6d5; color: #22543d; }
 
+        /* Trip Timeline */
+        .trip-timeline { background: #fff; border-radius: 12px; padding: 15px; margin: 15px 0; border: 1px solid #e2e8f0; }
+        .timeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .timeline-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .timeline-table th { text-align: left; padding: 10px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; }
+        .timeline-table td { padding: 10px; border-bottom: 1px solid #edf2f7; }
+        .time-cell { font-family: monospace; }
+        .delay-good { color: #38a169; }
+        .delay-bad { color: #e53e3e; }
+        .delay-neutral { color: #718096; }
+        
+        /* Journey Summary */
+        .journey-summary { background: linear-gradient(135deg, #2d3748, #4a5568); color: white; border-radius: 12px; padding: 15px; margin: 15px 0; }
+        .summary-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 10px; }
+        .summary-stat { text-align: center; }
+        .summary-value { font-size: 24px; font-weight: bold; color: var(--accent); margin-bottom: 5px; }
+        .summary-label { font-size: 11px; opacity: 0.8; }
+        
+        /* History Section */
+        .history-section { background: #fff; border-radius: 12px; padding: 15px; margin: 15px 0; border: 1px solid #e2e8f0; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .history-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .history-card { background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; }
+        .history-date { font-size: 12px; color: #718096; margin-bottom: 5px; }
+        .history-status { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; margin-bottom: 8px; }
+        .status-completed { background: #c6f6d5; color: #22543d; }
+        .history-times { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
+        
         /* Welcome Area */
         #welcomeArea { text-align: center; padding: 80px 20px; color: var(--secondary); background: #fff; border-radius: 20px; border: 2px dashed #ddd; margin: 20px 0; }
         
@@ -80,6 +108,11 @@
         .map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
         .map-close { position: absolute; top: 15px; right: 15px; background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 50%; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         #mapFrame { width: 100%; height: 100%; border: none; }
+        
+        /* History Modal */
+        .history-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; overflow-y: auto; }
+        .history-modal-content { background: #fff; margin: 50px auto; max-width: 800px; border-radius: 15px; padding: 25px; position: relative; }
+        .history-modal-close { position: absolute; top: 15px; right: 15px; background: var(--accent); color: #000; width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         
         /* Toggle Switch */
         .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
@@ -93,6 +126,21 @@
         .loading { text-align: center; padding: 40px; color: #666; }
         .spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Small Buttons */
+        .btn-small { padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .btn-edit { background: #ff9f1c; color: white; }
+        .btn-delete { background: #e63946; color: white; }
+        .btn-history { background: #0077b6; color: white; }
+        .btn-export { background: #38b000; color: white; }
+        
+        /* Record Time Section */
+        .record-time-section { background: #f0fff4; border: 1px solid #c6f6d5; border-radius: 10px; padding: 15px; margin: 15px 0; }
+        .record-time-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+        .record-time-item { display: flex; align-items: center; justify-content: space-between; padding: 8px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; }
+        
+        /* Modal Overlay */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 9998; }
     </style>
 </head>
 <body>
@@ -143,7 +191,10 @@
             <div id="adminPortal" class="admin-panel hidden">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
                     <h3 style="margin:0; color:var(--secondary)">🛠 Admin Portal</h3>
-                    <button onclick="exportToExcel()" class="btn-main" style="background:#0077b6; padding:8px 15px; font-size:12px">📊 Export Data</button>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="exportToExcel()" class="btn-main" style="background:#0077b6; padding:8px 15px; font-size:12px">📊 Export Data</button>
+                        <button onclick="showHistoryManagement()" class="btn-main" style="background:#9d4edd; padding:8px 15px; font-size:12px">📅 History</button>
+                    </div>
                 </div>
                 
                 <input id="travel" placeholder="Travels Name (e.g., TTT TRAVELS)">
@@ -160,6 +211,12 @@
                 </div>
                 
                 <button onclick="addNewCity()" class="btn-main" style="background:#6c757d; font-size:11px; padding:5px 10px; margin-top:5px;">➕ Add New City</button>
+                
+                <!-- Record Time Section -->
+                <div class="record-time-section" id="recordTimeSection">
+                    <h4 style="margin:0 0 10px 0; color: var(--secondary);">⏰ Record Actual Times</h4>
+                    <div id="recordTimeGrid"></div>
+                </div>
                 
                 <!-- Route Stops Section -->
                 <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid var(--primary);">
@@ -230,9 +287,25 @@
         <iframe id="mapFrame"></iframe>
     </div>
 
+    <!-- HISTORY MODAL -->
+    <div class="history-modal" id="historyModal">
+        <div class="history-modal-content">
+            <button class="history-modal-close" onclick="closeHistoryModal()">✕</button>
+            <div id="historyModalContent">
+                <!-- History content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL OVERLAY -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+
+    <!-- Excel Export Script -->
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         // Firebase Configuration
@@ -255,7 +328,8 @@
         let allCities = new Set();
         let depInterval = null;
         let arrInterval = null;
-        let isInitialized = false; // Track if UI is ready
+        let isInitialized = false;
+        let currentEditingBus = null;
 
         // ==================== INITIALIZATION ====================
         
@@ -387,6 +461,68 @@
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
 
+        function calculateTimeDifference(scheduled, actual) {
+            if (!scheduled || !actual) return null;
+            
+            const schedMins = parseTimeToMinutes(scheduled);
+            const actualMins = parseTimeToMinutes(actual);
+            
+            const diff = actualMins - schedMins;
+            return {
+                minutes: diff,
+                formatted: diff === 0 ? "On Time" : 
+                          diff > 0 ? `+${diff} min` : 
+                          `${diff} min`,
+                colorClass: diff === 0 ? "delay-neutral" : 
+                           diff > 0 ? "delay-bad" : "delay-good"
+            };
+        }
+
+        function calculateJourneyStats(bus) {
+            if (!bus.depTime || !bus.destTime) return null;
+            
+            const depTime = parseTimeToDate(bus.depTime);
+            const destTime = parseTimeToDate(bus.destTime, depTime);
+            
+            if (!depTime || !destTime) return null;
+            
+            const scheduledDuration = (destTime - depTime) / (1000 * 60); // in minutes
+            
+            let actualDuration = scheduledDuration;
+            if (bus.actualDeparture && bus.actualArrival) {
+                const actualDep = parseTimeToDate(bus.actualDeparture);
+                const actualArr = parseTimeToDate(bus.actualArrival, actualDep);
+                actualDuration = (actualArr - actualDep) / (1000 * 60);
+            }
+            
+            const delay = actualDuration - scheduledDuration;
+            const totalDistance = bus.route?.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0) || 385;
+            const avgSpeed = totalDistance / (actualDuration / 60); // km/h
+            
+            return {
+                scheduledDuration: `${Math.floor(scheduledDuration/60)}h ${scheduledDuration%60}m`,
+                actualDuration: `${Math.floor(actualDuration/60)}h ${actualDuration%60}m`,
+                delay: delay,
+                delayFormatted: delay === 0 ? "On Time" : 
+                               delay > 0 ? `+${Math.round(delay)} min` : 
+                               `${Math.round(delay)} min`,
+                avgSpeed: avgSpeed.toFixed(1),
+                onTimePerformance: bus.history ? calculateOnTimePerformance(bus.history) : "N/A"
+            };
+        }
+
+        function calculateOnTimePerformance(history) {
+            if (!history || history.length === 0) return "0%";
+            
+            const onTimeTrips = history.filter(trip => {
+                if (!trip.actualDeparture || !trip.actualArrival) return false;
+                const delay = calculateTimeDifference(trip.depTime, trip.actualDeparture);
+                return delay && Math.abs(delay.minutes) <= 5;
+            }).length;
+            
+            return `${Math.round((onTimeTrips / history.length) * 100)}%`;
+        }
+
         // ==================== UI FUNCTIONS ====================
 
         function updateCityDropdowns() {
@@ -439,11 +575,11 @@
 
         function getKMProgress(bus) {
             if (!bus.live_km) return '';
-            const totalDistance = 645; // Default total distance
+            const totalDistance = bus.route?.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0) || 385;
             const progress = Math.min(100, (bus.live_km / totalDistance) * 100);
             return `
                 <div class="km-progress">
-                    <div style="font-size:10px; color:#aaa;">Distance: <b>${bus.live_km || 0} KM</b></div>
+                    <div style="font-size:10px; color:#aaa;">Distance: <b>${bus.live_km || 0}/${totalDistance} KM</b> (${Math.round(progress)}%)</div>
                     <div class="km-bar">
                         <div class="km-fill" style="width: ${progress}%"></div>
                     </div>
@@ -482,6 +618,177 @@
                     </div>
                 </div>
             `;
+        }
+
+        function getTripTimeline(bus) {
+            const allStops = [
+                { city: bus.depCity, time: bus.depTime, actual_time: bus.actualDeparture, type: 'Departure', km_marker: 0 }
+            ];
+            
+            if (bus.route) {
+                bus.route.forEach(stop => {
+                    allStops.push(stop);
+                });
+            }
+            
+            allStops.push({ city: bus.destCity, time: bus.destTime, actual_time: bus.actualArrival, type: 'Arrival', km_marker: bus.route?.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0) || 385 });
+            
+            const now = new Date();
+            const depTime = parseTimeToDate(bus.depTime);
+            const isCompleted = now > parseTimeToDate(bus.destTime, depTime) || bus.status === 'completed';
+            
+            let timelineHTML = `
+                <div class="trip-timeline">
+                    <div class="timeline-header">
+                        <h4 style="margin:0; color:var(--secondary);">${isCompleted ? '🕐 COMPLETE TIMELINE' : '🕐 TRIP TIMINGS'}</h4>
+                        ${bus.actualArrival ? `<span class="status-badge ${isCompleted ? 'status-arrived' : 'status-on-route'}">${isCompleted ? '✓ Completed' : 'In Progress'}</span>` : ''}
+                    </div>
+                    <table class="timeline-table">
+                        <thead>
+                            <tr>
+                                <th>STOP</th>
+                                <th>SCHEDULED</th>
+                                <th>ACTUAL</th>
+                                <th>DELAY</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            allStops.forEach((stop, index) => {
+                const delay = calculateTimeDifference(stop.time, stop.actual_time);
+                const isPassed = stop.actual_time || (index === 0 && now > parseTimeToDate(stop.time));
+                
+                timelineHTML += `
+                    <tr ${isPassed ? 'style="background:#f0fff4;"' : ''}>
+                        <td><b>${stop.city}</b> ${stop.km_marker ? `<span style="font-size:10px; color:#666;">(${stop.km_marker}KM)</span>` : ''}</td>
+                        <td class="time-cell">${stop.time}</td>
+                        <td class="time-cell">${stop.actual_time || '--:--'}</td>
+                        <td class="${delay?.colorClass || 'delay-neutral'}">${delay?.formatted || '--'}</td>
+                    </tr>
+                `;
+                
+                // Add arrow between stops except last one
+                if (index < allStops.length - 1 && stop.actual_time) {
+                    const nextStop = allStops[index + 1];
+                    const nextDelay = calculateTimeDifference(nextStop.time, nextStop.actual_time);
+                    const currentDelay = delay?.minutes || 0;
+                    const delayDiff = nextDelay ? nextDelay.minutes - currentDelay : 0;
+                    
+                    timelineHTML += `
+                        <tr style="background:#f8fafc;">
+                            <td colspan="4" style="text-align:center; padding:5px 10px;">
+                                <span style="font-size:11px; color:#718096;">
+                                    ${delayDiff > 0 ? `↳ Gained ${delayDiff} min` : 
+                                      delayDiff < 0 ? `↳ Lost ${Math.abs(delayDiff)} min` : 
+                                      '↳ On schedule'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            timelineHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            return timelineHTML;
+        }
+
+        function getJourneySummary(bus) {
+            const stats = calculateJourneyStats(bus);
+            if (!stats) return '';
+            
+            return `
+                <div class="journey-summary">
+                    <h4 style="margin:0 0 10px 0; color:var(--accent);">📊 JOURNEY SUMMARY</h4>
+                    <div class="summary-stats">
+                        <div class="summary-stat">
+                            <div class="summary-value">${stats.scheduledDuration}</div>
+                            <div class="summary-label">SCHEDULED</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-value">${stats.actualDuration}</div>
+                            <div class="summary-label">ACTUAL</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-value" style="color:${stats.delay === 0 ? '#38a169' : stats.delay > 0 ? '#e53e3e' : '#3182ce'}">
+                                ${stats.delayFormatted}
+                            </div>
+                            <div class="summary-label">DELAY</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-value">${stats.avgSpeed}</div>
+                            <div class="summary-label">AVG SPEED</div>
+                        </div>
+                    </div>
+                    ${stats.onTimePerformance !== "N/A" ? `
+                        <div style="text-align:center; margin-top:10px; font-size:11px; opacity:0.8;">
+                            On-time Performance: <b>${stats.onTimePerformance}</b>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function getHistorySection(bus) {
+            if (!bus.history || bus.history.length === 0) return '';
+            
+            const recentHistory = bus.history.slice(0, 4); // Last 4 days
+            
+            let historyHTML = `
+                <div class="history-section">
+                    <div class="history-header">
+                        <h4 style="margin:0; color:var(--secondary);">📅 PAST 4 DAYS HISTORY</h4>
+                        <button onclick="viewDetailedHistory('${bus.id}')" class="btn-main" style="background:#0077b6; padding:6px 12px; font-size:11px;">View All</button>
+                    </div>
+                    <div class="history-grid">
+            `;
+            
+            recentHistory.forEach(trip => {
+                const date = new Date(trip.date);
+                const delay = calculateTimeDifference(trip.depTime, trip.actualDeparture);
+                const isToday = date.toDateString() === new Date().toDateString();
+                
+                historyHTML += `
+                    <div class="history-card">
+                        <div class="history-date">
+                            ${isToday ? 'Today' : date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                            ${isToday ? `(${date.toLocaleDateString('en-GB')})` : ''}
+                        </div>
+                        <span class="history-status status-completed">Completed</span>
+                        <div class="history-times">
+                            <div>
+                                <div style="font-size:9px; color:#718096;">Departure</div>
+                                <div>${trip.depTime} → ${trip.actualDeparture || '--:--'}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:9px; color:#718096;">Arrival</div>
+                                <div>${trip.destTime} → ${trip.actualArrival || '--:--'}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:8px; font-size:11px; text-align:center;">
+                            <span class="${delay?.colorClass || 'delay-neutral'}">
+                                ${delay?.formatted || 'No data'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            historyHTML += `
+                    </div>
+                    <div style="display:flex; justify-content:center; gap:10px; margin-top:15px;">
+                        <button onclick="exportTripHistory('${bus.id}')" class="btn-main" style="background:#38b000; padding:6px 12px; font-size:11px;">📥 Export to Excel</button>
+                        <button onclick="viewDetailedHistory('${bus.id}')" class="btn-main" style="background:#0077b6; padding:6px 12px; font-size:11px;">📊 View Detailed</button>
+                    </div>
+                </div>
+            `;
+            
+            return historyHTML;
         }
 
         // ==================== DASHBOARD FUNCTIONS ====================
@@ -642,13 +949,21 @@
             welcome.classList.add('hidden');
             listArea.classList.remove('hidden');
             
-            // Filter buses
+            // Filter buses - FIXED LOGIC
             let filtered = busDataArr.filter(b => {
-                const stopsData = [{ city: b.depCity, type: 'Boarding' }, ...(b.route || []), { city: b.destCity, type: 'Dropping' }];
-                const cityNames = stopsData.map(s => s.city.toLowerCase());
+                // Get all stops including departure and destination
+                const allStops = [
+                    { city: b.depCity, type: 'Boarding' },
+                    ...(b.route || []),
+                    { city: b.destCity, type: 'Dropping' }
+                ];
+                
+                // Text search
+                const cityNames = allStops.map(s => s.city?.toLowerCase() || '');
                 const matchText = b.travel.toLowerCase().includes(term) || 
                                   cityNames.some(c => c.includes(term));
                 
+                // City sequence search (from-to)
                 let seq = true;
                 if (from && to) {
                     const fIdx = cityNames.indexOf(from.toLowerCase());
@@ -660,12 +975,19 @@
                     seq = cityNames.includes(to.toLowerCase());
                 }
                 
-                let matchT = true;
+                // Stop type filter - FIXED LOGIC
+                let matchStopType = true;
                 if (stopType !== "All") {
-                    matchT = stopsData.some(s => s.type === stopType);
+                    if (stopType === "Boarding") {
+                        // Show buses that have at least one boarding point
+                        matchStopType = allStops.some(s => s.type === 'Boarding');
+                    } else if (stopType === "Dropping") {
+                        // Show buses that have at least one dropping point
+                        matchStopType = allStops.some(s => s.type === 'Dropping');
+                    }
                 }
                 
-                return matchText && seq && matchT;
+                return matchText && seq && matchStopType;
             });
             
             // Sort buses
@@ -691,15 +1013,10 @@
                 const card = document.createElement("div");
                 card.className = "card";
                 
-                // Prepare route stops
-                const routeWithActualTimes = (b.route || []).map(stop => {
-                    const hasActualTime = stop.actual_time && stop.actual_time !== '';
-                    return {
-                        ...stop,
-                        hasActualTime,
-                        displayTime: hasActualTime ? `${stop.time} → ${stop.actual_time}` : stop.time
-                    };
-                });
+                // Check if trip is completed
+                const now = new Date();
+                const depTime = parseTimeToDate(b.depTime);
+                const isCompleted = depTime && now > parseTimeToDate(b.destTime, depTime);
                 
                 card.innerHTML = `
                     <div class="bus-header">
@@ -709,8 +1026,9 @@
                         </div>
                         ${isAdmin ? `
                             <div style="display:flex; gap:5px;">
-                                <button onclick="triggerEdit('${b.id}')" style="background:#ff9f1c; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; font-size:12px;">Edit</button>
-                                <button onclick="triggerDelete('${b.id}')" style="background:#e63946; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; font-size:12px;">Delete</button>
+                                <button onclick="triggerEdit('${b.id}')" class="btn-small btn-edit">Edit</button>
+                                <button onclick="triggerDelete('${b.id}')" class="btn-small btn-delete">Delete</button>
+                                ${isCompleted ? `<button onclick="viewDetailedHistory('${b.id}')" class="btn-small btn-history">History</button>` : ''}
                             </div>
                         ` : ''}
                     </div>
@@ -731,15 +1049,21 @@
                     
                     ${getKMProgress(b)}
                     
+                    ${(b.actualDeparture || b.actualArrival) ? getJourneySummary(b) : ''}
+                    
+                    ${(b.actualDeparture || b.actualArrival || b.route?.some(s => s.actual_time)) ? getTripTimeline(b) : ''}
+                    
+                    ${b.history && b.history.length > 0 ? getHistorySection(b) : ''}
+                    
                     <div class="stops-preview">
                         <div style="font-size:10px; color:#999; margin-bottom:5px; text-transform:uppercase;">
                             Route Stops ${b.route ? `(${b.route.length} stops)` : ''}
                         </div>
-                        ${routeWithActualTimes.map(r => `
-                            <div class="timeline-item ${r.hasActualTime ? 'timeline-done' : ''}">
-                                <span style="color:var(--primary); margin-right:8px">${r.hasActualTime ? '✓' : '•'}</span>
+                        ${(b.route || []).map(r => `
+                            <div class="timeline-item ${r.actual_time ? 'timeline-done' : ''}">
+                                <span style="color:var(--primary); margin-right:8px">${r.actual_time ? '✓' : '•'}</span>
                                 <span style="flex:1"><b>${r.city}</b></span>
-                                <span style="color:#666; margin-right:10px; font-size:11px;">${r.displayTime}</span>
+                                <span style="color:#666; margin-right:10px; font-size:11px;">${r.actual_time ? `${r.time} → ${r.actual_time}` : r.time}</span>
                                 ${r.km_marker ? `<span style="font-size:9px; background:#e2e8f0; padding:2px 6px; border-radius:3px; margin-right:5px;">${r.km_marker}KM</span>` : ''}
                                 <span class="badge ${r.type.toLowerCase()}">${r.type}</span>
                             </div>
@@ -779,6 +1103,9 @@
                         current_area: data.current_area || '',
                         status: data.status || '',
                         last_sync: data.last_sync || '',
+                        actualDeparture: data.actualDeparture || '',
+                        actualArrival: data.actualArrival || '',
+                        history: data.history || [],
                         route: (data.route || []).map(stop => ({
                             city: stop.city || '',
                             time: stop.time || '',
@@ -820,6 +1147,7 @@
                 return;
             }
             
+            currentEditingBus = bus;
             document.getElementById('editingBusId').value = id;
             document.getElementById('travel').value = bus.travel;
             document.getElementById('depCityAdmin').value = bus.depCity;
@@ -828,6 +1156,9 @@
             document.getElementById('destTimeInput').value = bus.destTime;
             document.getElementById('serviceNo').value = bus.serviceNo || '';
             document.getElementById('trackLink').value = bus.link;
+            
+            // Update record time section
+            updateRecordTimeSection(bus);
             
             // Clear and repopulate stops
             const dynamicStops = document.getElementById('dynamicStops');
@@ -841,6 +1172,195 @@
             
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        function updateRecordTimeSection(bus) {
+            const recordTimeGrid = document.getElementById('recordTimeGrid');
+            if (!recordTimeGrid) return;
+            
+            let html = '<div class="record-time-grid">';
+            
+            // Departure time
+            html += `
+                <div class="record-time-item">
+                    <div>
+                        <div style="font-weight:bold; font-size:12px;">${bus.depCity} (Departure)</div>
+                        <div style="font-size:11px; color:#666;">Scheduled: ${bus.depTime}</div>
+                    </div>
+                    <div>
+                        <input type="text" id="recordDepTime" placeholder="Actual time" value="${bus.actualDeparture || ''}" style="width:80px; padding:5px; border-radius:4px; border:1px solid #ddd;">
+                        <button onclick="recordTime('departure')" class="btn-small" style="background:#38b000; margin-left:5px;">Record</button>
+                    </div>
+                </div>
+            `;
+            
+            // Route stops
+            if (bus.route) {
+                bus.route.forEach((stop, index) => {
+                    html += `
+                        <div class="record-time-item">
+                            <div>
+                                <div style="font-weight:bold; font-size:12px;">${stop.city}</div>
+                                <div style="font-size:11px; color:#666;">Scheduled: ${stop.time} • ${stop.km_marker || '?'}KM</div>
+                            </div>
+                            <div>
+                                <input type="text" id="recordStop_${index}" placeholder="Actual time" value="${stop.actual_time || ''}" style="width:80px; padding:5px; border-radius:4px; border:1px solid #ddd;">
+                                <button onclick="recordStopTime(${index})" class="btn-small" style="background:#38b000; margin-left:5px;">Record</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Arrival time
+            html += `
+                <div class="record-time-item">
+                    <div>
+                        <div style="font-weight:bold; font-size:12px;">${bus.destCity} (Arrival)</div>
+                        <div style="font-size:11px; color:#666;">Scheduled: ${bus.destTime}</div>
+                    </div>
+                    <div>
+                        <input type="text" id="recordArrTime" placeholder="Actual time" value="${bus.actualArrival || ''}" style="width:80px; padding:5px; border-radius:4px; border:1px solid #ddd;">
+                        <button onclick="recordTime('arrival')" class="btn-small" style="background:#38b000; margin-left:5px;">Record</button>
+                    </div>
+                </div>
+            `;
+            
+            html += '</div>';
+            
+            // Complete trip button
+            html += `
+                <div style="margin-top:15px; display:flex; justify-content:center;">
+                    <button onclick="completeTrip()" class="btn-main" style="background:#9d4edd;">
+                        ✅ Mark Trip as Completed
+                    </button>
+                </div>
+            `;
+            
+            recordTimeGrid.innerHTML = html;
+        }
+
+        window.recordTime = async (type) => {
+            if (!currentEditingBus) {
+                alert("No bus selected for editing");
+                return;
+            }
+            
+            const timeInput = type === 'departure' ? 
+                document.getElementById('recordDepTime') : 
+                document.getElementById('recordArrTime');
+            
+            const actualTime = timeInput.value.trim();
+            if (!actualTime || !actualTime.includes(" ")) {
+                alert("Please enter time in format: HH:MM AM/PM");
+                return;
+            }
+            
+            try {
+                const updateData = {};
+                if (type === 'departure') {
+                    updateData.actualDeparture = actualTime;
+                } else {
+                    updateData.actualArrival = actualTime;
+                }
+                
+                await updateDoc(doc(db, "buses", currentEditingBus.id), updateData);
+                alert(`${type === 'departure' ? 'Departure' : 'Arrival'} time recorded successfully!`);
+                
+                // Refresh the bus data
+                const bus = busDataArr.find(b => b.id === currentEditingBus.id);
+                if (bus) {
+                    if (type === 'departure') bus.actualDeparture = actualTime;
+                    else bus.actualArrival = actualTime;
+                }
+                
+            } catch (error) {
+                console.error("Error recording time:", error);
+                alert("Error recording time: " + error.message);
+            }
+        };
+
+        window.recordStopTime = async (index) => {
+            if (!currentEditingBus) {
+                alert("No bus selected for editing");
+                return;
+            }
+            
+            const timeInput = document.getElementById(`recordStop_${index}`);
+            const actualTime = timeInput.value.trim();
+            if (!actualTime || !actualTime.includes(" ")) {
+                alert("Please enter time in format: HH:MM AM/PM");
+                return;
+            }
+            
+            try {
+                const updatedRoute = [...currentEditingBus.route];
+                updatedRoute[index].actual_time = actualTime;
+                
+                await updateDoc(doc(db, "buses", currentEditingBus.id), {
+                    route: updatedRoute
+                });
+                
+                alert(`Stop time recorded successfully!`);
+                
+                // Refresh the bus data
+                const bus = busDataArr.find(b => b.id === currentEditingBus.id);
+                if (bus && bus.route && bus.route[index]) {
+                    bus.route[index].actual_time = actualTime;
+                }
+                
+            } catch (error) {
+                console.error("Error recording stop time:", error);
+                alert("Error recording stop time: " + error.message);
+            }
+        };
+
+        window.completeTrip = async () => {
+            if (!currentEditingBus) {
+                alert("No bus selected for editing");
+                return;
+            }
+            
+            if (!confirm("Mark this trip as completed? This will save it to history.")) {
+                return;
+            }
+            
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const historyEntry = {
+                    date: today,
+                    depCity: currentEditingBus.depCity,
+                    depTime: currentEditingBus.depTime,
+                    actualDeparture: currentEditingBus.actualDeparture || '',
+                    destCity: currentEditingBus.destCity,
+                    destTime: currentEditingBus.destTime,
+                    actualArrival: currentEditingBus.actualArrival || '',
+                    route: currentEditingBus.route || [],
+                    recordedAt: new Date().toISOString()
+                };
+                
+                const updatedHistory = [...(currentEditingBus.history || []), historyEntry];
+                
+                await updateDoc(doc(db, "buses", currentEditingBus.id), {
+                    history: updatedHistory,
+                    status: 'completed',
+                    actualDeparture: currentEditingBus.actualDeparture || '',
+                    actualArrival: currentEditingBus.actualArrival || ''
+                });
+                
+                alert("Trip marked as completed and added to history!");
+                
+                // Refresh the bus data
+                const bus = busDataArr.find(b => b.id === currentEditingBus.id);
+                if (bus) {
+                    bus.history = updatedHistory;
+                    bus.status = 'completed';
+                }
+                
+            } catch (error) {
+                console.error("Error completing trip:", error);
+                alert("Error completing trip: " + error.message);
+            }
         };
 
         window.triggerDelete = async (id) => {
@@ -972,6 +1492,8 @@
             document.getElementById('serviceNo').value = '';
             document.getElementById('trackLink').value = '';
             document.getElementById('dynamicStops').innerHTML = '';
+            document.getElementById('recordTimeGrid').innerHTML = '';
+            currentEditingBus = null;
         };
 
         window.addNewCity = () => {
@@ -981,6 +1503,200 @@
                 updateCityDropdowns();
                 alert(`City "${city}" added successfully!`);
             }
+        };
+
+        // ==================== HISTORY FUNCTIONS ====================
+
+        window.viewDetailedHistory = async (busId) => {
+            const bus = busDataArr.find(b => b.id === busId);
+            if (!bus) {
+                alert("Bus not found!");
+                return;
+            }
+            
+            const historyModal = document.getElementById('historyModal');
+            const modalContent = document.getElementById('historyModalContent');
+            const overlay = document.getElementById('modalOverlay');
+            
+            let historyHTML = `
+                <h2 style="color:var(--secondary); margin-bottom:10px;">📊 TRIP HISTORY</h2>
+                <div style="font-size:14px; color:#666; margin-bottom:20px;">
+                    ${bus.travel} • ${bus.depCity} → ${bus.destCity}
+                </div>
+                
+                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                    <select id="historyFilter" style="width:150px; padding:8px;" onchange="filterHistory('${busId}')">
+                        <option value="7">Last 7 days</option>
+                        <option value="30">Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="all">All time</option>
+                    </select>
+                    <button onclick="exportHistoryToExcel('${busId}')" class="btn-main" style="background:#38b000;">
+                        📥 Export to Excel
+                    </button>
+                </div>
+            `;
+            
+            if (!bus.history || bus.history.length === 0) {
+                historyHTML += `
+                    <div style="text-align:center; padding:40px; color:#666;">
+                        <div style="font-size:40px; margin-bottom:15px;">📊</div>
+                        <h3>No History Available</h3>
+                        <p>Complete trips will appear here</p>
+                    </div>
+                `;
+            } else {
+                historyHTML += `<div id="historyList">`;
+                
+                bus.history.forEach((trip, index) => {
+                    const date = new Date(trip.date);
+                    const delay = calculateTimeDifference(trip.depTime, trip.actualDeparture);
+                    const stats = calculateJourneyStats({
+                        depTime: trip.depTime,
+                        destTime: trip.destTime,
+                        actualDeparture: trip.actualDeparture,
+                        actualArrival: trip.actualArrival
+                    });
+                    
+                    historyHTML += `
+                        <div class="history-card" style="margin-bottom:15px;">
+                            <div class="history-header" style="display:flex; justify-content:space-between; align-items:center;">
+                                <h4 style="margin:0; color:var(--secondary);">
+                                    ${date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                </h4>
+                                <span class="${delay?.colorClass || 'delay-neutral'}" style="font-weight:bold;">
+                                    ${delay?.formatted || 'No data'}
+                                </span>
+                            </div>
+                            
+                            <div style="margin:10px 0; display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
+                                <div>
+                                    <div style="font-size:11px; color:#718096;">Departure</div>
+                                    <div style="font-weight:bold;">${trip.depTime} → ${trip.actualDeparture || '--:--'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size:11px; color:#718096;">Arrival</div>
+                                    <div style="font-weight:bold;">${trip.destTime} → ${trip.actualArrival || '--:--'}</div>
+                                </div>
+                            </div>
+                            
+                            ${stats ? `
+                                <div style="background:#f8fafc; border-radius:8px; padding:10px; margin:10px 0;">
+                                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center;">
+                                        <div>
+                                            <div style="font-size:11px; color:#718096;">Duration</div>
+                                            <div style="font-weight:bold;">${stats.actualDuration}</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size:11px; color:#718096;">Avg Speed</div>
+                                            <div style="font-weight:bold;">${stats.avgSpeed} km/h</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size:11px; color:#718096;">Stops Recorded</div>
+                                            <div style="font-weight:bold;">${trip.route.filter(s => s.actual_time).length}/${trip.route.length}</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size:11px; color:#718096;">Status</div>
+                                            <div style="font-weight:bold; color:#38a169;">Completed</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            ${trip.route && trip.route.length > 0 ? `
+                                <div style="font-size:12px; color:#718096; margin-top:10px;">Recorded Stops:</div>
+                                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">
+                                    ${trip.route.map(stop => `
+                                        <span style="font-size:11px; padding:3px 8px; background:${stop.actual_time ? '#c6f6d5' : '#fed7d7'}; border-radius:4px; color:${stop.actual_time ? '#22543d' : '#742a2a'}">
+                                            ${stop.city} ${stop.actual_time ? '✓' : '✗'}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                
+                historyHTML += `</div>`;
+            }
+            
+            modalContent.innerHTML = historyHTML;
+            historyModal.style.display = 'block';
+            overlay.style.display = 'block';
+        };
+
+        window.closeHistoryModal = () => {
+            document.getElementById('historyModal').style.display = 'none';
+            document.getElementById('modalOverlay').style.display = 'none';
+        };
+
+        window.filterHistory = (busId) => {
+            // Implement history filtering based on selected timeframe
+            alert("History filtering would be implemented here");
+        };
+
+        window.exportHistoryToExcel = (busId) => {
+            const bus = busDataArr.find(b => b.id === busId);
+            if (!bus || !bus.history || bus.history.length === 0) {
+                alert("No history data to export!");
+                return;
+            }
+            
+            // Prepare data for Excel
+            const excelData = [];
+            
+            // Header row
+            excelData.push([
+                'Date', 'Bus', 'Route', 'Departure (Scheduled)', 
+                'Departure (Actual)', 'Arrival (Scheduled)', 'Arrival (Actual)',
+                'Delay', 'Duration', 'Avg Speed (km/h)', 'Stops Recorded'
+            ]);
+            
+            // Data rows
+            bus.history.forEach(trip => {
+                const date = new Date(trip.date);
+                const delay = calculateTimeDifference(trip.depTime, trip.actualDeparture);
+                const stats = calculateJourneyStats({
+                    depTime: trip.depTime,
+                    destTime: trip.destTime,
+                    actualDeparture: trip.actualDeparture,
+                    actualArrival: trip.actualArrival
+                });
+                
+                excelData.push([
+                    date.toLocaleDateString('en-GB'),
+                    bus.travel,
+                    `${bus.depCity} → ${bus.destCity}`,
+                    trip.depTime,
+                    trip.actualDeparture || '--:--',
+                    trip.destTime,
+                    trip.actualArrival || '--:--',
+                    delay?.formatted || '--',
+                    stats?.actualDuration || '--',
+                    stats?.avgSpeed || '--',
+                    `${trip.route?.filter(s => s.actual_time).length || 0}/${trip.route?.length || 0}`
+                ]);
+            });
+            
+            // Create worksheet
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Trip History");
+            
+            // Generate Excel file
+            const fileName = `${bus.travel}_History_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            alert(`History exported to ${fileName}`);
+        };
+
+        window.exportTripHistory = exportHistoryToExcel;
+
+        window.showHistoryManagement = () => {
+            alert("History management panel would open here");
+            // This would show a separate panel for managing all bus histories
         };
 
         // ==================== UI EVENT HANDLERS ====================
@@ -1007,24 +1723,75 @@
             }
             const mapFrame = document.getElementById('mapFrame');
             const mapModal = document.getElementById('mapModal');
+            const overlay = document.getElementById('modalOverlay');
             if (mapFrame && mapModal) {
                 mapFrame.src = url;
                 mapModal.style.display = 'block';
+                overlay.style.display = 'block';
             }
         };
 
         window.closeMap = () => {
             const mapFrame = document.getElementById('mapFrame');
             const mapModal = document.getElementById('mapModal');
+            const overlay = document.getElementById('modalOverlay');
             if (mapFrame && mapModal) {
                 mapFrame.src = '';
                 mapModal.style.display = 'none';
+                overlay.style.display = 'none';
             }
         };
 
         window.exportToExcel = () => {
-            alert("Export feature would be implemented here.");
-            // Implementation for exporting to Excel
+            if (busDataArr.length === 0) {
+                alert("No data to export!");
+                return;
+            }
+            
+            // Prepare data for Excel
+            const excelData = [];
+            
+            // Header row
+            excelData.push([
+                'Bus Name', 'Departure City', 'Departure Time', 'Actual Departure',
+                'Destination City', 'Arrival Time', 'Actual Arrival', 'Status',
+                'Live KM', 'Current Area', 'Service No', 'Total Stops'
+            ]);
+            
+            // Data rows
+            busDataArr.forEach(bus => {
+                const status = getBusStatus(bus).includes('On Route') ? 'On Route' : 
+                              getBusStatus(bus).includes('Scheduled') ? 'Scheduled' : 
+                              getBusStatus(bus).includes('Arrived') ? 'Arrived' : 'Waiting';
+                
+                excelData.push([
+                    bus.travel,
+                    bus.depCity,
+                    bus.depTime,
+                    bus.actualDeparture || '--:--',
+                    bus.destCity,
+                    bus.destTime,
+                    bus.actualArrival || '--:--',
+                    status,
+                    bus.live_km || 0,
+                    bus.current_area || '--',
+                    bus.serviceNo || '--',
+                    bus.route?.length || 0
+                ]);
+            });
+            
+            // Create worksheet
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Bus Data");
+            
+            // Generate Excel file
+            const fileName = `Bus_Tracking_Data_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            alert(`Data exported to ${fileName}`);
         };
 
         // ==================== EVENT LISTENERS ====================
@@ -1046,9 +1813,14 @@
 
         // Add keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // ESC to close map
-            if (e.key === 'Escape' && document.getElementById('mapModal')?.style.display === 'block') {
-                closeMap();
+            // ESC to close modals
+            if (e.key === 'Escape') {
+                if (document.getElementById('mapModal').style.display === 'block') {
+                    closeMap();
+                }
+                if (document.getElementById('historyModal').style.display === 'block') {
+                    closeHistoryModal();
+                }
             }
             // Ctrl+F to focus search
             if (e.ctrlKey && e.key === 'f') {
@@ -1058,9 +1830,15 @@
             }
         });
 
+        // Close modals when clicking overlay
+        document.getElementById('modalOverlay').addEventListener('click', () => {
+            closeMap();
+            closeHistoryModal();
+        });
+
         // ==================== INITIAL SETUP ====================
         
-        console.log("Bus Tracking System initialized");
+        console.log("Bus Tracking System initialized with History & Excel Export");
         
         // Setup event listeners when page loads
         document.addEventListener('DOMContentLoaded', setupEventListeners);
