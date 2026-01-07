@@ -65,8 +65,8 @@
         <div id="authWall">
             <div style="text-align:center; background:white; padding:40px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.1); max-width:400px; margin:80px auto;">
                 <h2>Login</h2>
-                <input type="email" id="uEmail" placeholder="enter login id">
-                <input type="password" id="uPass" placeholder="enter password">
+                <input type="email" id="uEmail" placeholder="Enter Login ID">
+                <input type="password" id="uPass" placeholder="Enter Password">
                 <button class="btn-main" style="width:100%; margin-top:15px;" id="loginBtn">Login</button>
             </div>
         </div>
@@ -99,9 +99,7 @@
                     <input id="destTimeInput" placeholder="Time (e.g. 06:55 AM)">
                 </div>
                 <button onclick="addNewCity()" class="btn-main" style="background:#6c757d; font-size:11px; padding:5px 10px; margin-top:5px;">➕ Add New City Name</button>
-                
                 <div id="dynamicStops" style="margin-top:15px;"></div>
-                
                 <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin-bottom:12px; margin-top:10px;">➕ Add Route Stop</button>
                 <input id="trackLink" placeholder="Tracking Link">
                 <input type="hidden" id="editingBusId">
@@ -172,26 +170,30 @@
             }
         });
 
-        // --- CORE CITY UPDATE LOGIC ---
+        // ==========================================
+        // UPDATED CITY DROPDOWN LOGIC
+        // ==========================================
         function updateCityDropdowns() {
             const sorted = Array.from(allCities).sort();
             const opts = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
+            const cityDropdownIds = ['depCityAdmin', 'destCityAdmin', 'fromCity', 'toCity'];
             
-            // 1. Update Global Admin Selects
-            const globalSelects = ['depCityAdmin', 'destCityAdmin', 'fromCity', 'toCity'];
-            globalSelects.forEach(id => {
+            // 1. Update Fixed Dropdowns
+            cityDropdownIds.forEach(id => {
                 const el = document.getElementById(id);
-                const currentVal = el.value;
-                el.innerHTML = `<option value="">Select City</option>` + opts;
-                el.value = currentVal; // Restore selection
+                if(el) {
+                    const currentVal = el.value;
+                    el.innerHTML = `<option value="">Select City</option>` + opts;
+                    el.value = currentVal;
+                }
             });
 
-            // 2. Update existing Route Stop Selects
-            const stopSelects = document.querySelectorAll('.s-city');
-            stopSelects.forEach(select => {
+            // 2. Update Dynamic Route Stop Dropdowns
+            const stopCitySelects = document.querySelectorAll('.s-city');
+            stopCitySelects.forEach(select => {
                 const currentVal = select.value;
                 select.innerHTML = `<option value="">City</option>` + opts;
-                select.value = currentVal; // Restore selection
+                select.value = currentVal;
             });
         }
 
@@ -199,7 +201,7 @@
             const c = prompt("Enter New City Name:");
             if (c && c.trim() !== '') {
                 allCities.add(c.trim());
-                updateCityDropdowns();
+                updateCityDropdowns(); // Apply change everywhere
             }
         };
 
@@ -223,7 +225,9 @@
             document.getElementById('dynamicStops').appendChild(d);
         };
 
-        // --- HELPERS ---
+        // ==========================================
+        // HELPER FUNCTIONS & BUSINESS LOGIC
+        // ==========================================
         function parseTimeToDate(timeStr) {
             if (!timeStr || !timeStr.includes(" ")) return null;
             const now = new Date();
@@ -246,7 +250,6 @@
             return `<div class="status-badge status-arrived">Arrived</div>`;
         }
 
-        // --- FIREBASE OPS ---
         window.saveBusToFirebase = async () => {
             const id = document.getElementById('editingBusId').value;
             const stops = [];
@@ -265,9 +268,9 @@
             location.reload();
         };
 
+        // Sync from DB
         onSnapshot(collection(db, "buses"), snap => {
             busDataArr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            // Auto-collect cities from DB data
             busDataArr.forEach(b => {
                 if(b.depCity) allCities.add(b.depCity); 
                 if(b.destCity) allCities.add(b.destCity);
@@ -278,7 +281,7 @@
             rebuildUI();
         });
 
-        // --- UI RENDERING ---
+        // REBUILD UI
         function rebuildUI() {
             const term = searchBox.value.trim().toLowerCase();
             const from = fromCity.value, to = toCity.value, listArea = document.getElementById('busDisplayArea'), welcome = document.getElementById('welcomeArea');
@@ -286,8 +289,7 @@
             welcome.classList.add('hidden'); listArea.classList.remove('hidden');
 
             let filtered = busDataArr.filter(b => {
-                const stopsData = [{ city: b.depCity }, ...(b.route || []), { city: b.destCity }];
-                const cityNames = stopsData.map(s => s.city.toLowerCase());
+                const cityNames = [b.depCity, b.destCity, ...(b.route?.map(r => r.city) || [])].map(c => c.toLowerCase());
                 return b.travel.toLowerCase().includes(term) || cityNames.some(c => c.includes(term));
             });
 
@@ -323,6 +325,7 @@
                 const next = deps[0];
                 document.getElementById('depBusName').innerText = next.b.travel;
                 document.getElementById('depCityInfo').innerText = `${next.b.depCity} (${next.b.depTime})`;
+                document.getElementById('depDate').innerText = next.t.toLocaleDateString('en-GB');
                 setInterval(() => {
                     const diff = Math.max(0, Math.floor((next.t - new Date()) / 1000));
                     const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
@@ -341,12 +344,13 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // UI Listeners
+        // Event Bindings
         document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, uEmail.value, uPass.value);
         document.getElementById('logoutBtn').onclick = () => signOut(auth);
         searchBox.oninput = rebuildUI; fromCity.onchange = rebuildUI; toCity.onchange = rebuildUI;
         window.openMap = (u) => { mapFrame.src = u; mapModal.style.display = 'block'; };
         window.closeMap = () => { mapModal.style.display = 'none'; };
+        window.clearAllSearch = () => { searchBox.value = ""; fromCity.value = ""; toCity.value = ""; rebuildUI(); };
     </script>
 </body>
 </html>
