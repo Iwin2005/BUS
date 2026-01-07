@@ -1,430 +1,435 @@
+To show all boarding and dropping points on your bus cards instead of just the first three with a "+ more" indicator, you need to modify the rebuildUI() function.
+The code below removes the .slice(0, 3) limitation and the conditional logic that displays the "+ more stops" text.
+Here is your complete, updated code:
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BUS TRACKING</title>
-    <style>
-        :root { --primary: #2a9d8f; --secondary: #023047; --accent: #ffd60a; --bg: #f0f2f5; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; }
-        header { background: #fff; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header-right { display: flex; align-items: center; gap: 15px; }
-        #liveClock { font-family: monospace; font-weight: bold; color: var(--secondary); background: #eee; padding: 5px 10px; border-radius: 5px; }
-        .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .container { max-width: 1000px; margin: auto; padding: 20px; }
-        .hidden { display: none !important; }
-        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUS TRACKING</title>
+    <style>
+        :root { --primary: #2a9d8f; --secondary: #023047; --accent: #ffd60a; --bg: #f0f2f5; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; }
+        header { background: #fff; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        #liveClock { font-family: monospace; font-weight: bold; color: var(--secondary); background: #eee; padding: 5px 10px; border-radius: 5px; }
+        .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .container { max-width: 1000px; margin: auto; padding: 20px; }
+        .hidden { display: none !important; }
+        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
 
-        /* Dashboard Alignment */
-        .upcoming { display: flex; gap: 15px; margin-bottom: 25px; }
-        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .count { font-size: 28px; font-weight: bold; font-family: monospace; color: #fff; }
+        /* Dashboard Alignment */
+        .upcoming { display: flex; gap: 15px; margin-bottom: 25px; }
+        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .count { font-size: 28px; font-weight: bold; font-family: monospace; color: #fff; }
 
-        /* Search Layout */
-        .search-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; background: #fff; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
-        .city-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+        /* Search Layout */
+        .search-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; background: #fff; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
+        .city-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
 
-        /* Admin Portal */
-        .admin-panel { background: #fff; border: 2px dashed var(--primary); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
+        /* Admin Portal */
+        .admin-panel { background: #fff; border: 2px dashed var(--primary); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
 
-        /* MODERN BUS CARD CSS */
-        .card { 
-            background: #fff; padding: 22px; border-radius: 20px; margin: 15px 0; 
-            box-shadow: 0 6px 18px rgba(0,0,0,0.06); border: 1px solid #edf2f7; transition: transform 0.2s; 
-        }
-        .card:hover { transform: translateY(-3px); }
-        .bus-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .travel-name { font-size: 18px; font-weight: 800; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        .status-badge { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
-        .status-waiting { background: #f3f4f6; color: #6b7280; }
-        .status-scheduled { background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
-        .status-on-route { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
-        .dot { height: 8px; width: 8px; background-color: #10b981; border-radius: 50%; display: inline-block; animation: blink 1.2s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-        .route-visual { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; }
-        .point { text-align: center; flex: 1; }
-        .point b { font-size: 17px; display: block; color: #1a202c; }
-        .point span { font-size: 12px; color: #718096; font-weight: 600; }
-        .line { flex: 1.5; height: 2px; background: #cbd5e0; position: relative; margin: 0 15px; }
-        .line::after { content: '▶'; position: absolute; top: -8px; left: 45%; color: var(--primary); font-size: 12px; background: #fff; padding: 0 4px; }
-        .stops-preview { background: #f7fafc; border-radius: 12px; padding: 12px; margin-bottom: 15px; border: 1px solid #edf2f7; }
-        .timeline-item { display: flex; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #edf2f7; }
-        .timeline-item:last-child { border-bottom: none; }
-        .badge { font-size: 9px; padding: 3px 6px; border-radius: 5px; margin-left: auto; font-weight: bold; }
-        .boarding { background: #e9f5f3; color: #2a9d8f; }
-        .dropping { background: #fef2f2; color: #e63946; }
+        /* MODERN BUS CARD CSS */
+        .card { 
+            background: #fff; padding: 22px; border-radius: 20px; margin: 15px 0; 
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06); border: 1px solid #edf2f7; transition: transform 0.2s; 
+        }
+        .card:hover { transform: translateY(-3px); }
+        .bus-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .travel-name { font-size: 18px; font-weight: 800; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-badge { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+        .status-waiting { background: #f3f4f6; color: #6b7280; }
+        .status-scheduled { background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
+        .status-on-route { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+        .dot { height: 8px; width: 8px; background-color: #10b981; border-radius: 50%; display: inline-block; animation: blink 1.2s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        .route-visual { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; }
+        .point { text-align: center; flex: 1; }
+        .point b { font-size: 17px; display: block; color: #1a202c; }
+        .point span { font-size: 12px; color: #718096; font-weight: 600; }
+        .line { flex: 1.5; height: 2px; background: #cbd5e0; position: relative; margin: 0 15px; }
+        .line::after { content: '▶'; position: absolute; top: -8px; left: 45%; color: var(--primary); font-size: 12px; background: #fff; padding: 0 4px; }
+        .stops-preview { background: #f7fafc; border-radius: 12px; padding: 12px; margin-bottom: 15px; border: 1px solid #edf2f7; }
+        .timeline-item { display: flex; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #edf2f7; }
+        .timeline-item:last-child { border-bottom: none; }
+        .badge { font-size: 9px; padding: 3px 6px; border-radius: 5px; margin-left: auto; font-weight: bold; }
+        .boarding { background: #e9f5f3; color: #2a9d8f; }
+        .dropping { background: #fef2f2; color: #e63946; }
 
-        #welcomeArea { text-align: center; padding: 80px 20px; color: var(--secondary); background: #fff; border-radius: 20px; border: 2px dashed #ddd; }
-        .map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
-        .map-close { position: absolute; top: 15px; right: 15px; background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 50%; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        #mapFrame { width: 100%; height: 100%; border: none; }
-    </style>
+        #welcomeArea { text-align: center; padding: 80px 20px; color: var(--secondary); background: #fff; border-radius: 20px; border: 2px dashed #ddd; }
+        .map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
+        .map-close { position: absolute; top: 15px; right: 15px; background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 50%; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #mapFrame { width: 100%; height: 100%; border: none; }
+    </style>
 </head>
 <body>
-    <header>
-        <h3 style="margin:0; color:var(--secondary)">🚍 BUS TRACKING</h3>
-        <div class="header-right">
-            <div id="liveClock">00:00:00</div>
-            <div id="loggedInLinks" class="hidden">
-                <span id="userEmailDisplay" style="font-size: 13px; color: #666;"></span>
-                <button id="logoutBtn" class="btn-main" style="background:#e63946 !important; padding: 8px 15px;">Log Out</button>
-            </div>
-        </div>
-    </header>
+    <header>
+        <h3 style="margin:0; color:var(--secondary)">🚍 BUS TRACKING</h3>
+        <div class="header-right">
+            <div id="liveClock">00:00:00</div>
+            <div id="loggedInLinks" class="hidden">
+                <span id="userEmailDisplay" style="font-size: 13px; color: #666;"></span>
+                <button id="logoutBtn" class="btn-main" style="background:#e63946 !important; padding: 8px 15px;">Log Out</button>
+            </div>
+        </div>
+    </header>
 
-    <div class="container">
-        <div id="authWall">
-            <div style="text-align:center; background:white; padding:40px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.1); max-width:400px; margin:80px auto;">
-                <h2>Login</h2>
-                <input type="email" id="uEmail" placeholder="enter login id">
-                <input type="password" id="uPass" placeholder="enter password">
-                <button class="btn-main" style="width:100%; margin-top:15px;" id="loginBtn">Login</button>
-            </div>
-        </div>
+    <div class="container">
+        <div id="authWall">
+            <div style="text-align:center; background:white; padding:40px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.1); max-width:400px; margin:80px auto;">
+                <h2>Login</h2>
+                <input type="email" id="uEmail" placeholder="enter login id">
+                <input type="password" id="uPass" placeholder="enter password">
+                <button class="btn-main" style="width:100%; margin-top:15px;" id="loginBtn">Login</button>
+            </div>
+        </div>
 
-        <div id="mainContent" class="hidden">
-            <div class="upcoming">
-                <div class="up-box">
-                    <div style="font-size:10px; color:#aaa;">Next Departure</div>
-                    <div id="depDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
-                    <b id="depBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
-                    <div id="depCityInfo" style="font-size:12px;"></div>
-                    <div class="count" id="depCounter">00:00:00</div>
-                </div>
-                <div class="up-box">
-                    <div style="font-size:10px; color:#aaa;">Next Arrival</div>
-                    <div id="arrDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
-                    <b id="arrBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
-                    <div id="arrCityInfo" style="font-size:12px;"></div>
-                    <div class="count" id="arrCounter">00:00:00</div>
-                </div>
-            </div>
+        <div id="mainContent" class="hidden">
+            <div class="upcoming">
+                <div class="up-box">
+                    <div style="font-size:10px; color:#aaa;">Next Departure</div>
+                    <div id="depDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
+                    <b id="depBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
+                    <div id="depCityInfo" style="font-size:12px;"></div>
+                    <div class="count" id="depCounter">00:00:00</div>
+                </div>
+                <div class="up-box">
+                    <div style="font-size:10px; color:#aaa;">Next Arrival</div>
+                    <div id="arrDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
+                    <b id="arrBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
+                    <div id="arrCityInfo" style="font-size:12px;"></div>
+                    <div class="count" id="arrCounter">00:00:00</div>
+                </div>
+            </div>
 
-            <div id="adminPortal" class="admin-panel hidden">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                    <h3 id="portalTitle">🛠 Admin Portal</h3>
-                    <button onclick="exportToExcel()" class="btn-main" style="background:#0077b6; padding:8px 15px; font-size:12px">📊 Export to Excel</button>
-                </div>
-                <input id="travel" placeholder="Travels Name">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                    <select id="depCityAdmin"><option value="">Select Departure City</option></select>
-                    <input id="depTimeInput" placeholder="Time (e.g. 05:50 PM)">
-                    <select id="destCityAdmin"><option value="">Select Destination City</option></select>
-                    <input id="destTimeInput" placeholder="Time (e.g. 06:55 AM)">
-                </div>
-                <button onclick="addNewCity()" class="btn-main" style="background:#6c757d; font-size:11px; padding:5px 10px; margin-top:5px;">➕ Add New City Name</button>
-                <div id="dynamicStops"></div>
-                <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin-bottom:12px; margin-top:10px;">➕ Add Route Stop</button>
-                <input id="trackLink" placeholder="Tracking Link">
-                <input type="hidden" id="editingBusId">
-                <button onclick="saveBusToFirebase()" class="btn-main" id="saveBtn" style="width:100%">💾 Save Bus Record</button>
-            </div>
+            <div id="adminPortal" class="admin-panel hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                    <h3 id="portalTitle">🛠 Admin Portal</h3>
+                    <button onclick="exportToExcel()" class="btn-main" style="background:#0077b6; padding:8px 15px; font-size:12px">📊 Export to Excel</button>
+                </div>
+                <input id="travel" placeholder="Travels Name">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+                    <select id="depCityAdmin"><option value="">Select Departure City</option></select>
+                    <input id="depTimeInput" placeholder="Time (e.g. 05:50 PM)">
+                    <select id="destCityAdmin"><option value="">Select Destination City</option></select>
+                    <input id="destTimeInput" placeholder="Time (e.g. 06:55 AM)">
+                </div>
+                <button onclick="addNewCity()" class="btn-main" style="background:#6c757d; font-size:11px; padding:5px 10px; margin-top:5px;">➕ Add New City Name</button>
+                <div id="dynamicStops"></div>
+                <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin-bottom:12px; margin-top:10px;">➕ Add Route Stop</button>
+                <input id="trackLink" placeholder="Tracking Link">
+                <input type="hidden" id="editingBusId">
+                <button onclick="saveBusToFirebase()" class="btn-main" id="saveBtn" style="width:100%">💾 Save Bus Record</button>
+            </div>
 
-            <div class="search-grid">
-                <input id="searchBox" placeholder="🔍 Search bus name or city...">
-                <select id="stopTypeFilter">
-                    <option value="All">All Stops</option>
-                    <option value="Boarding">Boarding Points</option>
-                    <option value="Dropping">Dropping Points</option>
-                </select>
-                <select id="sortOption">
-                    <option value="none">Sort By</option>
-                    <option value="early">Early Departure</option>
-                    <option value="late">Late Departure</option>
-                </select>
-                <button onclick="clearAllSearch()" class="btn-main" style="background:#555">Clear All</button>
-            </div>
-            <div class="city-filter-row">
-                <select id="fromCity"><option value="">Select Boarding City</option></select>
-                <select id="toCity"><option value="">Select Destination</option></select>
-            </div>
+            <div class="search-grid">
+                <input id="searchBox" placeholder="🔍 Search bus name or city...">
+                <select id="stopTypeFilter">
+                    <option value="All">All Stops</option>
+                    <option value="Boarding">Boarding Points</option>
+                    <option value="Dropping">Dropping Points</option>
+                </select>
+                <select id="sortOption">
+                    <option value="none">Sort By</option>
+                    <option value="early">Early Departure</option>
+                    <option value="late">Late Departure</option>
+                </select>
+                <button onclick="clearAllSearch()" class="btn-main" style="background:#555">Clear All</button>
+            </div>
+            <div class="city-filter-row">
+                <select id="fromCity"><option value="">Select Boarding City</option></select>
+                <select id="toCity"><option value="">Select Destination</option></select>
+            </div>
 
-            <div id="welcomeArea">
-                <div style="font-size: 50px; margin-bottom: 15px;">🔍</div>
-                <h2>Search to get results</h2>
-                <p>Enter a bus name or select a city to see tracking details.</p>
-            </div>
-            <div id="busDisplayArea" class="hidden"></div>
-        </div>
-    </div>
+            <div id="welcomeArea">
+                <div style="font-size: 50px; margin-bottom: 15px;">🔍</div>
+                <h2>Search to get results</h2>
+                <p>Enter a bus name or select a city to see tracking details.</p>
+            </div>
+            <div id="busDisplayArea" class="hidden"></div>
+        </div>
+    </div>
 
-    <div class="map-modal" id="mapModal">
-        <button class="map-close" onclick="closeMap()">✕</button>
-        <iframe id="mapFrame"></iframe>
-    </div>
+    <div class="map-modal" id="mapModal">
+        <button class="map-close" onclick="closeMap()">✕</button>
+        <iframe id="mapFrame"></iframe>
+    </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", authDomain: "smart-bus-tracking-2ba21.firebaseapp.com", projectId: "smart-bus-tracking-2ba21" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        const firebaseConfig = { apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", authDomain: "smart-bus-tracking-2ba21.firebaseapp.com", projectId: "smart-bus-tracking-2ba21" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        const ADMIN_EMAIL = "admin@wintracking.com";
-        let busDataArr = [];
-        let allCities = new Set();
+        const ADMIN_EMAIL = "admin@wintracking.com";
+        let busDataArr = [];
+        let allCities = new Set();
 
-        setInterval(() => {
-            document.getElementById('liveClock').innerText = new Date().toLocaleTimeString();
-            if (!document.getElementById('busDisplayArea').classList.contains('hidden')) rebuildUI();
-        }, 1000);
+        setInterval(() => {
+            document.getElementById('liveClock').innerText = new Date().toLocaleTimeString();
+            if (!document.getElementById('busDisplayArea').classList.contains('hidden')) rebuildUI();
+        }, 1000);
 
-        onAuthStateChanged(auth, user => {
-            const main = document.getElementById('mainContent'), wall = document.getElementById('authWall'), adminPortal = document.getElementById('adminPortal');
-            if (user) {
-                main.classList.remove('hidden'); wall.classList.add('hidden');
-                document.getElementById('loggedInLinks').classList.remove('hidden');
-                document.getElementById('userEmailDisplay').innerText = user.email;
+        onAuthStateChanged(auth, user => {
+            const main = document.getElementById('mainContent'), wall = document.getElementById('authWall'), adminPortal = document.getElementById('adminPortal');
+            if (user) {
+                main.classList.remove('hidden'); wall.classList.add('hidden');
+                document.getElementById('loggedInLinks').classList.remove('hidden');
+                document.getElementById('userEmailDisplay').innerText = user.email;
 
-                if (user.email === ADMIN_EMAIL) {
-                    adminPortal.classList.remove('hidden');
-                } else {
-                    adminPortal.classList.add('hidden');
-                }
-                rebuildUI();
-            } else {
-                main.classList.add('hidden'); wall.classList.remove('hidden');
-            }
-        });
+                if (user.email === ADMIN_EMAIL) {
+                    adminPortal.classList.remove('hidden');
+                } else {
+                    adminPortal.classList.add('hidden');
+                }
+                rebuildUI();
+            } else {
+                main.classList.add('hidden'); wall.classList.remove('hidden');
+            }
+        });
 
-        function parseTimeToMinutes(timeStr) {
-            if (!timeStr) return 0;
-            let [time, ampm] = timeStr.split(" ");
-            let [h, m] = time.split(":").map(Number);
-            if (ampm === "PM" && h !== 12) h += 12;
-            if (ampm === "AM" && h === 12) h = 0;
-            return h * 60 + m;
-        }
+        function parseTimeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            let [time, ampm] = timeStr.split(" ");
+            let [h, m] = time.split(":").map(Number);
+            if (ampm === "PM" && h !== 12) h += 12;
+            if (ampm === "AM" && h === 12) h = 0;
+            return h * 60 + m;
+        }
 
-        function parseTimeToDate(timeStr) {
-            if (!timeStr || !timeStr.includes(" ")) return null;
-            const now = new Date();
-            let [time, mod] = timeStr.split(" ");
-            let [h, m] = time.split(":").map(Number);
-            if (mod.toUpperCase() === "PM" && h !== 12) h += 12;
-            if (mod.toUpperCase() === "AM" && h === 12) h = 0;
-            let target = new Date(); target.setHours(h, m, 0, 0);
-            if (target < now) target.setDate(target.getDate() + 1);
-            return target;
-        }
+        function parseTimeToDate(timeStr) {
+            if (!timeStr || !timeStr.includes(" ")) return null;
+            const now = new Date();
+            let [time, mod] = timeStr.split(" ");
+            let [h, m] = time.split(":").map(Number);
+            if (mod.toUpperCase() === "PM" && h !== 12) h += 12;
+            if (mod.toUpperCase() === "AM" && h === 12) h = 0;
+            let target = new Date(); target.setHours(h, m, 0, 0);
+            if (target < now) target.setDate(target.getDate() + 1);
+            return target;
+        }
 
-        function getBusStatus(bus) {
-            const now = new Date();
-            const depTime = parseTimeToDate(bus.depTime);
-            const arrTime = parseTimeToDate(bus.destTime);
-            if (arrTime < depTime) arrTime.setDate(arrTime.getDate() + 1);
-            const diffHrs = (depTime - now) / (1000 * 60 * 60);
+        function getBusStatus(bus) {
+            const now = new Date();
+            const depTime = parseTimeToDate(bus.depTime);
+            const arrTime = parseTimeToDate(bus.destTime);
+            if (arrTime < depTime) arrTime.setDate(arrTime.getDate() + 1);
+            const diffHrs = (depTime - now) / (1000 * 60 * 60);
 
-            if (now < depTime) {
-                if (diffHrs <= 5) return `<div class="status-badge status-scheduled">Scheduled to depart</div>`;
-                return `<div class="status-badge status-waiting">Waiting</div>`;
-            } else if (now >= depTime && now < arrTime) {
-                let nextStop = bus.destCity;
-                if (bus.route) {
-                    for (let stop of bus.route) {
-                        const sTime = parseTimeToDate(stop.time);
-                        if (sTime < depTime) sTime.setDate(sTime.getDate() + 1);
-                        if (now < sTime) { nextStop = stop.city; break; }
-                    }
-                }
-                return `<div class="status-badge status-on-route"><span class="dot"></span> Departed: Next Stop ${nextStop}</div>`;
-            }
-            return `<div class="status-badge status-arrived">Reached Destination</div>`;
-        }
+            if (now < depTime) {
+                if (diffHrs <= 5) return `<div class="status-badge status-scheduled">Scheduled to depart</div>`;
+                return `<div class="status-badge status-waiting">Waiting</div>`;
+            } else if (now >= depTime && now < arrTime) {
+                let nextStop = bus.destCity;
+                if (bus.route) {
+                    for (let stop of bus.route) {
+                        const sTime = parseTimeToDate(stop.time);
+                        if (sTime < depTime) sTime.setDate(sTime.getDate() + 1);
+                        if (now < sTime) { nextStop = stop.city; break; }
+                    }
+                }
+                return `<div class="status-badge status-on-route"><span class="dot"></span> Departed: Next Stop ${nextStop}</div>`;
+            }
+            return `<div class="status-badge status-arrived">Reached Destination</div>`;
+        }
 
-        function getTargetTime(bus, cityName) {
-            if (!cityName) return parseTimeToMinutes(bus.depTime);
-            if (bus.depCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.depTime);
-            if (bus.destCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.destTime);
-            const stop = bus.route?.find(r => r.city.toLowerCase() === cityName.toLowerCase());
-            return stop ? parseTimeToMinutes(stop.time) : parseTimeToMinutes(bus.depTime);
-        }
+        function getTargetTime(bus, cityName) {
+            if (!cityName) return parseTimeToMinutes(bus.depTime);
+            if (bus.depCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.depTime);
+            if (bus.destCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.destTime);
+            const stop = bus.route?.find(r => r.city.toLowerCase() === cityName.toLowerCase());
+            return stop ? parseTimeToMinutes(stop.time) : parseTimeToMinutes(bus.depTime);
+        }
 
-        function updateCityDropdowns() {
-            const sorted = Array.from(allCities).sort();
-            const opts = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
-            document.getElementById('depCityAdmin').innerHTML = `<option value="">Select Departure</option>` + opts;
-            document.getElementById('destCityAdmin').innerHTML = `<option value="">Select Destination</option>` + opts;
-            document.getElementById('fromCity').innerHTML = `<option value="">Select Boarding City</option>` + opts;
-            document.getElementById('toCity').innerHTML = `<option value="">Select Destination</option>` + opts;
-        }
+        function updateCityDropdowns() {
+            const sorted = Array.from(allCities).sort();
+            const opts = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('depCityAdmin').innerHTML = `<option value="">Select Departure</option>` + opts;
+            document.getElementById('destCityAdmin').innerHTML = `<option value="">Select Destination</option>` + opts;
+            document.getElementById('fromCity').innerHTML = `<option value="">Select Boarding City</option>` + opts;
+            document.getElementById('toCity').innerHTML = `<option value="">Select Destination</option>` + opts;
+        }
 
-        function rebuildUI() {
-            const term = searchBox.value.trim().toLowerCase();
-            const from = fromCity.value, to = toCity.value, stopType = stopTypeFilter.value, sort = sortOption.value, listArea = document.getElementById('busDisplayArea'), welcome = document.getElementById('welcomeArea');
-            const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
+        function rebuildUI() {
+            const term = searchBox.value.trim().toLowerCase();
+            const from = fromCity.value, to = toCity.value, stopType = stopTypeFilter.value, sort = sortOption.value, listArea = document.getElementById('busDisplayArea'), welcome = document.getElementById('welcomeArea');
+            const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
 
-            if (!term && !from && !to) { welcome.classList.remove('hidden'); listArea.classList.add('hidden'); return; }
-            welcome.classList.add('hidden'); listArea.classList.remove('hidden');
+            if (!term && !from && !to) { welcome.classList.remove('hidden'); listArea.classList.add('hidden'); return; }
+            welcome.classList.add('hidden'); listArea.classList.remove('hidden');
 
-            let filtered = busDataArr.filter(b => {
-                const stopsData = [{ city: b.depCity, type: 'Boarding' }, ...(b.route || []), { city: b.destCity, type: 'Dropping' }];
-                const cityNames = stopsData.map(s => s.city.toLowerCase());
-                const matchText = b.travel.toLowerCase().includes(term) || cityNames.some(c => c.includes(term));
-                let seq = true;
-                if (from && to) {
-                    const fIdx = cityNames.indexOf(from.toLowerCase());
-                    const tIdx = cityNames.indexOf(to.toLowerCase());
-                    seq = (fIdx !== -1 && tIdx !== -1 && fIdx < tIdx);
-                } else if (from) seq = cityNames.includes(from.toLowerCase());
-                else if (to) seq = cityNames.includes(to.toLowerCase());
-                let matchT = (stopType === "All") ? true : stopsData.some(s => s.type === stopType && s.city.toLowerCase().includes((from || term).toLowerCase()));
-                return matchText && seq && matchT;
-            });
+            let filtered = busDataArr.filter(b => {
+                const stopsData = [{ city: b.depCity, type: 'Boarding' }, ...(b.route || []), { city: b.destCity, type: 'Dropping' }];
+                const cityNames = stopsData.map(s => s.city.toLowerCase());
+                const matchText = b.travel.toLowerCase().includes(term) || cityNames.some(c => c.includes(term));
+                let seq = true;
+                if (from && to) {
+                    const fIdx = cityNames.indexOf(from.toLowerCase());
+                    const tIdx = cityNames.indexOf(to.toLowerCase());
+                    seq = (fIdx !== -1 && tIdx !== -1 && fIdx < tIdx);
+                } else if (from) seq = cityNames.includes(from.toLowerCase());
+                else if (to) seq = cityNames.includes(to.toLowerCase());
+                let matchT = (stopType === "All") ? true : stopsData.some(s => s.type === stopType && s.city.toLowerCase().includes((from || term).toLowerCase()));
+                return matchText && seq && matchT;
+            });
 
-            if (sort !== "none") {
-                const city = from || term;
-                filtered.sort((a, b) => getTargetTime(a, city) - getTargetTime(b, city));
-                if (sort === "late") filtered.reverse();
-            }
+            if (sort !== "none") {
+                const city = from || term;
+                filtered.sort((a, b) => getTargetTime(a, city) - getTargetTime(b, city));
+                if (sort === "late") filtered.reverse();
+            }
 
-            listArea.innerHTML = filtered.length === 0 ? "<p style='text-align:center; padding:20px;'>No routes found.</p>" : "";
-            filtered.forEach(b => {
-                const card = document.createElement("div"); card.className = "card";
+            listArea.innerHTML = filtered.length === 0 ? "<p style='text-align:center; padding:20px;'>No routes found.</p>" : "";
+            filtered.forEach(b => {
+                const card = document.createElement("div"); card.className = "card";
 
-                // CHANGED: Removed .slice(0, 3) and moreStopsCount logic to show all stops
-                card.innerHTML = `
-            <div class="bus-header">
-                <div>
-                    <div class="travel-name">🚍 ${b.travel}</div>
-                    ${getBusStatus(b)}
-                </div>
-                <div>${isAdmin ? `<button onclick="triggerEdit('${b.id}')" style="background:#ff9f1c; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer">Edit</button> <button onclick="triggerDelete('${b.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; margin-left:8px">Delete</button>` : ''}</div>
-            </div>
-            
-            <div class="route-visual">
-                <div class="point"><span>${b.depTime}</span><b>${b.depCity}</b></div>
-                <div class="line"></div>
-                <div class="point"><span>${b.destTime}</span><b>${b.destCity}</b></div>
-            </div>
+                // CHANGED: Removed .slice(0, 3) and moreStopsCount logic to show all stops
+                card.innerHTML = `
+            <div class="bus-header">
+                <div>
+                    <div class="travel-name">🚍 ${b.travel}</div>
+                    ${getBusStatus(b)}
+                </div>
+                <div>${isAdmin ? `<button onclick="triggerEdit('${b.id}')" style="background:#ff9f1c; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer">Edit</button> <button onclick="triggerDelete('${b.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; margin-left:8px">Delete</button>` : ''}</div>
+            </div>
+            
+            <div class="route-visual">
+                <div class="point"><span>${b.depTime}</span><b>${b.depCity}</b></div>
+                <div class="line"></div>
+                <div class="point"><span>${b.destTime}</span><b>${b.destCity}</b></div>
+            </div>
 
-            <div class="stops-preview">
-                <div style="font-size:10px; color:#999; margin-bottom:5px; text-transform:uppercase">Route Highlights</div>
-                ${(b.route || []).map(r => `
-                    <div class="timeline-item">
-                        <span style="color:var(--primary); margin-right:8px">•</span>
-                        <span style="flex:1"><b>${r.city}</b></span>
-                        <span style="color:#666; margin-right:10px">${r.time}</span>
-                        <span class="badge ${r.type.toLowerCase()}">${r.type}</span>
-                    </div>
-                `).join('')}
-            </div>
+            <div class="stops-preview">
+                <div style="font-size:10px; color:#999; margin-bottom:5px; text-transform:uppercase">Route Highlights</div>
+                ${(b.route || []).map(r => `
+                    <div class="timeline-item">
+                        <span style="color:var(--primary); margin-right:8px">•</span>
+                        <span style="flex:1"><b>${r.city}</b></span>
+                        <span style="color:#666; margin-right:10px">${r.time}</span>
+                        <span class="badge ${r.type.toLowerCase()}">${r.type}</span>
+                    </div>
+                `).join('')}
+            </div>
 
-            <button class="btn-main" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="openMap('${b.link}')">
-                📍 Track Live Location
-            </button>`;
-                listArea.appendChild(card);
-            });
-        }
+            <button class="btn-main" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="openMap('${b.link}')">
+                📍 Track Live Location
+            </button>`;
+                listArea.appendChild(card);
+            });
+        }
 
-        function updateDashboard() {
-            const deps = busDataArr.map(b => ({ b, t: parseTimeToDate(b.depTime) })).filter(x => x.t).sort((a, b) => a.t - b.t);
-            const refreshBox = (type, list) => {
-                if (list.length > 0) {
-                    const next = list[0];
-                    document.getElementById(type + 'Date').innerText = next.t.toLocaleDateString('en-GB');
-                    document.getElementById(type + 'BusName').innerText = next.b.travel;
-                    document.getElementById(type + 'CityInfo').innerText = `${type === 'dep' ? next.b.depCity : next.b.destCity} (${type === 'dep' ? next.b.depTime : next.b.destTime})`;
-                    if (window[type + 'Int']) clearInterval(window[type + 'Int']);
-                    window[type + 'Int'] = setInterval(() => {
-                        const diff = Math.max(0, Math.floor((next.t - new Date()) / 1000));
-                        const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
-                        document.getElementById(type + 'Counter').innerText = `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
-                    }, 1000);
-                }
-            };
-            refreshBox('dep', deps);
-            const arrs = busDataArr.map(b => {
-                let t = parseTimeToDate(b.destTime);
-                let d = parseTimeToDate(b.depTime);
-                if (t < d) t.setDate(t.getDate() + 1);
-                return { b, t };
-            }).filter(x => x.t > new Date()).sort((a, b) => a.t - b.t);
-            refreshBox('arr', arrs);
-        }
+        function updateDashboard() {
+            const deps = busDataArr.map(b => ({ b, t: parseTimeToDate(b.depTime) })).filter(x => x.t).sort((a, b) => a.t - b.t);
+            const refreshBox = (type, list) => {
+                if (list.length > 0) {
+                    const next = list[0];
+                    document.getElementById(type + 'Date').innerText = next.t.toLocaleDateString('en-GB');
+                    document.getElementById(type + 'BusName').innerText = next.b.travel;
+                    document.getElementById(type + 'CityInfo').innerText = `${type === 'dep' ? next.b.depCity : next.b.destCity} (${type === 'dep' ? next.b.depTime : next.b.destTime})`;
+                    if (window[type + 'Int']) clearInterval(window[type + 'Int']);
+                    window[type + 'Int'] = setInterval(() => {
+                        const diff = Math.max(0, Math.floor((next.t - new Date()) / 1000));
+                        const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
+                        document.getElementById(type + 'Counter').innerText = `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+                    }, 1000);
+                }
+            };
+            refreshBox('dep', deps);
+            const arrs = busDataArr.map(b => {
+                let t = parseTimeToDate(b.destTime);
+                let d = parseTimeToDate(b.depTime);
+                if (t < d) t.setDate(t.getDate() + 1);
+                return { b, t };
+            }).filter(x => x.t > new Date()).sort((a, b) => a.t - b.t);
+            refreshBox('arr', arrs);
+        }
 
-        onSnapshot(collection(db, "buses"), snap => {
-            busDataArr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            allCities.clear();
-            busDataArr.forEach(b => {
-                allCities.add(b.depCity); allCities.add(b.destCity);
-                b.route?.forEach(s => allCities.add(s.city));
-            });
-            updateCityDropdowns();
-            updateDashboard();
-            rebuildUI();
-        });
+        onSnapshot(collection(db, "buses"), snap => {
+            busDataArr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            allCities.clear();
+            busDataArr.forEach(b => {
+                allCities.add(b.depCity); allCities.add(b.destCity);
+                b.route?.forEach(s => allCities.add(s.city));
+            });
+            updateCityDropdowns();
+            updateDashboard();
+            rebuildUI();
+        });
 
-        window.triggerEdit = (id) => {
-            const bus = busDataArr.find(b => b.id === id);
-            document.getElementById('editingBusId').value = id;
-            document.getElementById('travel').value = bus.travel;
-            document.getElementById('depCityAdmin').value = bus.depCity;
-            document.getElementById('depTimeInput').value = bus.depTime;
-            document.getElementById('destCityAdmin').value = bus.destCity;
-            document.getElementById('destTimeInput').value = bus.destTime;
-            document.getElementById('trackLink').value = bus.link;
-            const dynamicStops = document.getElementById('dynamicStops');
-            dynamicStops.innerHTML = '';
-            if (bus.route && bus.route.length > 0) {
-                bus.route.forEach(stop => addStopField(stop.city, stop.time, stop.type));
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
+        window.triggerEdit = (id) => {
+            const bus = busDataArr.find(b => b.id === id);
+            document.getElementById('editingBusId').value = id;
+            document.getElementById('travel').value = bus.travel;
+            document.getElementById('depCityAdmin').value = bus.depCity;
+            document.getElementById('depTimeInput').value = bus.depTime;
+            document.getElementById('destCityAdmin').value = bus.destCity;
+            document.getElementById('destTimeInput').value = bus.destTime;
+            document.getElementById('trackLink').value = bus.link;
+            const dynamicStops = document.getElementById('dynamicStops');
+            dynamicStops.innerHTML = '';
+            if (bus.route && bus.route.length > 0) {
+                bus.route.forEach(stop => addStopField(stop.city, stop.time, stop.type));
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
 
-        window.triggerDelete = async (id) => { if (confirm("Delete?")) await deleteDoc(doc(db, "buses", id)); };
-        window.saveBusToFirebase = async () => {
-            const id = document.getElementById('editingBusId').value;
-            const stops = [];
-            document.querySelectorAll('.stop-entry').forEach(r => {
-                const city = r.querySelector('.s-city').value;
-                const time = r.querySelector('.s-time').value;
-                const type = r.querySelector('.s-type').value;
-                if (city && time && type) stops.push({ city, time, type });
-            });
-            const payload = { travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value, destCity: destCityAdmin.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
-            id ? await updateDoc(doc(db, "buses", id), payload) : await addDoc(collection(db, "buses"), payload);
-            location.reload();
-        };
+        window.triggerDelete = async (id) => { if (confirm("Delete?")) await deleteDoc(doc(db, "buses", id)); };
+        window.saveBusToFirebase = async () => {
+            const id = document.getElementById('editingBusId').value;
+            const stops = [];
+            document.querySelectorAll('.stop-entry').forEach(r => {
+                const city = r.querySelector('.s-city').value;
+                const time = r.querySelector('.s-time').value;
+                const type = r.querySelector('.s-type').value;
+                if (city && time && type) stops.push({ city, time, type });
+            });
+            const payload = { travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value, destCity: destCityAdmin.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
+            id ? await updateDoc(doc(db, "buses", id), payload) : await addDoc(collection(db, "buses"), payload);
+            location.reload();
+        };
 
-        window.addNewCity = () => {
-            const c = prompt("City Name:");
-            if (c && c.trim() !== '') {
-                allCities.add(c.trim());
-                updateCityDropdowns();
-                rebuildUI();
-            }
-        };
+        window.addNewCity = () => {
+            const c = prompt("City Name:");
+            if (c && c.trim() !== '') {
+                allCities.add(c.trim());
+                updateCityDropdowns();
+                rebuildUI();
+            }
+        };
 
-        window.addStopField = (city = '', time = '', type = 'Boarding') => {
-            const d = document.createElement("div");
-            d.className = "stop-entry";
-            d.style.display = "flex"; d.style.gap = "5px"; d.style.marginBottom = "5px";
-            const opts = Array.from(allCities).sort().map(c => `<option value="${c}" ${c === city ? 'selected' : ''}>${c}</option>`).join('');
-            d.innerHTML = `
-        <select class="s-city" style="flex:1"><option value="">City</option>${opts}</select>  
-        <input placeholder="Time" class="s-time" style="flex:1" value="${time}">  
-        <select class="s-type" style="flex:1">  
-            <option value="Boarding" ${type === 'Boarding' ? 'selected' : ''}>Boarding</option>  
-            <option value="Dropping" ${type === 'Dropping' ? 'selected' : ''}>Dropping</option>  
-        </select>  
-        <button onclick="this.parentElement.remove()" style="background:red; color:white; border:none; border-radius:5px; width:40px">X</button>  
-    `;
-            document.getElementById('dynamicStops').appendChild(d);
-        };
+        window.addStopField = (city = '', time = '', type = 'Boarding') => {
+            const d = document.createElement("div");
+            d.className = "stop-entry";
+            d.style.display = "flex"; d.style.gap = "5px"; d.style.marginBottom = "5px";
+            const opts = Array.from(allCities).sort().map(c => `<option value="${c}" ${c === city ? 'selected' : ''}>${c}</option>`).join('');
+            d.innerHTML = `
+        <select class="s-city" style="flex:1"><option value="">City</option>${opts}</select>  
+        <input placeholder="Time" class="s-time" style="flex:1" value="${time}">  
+        <select class="s-type" style="flex:1">  
+            <option value="Boarding" ${type === 'Boarding' ? 'selected' : ''}>Boarding</option>  
+            <option value="Dropping" ${type === 'Dropping' ? 'selected' : ''}>Dropping</option>  
+        </select>  
+        <button onclick="this.parentElement.remove()" style="background:red; color:white; border:none; border-radius:5px; width:40px">X</button>  
+    `;
+            document.getElementById('dynamicStops').appendChild(d);
+        };
 
-        document.getElementById('loginBtn').onclick = () => {
-            signInWithEmailAndPassword(auth, uEmail.value.trim(), uPass.value).catch(error => alert("Login failed: " + error.message));
-        };
-        document.getElementById('logoutBtn').onclick = () => signOut(auth);
-        window.clearAllSearch = () => { searchBox.value = ""; fromCity.value = ""; toCity.value = ""; rebuildUI(); };
-        window.openMap = (u) => { if (!u) return alert("No link"); mapFrame.src = u; mapModal.style.display = 'block'; };
-        window.closeMap = () => { mapFrame.src = ''; mapModal.style.display = 'none'; };
+        document.getElementById('loginBtn').onclick = () => {
+            signInWithEmailAndPassword(auth, uEmail.value.trim(), uPass.value).catch(error => alert("Login failed: " + error.message));
+        };
+        document.getElementById('logoutBtn').onclick = () => signOut(auth);
+        window.clearAllSearch = () => { searchBox.value = ""; fromCity.value = ""; toCity.value = ""; rebuildUI(); };
+        window.openMap = (u) => { if (!u) return alert("No link"); mapFrame.src = u; mapModal.style.display = 'block'; };
+        window.closeMap = () => { mapFrame.src = ''; mapModal.style.display = 'none'; };
 
-        searchBox.oninput = rebuildUI; fromCity.onchange = rebuildUI; toCity.onchange = rebuildUI; stopTypeFilter.oninput = rebuildUI; sortOption.onchange = rebuildUI;
-    </script>
+        searchBox.oninput = rebuildUI; fromCity.onchange = rebuildUI; toCity.onchange = rebuildUI; stopTypeFilter.oninput = rebuildUI; sortOption.onchange = rebuildUI;
+    </script>
 </body>
 </html>
+
+
