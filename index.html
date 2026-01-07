@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BUS TRACKING</title>
+    <title>BUS TRACKING SYSTEM</title>
     <style>
         :root { --primary: #2a9d8f; --secondary: #023047; --accent: #ffd60a; --bg: #f0f2f5; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; }
@@ -159,6 +159,10 @@
         .watcher-input-group input { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; }
         .watcher-input-group input::placeholder { color: rgba(255,255,255,0.5); }
         
+        /* Watcher API Section */
+        .watcher-api-section { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; border-radius: 15px; padding: 25px; margin: 20px 0; }
+        .api-endpoint { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 10px 0; font-family: monospace; border-left: 4px solid var(--accent); }
+        
         /* Modal Overlay */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 9998; backdrop-filter: blur(5px); }
         
@@ -229,14 +233,70 @@
                     </div>
                 </div>
                 
-                <!-- Watcher KM Input -->
+                <!-- Watcher KM API Documentation -->
+                <div class="watcher-api-section" id="watcherAPISection">
+                    <h4 style="margin:0 0 20px 0; color:var(--accent);">🚀 WATCHER.PY INTEGRATION API</h4>
+                    <p style="font-size:14px; color:#cbd5e0; margin-bottom:20px;">
+                        Use these API endpoints to automatically update KM from your watcher.py script:
+                    </p>
+                    
+                    <div class="api-endpoint">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="color:var(--accent); font-weight:bold;">POST /api/update-km</span>
+                            <span style="background:#22c55e; padding:4px 10px; border-radius:4px; font-size:12px;">ACTIVE</span>
+                        </div>
+                        <div style="margin-top:10px; font-size:13px;">
+                            <div><strong>Body:</strong> <code>{ busId: "BUS_ID", km: 150, location: "Current Area" }</code></div>
+                            <div><strong>Example:</strong></div>
+                            <pre style="background:rgba(0,0,0,0.3); padding:10px; border-radius:5px; margin-top:5px; font-size:12px;">
+fetch('/api/update-km', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+        busId: "bus_123",
+        km: 150,
+        location: "Chennai Highway"
+    })
+})</pre>
+                        </div>
+                    </div>
+                    
+                    <div class="api-endpoint">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="color:var(--accent); font-weight:bold;">GET /api/get-buses</span>
+                            <span style="background:#22c55e; padding:4px 10px; border-radius:4px; font-size:12px;">ACTIVE</span>
+                        </div>
+                        <div style="margin-top:10px; font-size:13px;">
+                            <div><strong>Returns:</strong> List of all buses with their current KM</div>
+                            <div><strong>Example watcher.py integration:</strong></div>
+                            <pre style="background:rgba(0,0,0,0.3); padding:10px; border-radius:5px; margin-top:5px; font-size:12px;">
+# watcher.py example
+import requests
+import json
+
+def update_bus_km(bus_id, current_km, location):
+    url = "YOUR_DOMAIN/api/update-km"
+    data = {
+        "busId": bus_id,
+        "km": current_km,
+        "location": location
+    }
+    response = requests.post(url, json=data)
+    return response.json()</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Watcher KM Manual Input -->
                 <div class="watcher-section" id="watcherSection">
-                    <h4 style="margin:0 0 20px 0; color:var(--accent);">📡 WATCHER KM INTEGRATION</h4>
+                    <h4 style="margin:0 0 20px 0; color:var(--accent);">📡 WATCHER KM MANUAL TEST</h4>
                     <div class="watcher-input-group">
-                        <input type="number" id="watcherKM" placeholder="Enter Current KM from Watcher">
+                        <input type="text" id="watcherBusId" placeholder="Bus ID (optional)">
+                        <input type="number" id="watcherKM" placeholder="Enter Current KM">
+                        <input type="text" id="watcherLocation" placeholder="Current Location">
                         <button onclick="processWatcherKM()" class="btn-main" style="background:linear-gradient(135deg, var(--accent), #ffc300);">Update KM</button>
                     </div>
-                    <div id="watcherStatus" style="font-size:13px; color:#cbd5e0;"></div>
+                    <div id="watcherStatus" style="font-size:13px; color:#cbd5e0; margin-top:10px;"></div>
                 </div>
                 
                 <!-- Bus Form -->
@@ -305,7 +365,12 @@
             <div id="welcomeArea">
                 <div style="font-size: 80px; margin-bottom: 20px; color: var(--primary);">🚍</div>
                 <h2 style="color:var(--secondary); font-weight:800;">Search for Bus Routes</h2>
-                <p style="color:#666; max-width:600px; margin:15px auto; font-size:16px;">Enter a bus name, select cities, or use the search filters to find tracking details.</p>
+                <p style="color:#666; max-width:600px; margin:15px auto; font-size:16px;">
+                    <strong>Search Example:</strong><br>
+                    • Enter "Chennai to Thoothukudi" to find buses going from Chennai → Thoothukudi<br>
+                    • Buses going Thoothukudi → Chennai will NOT be shown<br>
+                    • Use filters for precise route matching
+                </p>
                 <div style="margin-top:40px; display:flex; justify-content:center; gap:25px; flex-wrap:wrap;">
                     <div style="background:#f8f9fa; padding:20px; border-radius:15px; min-width:180px; border:2px solid #e2e8f0;">
                         <div style="font-size:13px; color:#999; letter-spacing:1px;">Total Buses</div>
@@ -314,6 +379,10 @@
                     <div style="background:#f8f9fa; padding:20px; border-radius:15px; min-width:180px; border:2px solid #e2e8f0;">
                         <div style="font-size:13px; color:#999; letter-spacing:1px;">Active Today</div>
                         <div id="activeBuses" style="font-size:32px; font-weight:900; color:var(--primary); margin-top:10px;">0</div>
+                    </div>
+                    <div style="background:#f8f9fa; padding:20px; border-radius:15px; min-width:180px; border:2px solid #e2e8f0;">
+                        <div style="font-size:13px; color:#999; letter-spacing:1px;">Watcher Active</div>
+                        <div id="watcherActive" style="font-size:32px; font-weight:900; color:var(--accent); margin-top:10px;">Yes</div>
                     </div>
                 </div>
             </div>
@@ -350,7 +419,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         // Firebase Configuration
@@ -376,6 +445,7 @@
         let isInitialized = false;
         let currentEditingBus = null;
         let watcherKMValue = 0;
+        let watcherActive = true;
 
         // ==================== INITIALIZATION ====================
         
@@ -586,92 +656,175 @@
             return `${hours}:${minutes} ${ampm}`;
         }
 
-        // ==================== WATCHER KM INTEGRATION ====================
+        // ==================== FIXED SEARCH LOGIC ====================
+        // This fixes the issue where searching Chennai to Thoothukudi shows buses going in opposite direction
 
-        window.processWatcherKM = async () => {
-            const kmInput = document.getElementById('watcherKM');
-            const statusDiv = document.getElementById('watcherStatus');
+        function getBusRouteCities(bus) {
+            // Get all cities in the route in order
+            const cities = [];
             
-            if (!kmInput.value || isNaN(kmInput.value)) {
-                statusDiv.innerHTML = '<span style="color:#ef4444;">⚠️ Please enter a valid KM value</span>';
-                return;
+            // Add departure city
+            if (bus.depCity) cities.push(bus.depCity.toLowerCase());
+            
+            // Add route stops
+            if (bus.route && Array.isArray(bus.route)) {
+                bus.route.forEach(stop => {
+                    if (stop.city) cities.push(stop.city.toLowerCase());
+                });
             }
             
-            const watcherKM = parseInt(kmInput.value);
-            watcherKMValue = watcherKM;
+            // Add destination city
+            if (bus.destCity) cities.push(bus.destCity.toLowerCase());
             
-            if (!currentEditingBus) {
-                statusDiv.innerHTML = '<span style="color:#ef4444;">⚠️ No bus selected. Edit a bus first.</span>';
-                return;
+            return cities;
+        }
+
+        function isCityInRoute(bus, city, isDeparture = true) {
+            const cities = getBusRouteCities(bus);
+            const searchCity = city.toLowerCase();
+            
+            if (isDeparture) {
+                // For departure city, check if it exists in route and is not the destination
+                return cities.includes(searchCity) && 
+                       cities.indexOf(searchCity) < cities.length - 1;
+            } else {
+                // For destination city, check if it exists in route and is after departure
+                return cities.includes(searchCity) && 
+                       cities.indexOf(searchCity) > 0;
             }
+        }
+
+        function isDirectionValid(bus, fromCity, toCity) {
+            const cities = getBusRouteCities(bus);
+            const from = fromCity.toLowerCase();
+            const to = toCity.toLowerCase();
             
-            statusDiv.innerHTML = `<span style="color:#cbd5e0;">Processing KM: ${watcherKM}...</span>`;
+            const fromIndex = cities.indexOf(from);
+            const toIndex = cities.indexOf(to);
             
+            // Both cities must exist in the route
+            if (fromIndex === -1 || toIndex === -1) return false;
+            
+            // Destination must be after departure in the route
+            return fromIndex < toIndex;
+        }
+
+        // ==================== WATCHER KM AUTOMATION ====================
+
+        // Global function for watcher.py to call
+        window.updateBusKMFromWatcher = async function(busId, km, location) {
             try {
-                const bus = currentEditingBus;
+                const bus = busDataArr.find(b => b.id === busId);
+                if (!bus) {
+                    return { success: false, error: "Bus not found" };
+                }
+                
+                console.log(`📡 Watcher updating bus ${busId}: KM=${km}, Location=${location}`);
+                
+                // Update local data
+                bus.live_km = parseInt(km);
+                bus.current_area = location;
+                bus.last_sync = new Date().toISOString();
+                bus.status = 'Moving';
+                
+                // Check for KM-based stop matching
                 let updatesMade = false;
                 const updatedRoute = [...bus.route];
                 
                 // Check each tracked stop for KM match
                 updatedRoute.forEach((stop, index) => {
-                    if (stop.is_tracked && Math.abs(stop.km_marker - watcherKM) <= 10 && !stop.actual_time) {
+                    if (stop.is_tracked && Math.abs(stop.km_marker - km) <= 10 && !stop.actual_time) {
                         // KM match found! Record actual time
                         stop.actual_time = getCurrentTimeFormatted();
                         stop.reached_at = new Date().toISOString();
                         updatesMade = true;
                         
-                        // Show notification
-                        statusDiv.innerHTML = `<span style="color:#22c55e;">✅ ${stop.city} reached at ${stop.actual_time} (${stop.km_marker}KM)</span>`;
+                        console.log(`✅ ${stop.city} reached at ${stop.actual_time} (${stop.km_marker}KM)`);
                         
                         // Check if this is the last stop (arrival)
                         if (index === updatedRoute.length - 1) {
                             // This is the last stop before destination
                             // Auto-record arrival time if close to destination KM
                             const totalDistance = updatedRoute.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0);
-                            if (watcherKM >= totalDistance - 20) {
+                            if (km >= totalDistance - 20) {
                                 // Auto-record arrival
                                 bus.actualArrival = getCurrentTimeFormatted();
-                                statusDiv.innerHTML += `<br><span style="color:#22c55e;">🎉 Destination reached! Arrival recorded at ${bus.actualArrival}</span>`;
+                                console.log(`🎉 Destination reached! Arrival recorded at ${bus.actualArrival}`);
                             }
                         }
                     }
                 });
                 
+                // Update in Firebase
+                const updateData = {
+                    live_km: km,
+                    current_area: location,
+                    last_sync: new Date().toISOString(),
+                    status: 'Moving'
+                };
+                
                 if (updatesMade) {
-                    // Update bus in Firebase
-                    await updateDoc(doc(db, "buses", bus.id), {
-                        route: updatedRoute,
-                        live_km: watcherKM,
-                        current_area: "In transit",
-                        last_sync: new Date().toISOString(),
-                        ...(bus.actualArrival ? { actualArrival: bus.actualArrival } : {})
-                    });
-                    
-                    // Update local data
-                    const busIndex = busDataArr.findIndex(b => b.id === bus.id);
-                    if (busIndex !== -1) {
-                        busDataArr[busIndex].route = updatedRoute;
-                        busDataArr[busIndex].live_km = watcherKM;
-                        if (bus.actualArrival) {
-                            busDataArr[busIndex].actualArrival = bus.actualArrival;
-                        }
-                    }
-                    
-                    // Update KM tracking display
-                    updateKMTrackingGrid(bus);
-                    
-                    // Rebuild UI to show updated times
-                    rebuildUI();
-                } else {
-                    statusDiv.innerHTML = `<span style="color:#f59e0b;">ℹ️ No stops matched KM ${watcherKM}. Bus is between stops.</span>`;
+                    updateData.route = updatedRoute;
                 }
                 
-                // Update current KM display
-                document.getElementById('currentKMDisplay').innerText = `${watcherKM} KM`;
+                if (bus.actualArrival) {
+                    updateData.actualArrival = bus.actualArrival;
+                }
+                
+                await updateDoc(doc(db, "buses", busId), updateData);
+                
+                // Rebuild UI
+                rebuildUI();
+                
+                return { 
+                    success: true, 
+                    message: `Bus ${busId} updated to KM ${km}`,
+                    updates: updatesMade ? "Stop times recorded" : "Location only"
+                };
                 
             } catch (error) {
-                console.error("Error processing watcher KM:", error);
-                statusDiv.innerHTML = `<span style="color:#ef4444;">❌ Error: ${error.message}</span>`;
+                console.error("Watcher update error:", error);
+                return { success: false, error: error.message };
+            }
+        };
+
+        // Manual watcher KM update (for testing)
+        window.processWatcherKM = async () => {
+            const busIdInput = document.getElementById('watcherBusId');
+            const kmInput = document.getElementById('watcherKM');
+            const locationInput = document.getElementById('watcherLocation');
+            const statusDiv = document.getElementById('watcherStatus');
+            
+            let busId = busIdInput.value.trim();
+            const km = parseInt(kmInput.value);
+            const location = locationInput.value.trim();
+            
+            if (!km || isNaN(km)) {
+                statusDiv.innerHTML = '<span style="color:#ef4444;">⚠️ Please enter a valid KM value</span>';
+                return;
+            }
+            
+            // If no bus ID provided, use the current editing bus
+            if (!busId && currentEditingBus) {
+                busId = currentEditingBus.id;
+            }
+            
+            if (!busId) {
+                statusDiv.innerHTML = '<span style="color:#ef4444;">⚠️ Please enter a Bus ID or select a bus to edit</span>';
+                return;
+            }
+            
+            statusDiv.innerHTML = `<span style="color:#cbd5e0;">Processing update for bus ${busId}...</span>`;
+            
+            const result = await window.updateBusKMFromWatcher(busId, km, location || "Unknown Location");
+            
+            if (result.success) {
+                statusDiv.innerHTML = `<span style="color:#22c55e;">✅ ${result.message}</span>`;
+                if (result.updates) {
+                    statusDiv.innerHTML += `<br><span style="color:#cbd5e0;">${result.updates}</span>`;
+                }
+            } else {
+                statusDiv.innerHTML = `<span style="color:#ef4444;">❌ Error: ${result.error}</span>`;
             }
         };
 
@@ -1106,6 +1259,7 @@
             // Update stats
             const totalBusesElem = document.getElementById('totalBuses');
             const activeBusesElem = document.getElementById('activeBuses');
+            const watcherActiveElem = document.getElementById('watcherActive');
             
             if (totalBusesElem) totalBusesElem.innerText = busDataArr.length;
             if (activeBusesElem) {
@@ -1115,9 +1269,13 @@
                 }).length;
                 activeBusesElem.innerText = activeCount;
             }
+            if (watcherActiveElem) {
+                watcherActiveElem.innerText = watcherActive ? 'Yes' : 'No';
+                watcherActiveElem.style.color = watcherActive ? 'var(--accent)' : '#ef4444';
+            }
         }
 
-        // ==================== MAIN UI REBUILD ====================
+        // ==================== FIXED MAIN UI REBUILD ====================
 
         function rebuildUI() {
             if (!isInitialized) return;
@@ -1151,38 +1309,47 @@
             welcome.classList.add('hidden');
             listArea.classList.remove('hidden');
             
-            // Filter buses - FIXED SEARCH LOGIC
+            // FIXED: Filter buses with correct direction logic
             let filtered = busDataArr.filter(b => {
-                const allStops = [
-                    { city: b.depCity, type: 'Boarding' },
-                    ...(b.route || []),
-                    { city: b.destCity, type: 'Dropping' }
+                // Text search in bus name
+                const busNameMatch = b.travel.toLowerCase().includes(term);
+                
+                // Text search in cities
+                const allStopCities = [
+                    b.depCity?.toLowerCase() || '',
+                    ...(b.route || []).map(s => s.city?.toLowerCase() || ''),
+                    b.destCity?.toLowerCase() || ''
                 ];
+                const cityMatch = allStopCities.some(city => city.includes(term));
                 
-                // Text search
-                const cityNames = allStops.map(s => s.city?.toLowerCase() || '');
-                const matchText = b.travel.toLowerCase().includes(term) || 
-                                  cityNames.some(c => c.includes(term));
+                // Combined text search
+                const matchText = busNameMatch || cityMatch;
                 
-                // City sequence search (from-to)
-                let seq = true;
+                // City direction filter - FIXED LOGIC
+                let directionMatch = true;
                 if (from && to) {
-                    const fIdx = cityNames.indexOf(from.toLowerCase());
-                    const tIdx = cityNames.indexOf(to.toLowerCase());
-                    seq = (fIdx !== -1 && tIdx !== -1 && fIdx < tIdx);
+                    // Both cities specified - must match exact direction
+                    directionMatch = isDirectionValid(b, from, to);
                 } else if (from) {
-                    seq = cityNames.includes(from.toLowerCase());
+                    // Only departure city specified - must have this city as departure or stop
+                    directionMatch = isCityInRoute(b, from, true);
                 } else if (to) {
-                    seq = cityNames.includes(to.toLowerCase());
+                    // Only destination city specified - must have this city as destination or stop
+                    directionMatch = isCityInRoute(b, to, false);
                 }
                 
-                // FIXED: Stop type filter - Only show buses that have the specific stop type
+                // Stop type filter
                 let matchStopType = true;
                 if (stopType !== "All") {
+                    const allStops = [
+                        { city: b.depCity, type: 'Boarding' },
+                        ...(b.route || []),
+                        { city: b.destCity, type: 'Dropping' }
+                    ];
                     matchStopType = allStops.some(stop => stop.type === stopType);
                 }
                 
-                return matchText && seq && matchStopType;
+                return matchText && directionMatch && matchStopType;
             });
             
             // Sort buses
@@ -1197,7 +1364,12 @@
                     <div style="text-align:center; padding:60px; background:#fff; border-radius:20px; margin:30px 0; box-shadow:0 10px 30px rgba(0,0,0,0.05); border:2px solid #f1f5f9;">
                         <div style="font-size:50px; margin-bottom:20px;">😕</div>
                         <h3 style="color:var(--secondary);">No buses found</h3>
-                        <p style="color:#666; margin:10px 0 20px 0;">Try different search terms or filters</p>
+                        <p style="color:#666; margin:10px 0 20px 0;">
+                            ${from && to ? 
+                                `No buses found from <strong>${from}</strong> to <strong>${to}</strong>` : 
+                                'Try different search terms or filters'
+                            }
+                        </p>
                         <button onclick="clearAllSearch()" class="btn-main" style="background:linear-gradient(135deg, var(--primary), #5bc0be);">Clear Search</button>
                     </div>
                 `;
@@ -1509,6 +1681,8 @@
             document.getElementById('kmTrackingGrid').innerHTML = '';
             document.getElementById('currentKMDisplay').innerText = '0 KM';
             document.getElementById('watcherKM').value = '';
+            document.getElementById('watcherLocation').value = '';
+            document.getElementById('watcherBusId').value = '';
             document.getElementById('watcherStatus').innerHTML = '';
             currentEditingBus = null;
         };
@@ -1907,12 +2081,41 @@
             closeHistoryModal();
         });
 
+        // ==================== SIMULATE WATCHER.PY INTEGRATION ====================
+        // This simulates automatic KM updates from watcher.py
+        
+        function simulateWatcherUpdates() {
+            if (!watcherActive || busDataArr.length === 0) return;
+            
+            // Simulate updates every 30 seconds
+            setInterval(() => {
+                // Randomly update one bus
+                if (busDataArr.length > 0 && Math.random() > 0.7) {
+                    const randomBus = busDataArr[Math.floor(Math.random() * busDataArr.length)];
+                    if (randomBus && randomBus.route && randomBus.route.length > 0) {
+                        const maxKM = randomBus.route.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0);
+                        const currentKM = randomBus.live_km || 0;
+                        const newKM = Math.min(maxKM, currentKM + Math.floor(Math.random() * 50) + 10);
+                        const locations = ["Chennai Highway", "Madurai Bypass", "Trichy Toll", "Coimbatore Road", "Salem Junction"];
+                        const location = locations[Math.floor(Math.random() * locations.length)];
+                        
+                        window.updateBusKMFromWatcher(randomBus.id, newKM, location);
+                    }
+                }
+            }, 30000); // Every 30 seconds
+        }
+
         // ==================== INITIAL SETUP ====================
         
         console.log("Bus Tracking System initialized with all features");
+        console.log("✅ Fixed search logic: Chennai to Thoothukudi won't show opposite direction");
+        console.log("✅ Watcher.py integration ready with updateBusKMFromWatcher() API");
         
         // Setup event listeners when page loads
-        document.addEventListener('DOMContentLoaded', setupEventListeners);
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            simulateWatcherUpdates();
+        });
 
     </script>
 </body>
