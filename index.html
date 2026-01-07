@@ -1,2122 +1,430 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BUS TRACKING SYSTEM</title>
-    <style>
-        :root { --primary: #2a9d8f; --secondary: #023047; --accent: #ffd60a; --bg: #f0f2f5; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; }
-        header { background: #fff; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header-right { display: flex; align-items: center; gap: 15px; }
-        #liveClock { font-family: monospace; font-weight: bold; color: var(--secondary); background: #eee; padding: 5px 10px; border-radius: 5px; }
-        .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-main:hover { opacity: 0.9; transform: translateY(-2px); }
-        .container { max-width: 1200px; margin: auto; padding: 20px; }
-        .hidden { display: none !important; }
-        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
-        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUS TRACKING</title>
+    <style>
+        :root { --primary: #2a9d8f; --secondary: #023047; --accent: #ffd60a; --bg: #f0f2f5; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #333; }
+        header { background: #fff; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        #liveClock { font-family: monospace; font-weight: bold; color: var(--secondary); background: #eee; padding: 5px 10px; border-radius: 5px; }
+        .btn-main { background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .container { max-width: 1000px; margin: auto; padding: 20px; }
+        .hidden { display: none !important; }
+        input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; }
 
-        /* Dashboard */
-        .upcoming { display: flex; gap: 20px; margin-bottom: 30px; }
-        .up-box { flex: 1; background: linear-gradient(135deg, #1b263b, #2a4365); color: #fff; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
-        .up-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
-        .count { font-size: 32px; font-weight: bold; font-family: monospace; color: var(--accent); margin-top: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .km-progress { margin-top: 15px; }
-        .km-bar { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; margin-top: 8px; }
-        .km-fill { height: 100%; background: linear-gradient(90deg, #5bc0be, #2a9d8f, var(--accent)); border-radius: 5px; transition: width 0.5s; box-shadow: 0 0 10px rgba(91, 192, 190, 0.3); }
+        /* Dashboard Alignment */
+        .upcoming { display: flex; gap: 15px; margin-bottom: 25px; }
+        .up-box { flex: 1; background: #1b263b; color: #fff; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .count { font-size: 28px; font-weight: bold; font-family: monospace; color: #fff; }
 
-        /* Search */
-        .search-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px; background: #fff; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .city-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        /* Search Layout */
+        .search-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; background: #fff; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
+        .city-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
 
-        /* Admin Portal */
-        .admin-panel { background: #fff; border: 2px solid var(--primary); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(42, 157, 143, 0.1); }
-        .track-checkbox { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+        /* Admin Portal */
+        .admin-panel { background: #fff; border: 2px dashed var(--primary); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
 
-        /* Bus Cards - Enhanced */
-        .card { 
-            background: #fff; padding: 25px; border-radius: 20px; margin: 20px 0; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; 
-            transition: all 0.3s ease; position: relative; overflow: hidden;
-        }
-        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 5px; height: 100%; background: linear-gradient(180deg, var(--primary), var(--accent)); }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); border-color: var(--primary); }
-        .bus-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9; }
-        .travel-name { font-size: 20px; font-weight: 900; color: var(--secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
-        .status-badge { font-size: 12px; padding: 6px 15px; border-radius: 20px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
-        .status-waiting { background: linear-gradient(135deg, #f3f4f6, #e5e7eb); color: #6b7280; border: 1px solid #d1d5db; }
-        .status-scheduled { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #b45309; border: 1px solid #fcd34d; }
-        .status-on-route { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; border: 1px solid #34d399; }
-        .status-arrived { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; border: 1px solid #60a5fa; }
-        .dot { height: 10px; width: 10px; background-color: #10b981; border-radius: 50%; display: inline-block; animation: blink 1.2s infinite; box-shadow: 0 0 10px #10b981; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        
-        .route-visual { display: flex; align-items: center; justify-content: space-between; margin: 25px 0; padding: 20px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 15px; border: 1px solid #e2e8f0; }
-        .point { text-align: center; flex: 1; position: relative; }
-        .point::before { content: '📍'; position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 20px; }
-        .point b { font-size: 18px; display: block; color: var(--secondary); margin-top: 5px; font-weight: 800; }
-        .point span { font-size: 13px; color: #4a5568; font-weight: 600; background: #fff; padding: 4px 12px; border-radius: 20px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .line { flex: 2; height: 3px; background: linear-gradient(90deg, #cbd5e0, var(--primary), #cbd5e0); position: relative; margin: 0 20px; }
-        .line::after { content: '➤'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); color: var(--primary); font-size: 16px; background: #fff; padding: 0 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        
-        /* Live Tracking */
-        .live-tracking { background: linear-gradient(135deg, #1a237e, #311b92, #4a148c); color: white; border-radius: 15px; padding: 20px; margin: 20px 0; box-shadow: 0 8px 25px rgba(26, 35, 126, 0.3); }
-        .tracking-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0; }
-        .stat-box { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 12px; text-align: center; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s; }
-        .stat-box:hover { transform: translateY(-3px); background: rgba(255,255,255,0.2); }
-        .stat-value { font-size: 24px; font-weight: bold; color: var(--accent); margin-bottom: 5px; }
-        .stat-label { font-size: 12px; opacity: 0.9; letter-spacing: 0.5px; }
-        
-        /* Stops */
-        .stops-preview { background: linear-gradient(135deg, #f7fafc, #edf2f7); border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
-        .timeline-item { display: flex; align-items: center; padding: 12px 15px; font-size: 14px; border-bottom: 2px solid #e2e8f0; transition: all 0.3s; }
-        .timeline-item:hover { background: rgba(42, 157, 143, 0.05); transform: translateX(5px); }
-        .timeline-item:last-child { border-bottom: none; }
-        .badge { font-size: 10px; padding: 4px 10px; border-radius: 20px; margin-left: auto; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .boarding { background: linear-gradient(135deg, #e9f5f3, #d1fae5); color: #2a9d8f; border: 1px solid #a7f3d0; }
-        .dropping { background: linear-gradient(135deg, #fef2f2, #fee2e2); color: #e63946; border: 1px solid #fca5a5; }
-        .timeline-done { background: linear-gradient(135deg, #f0fff4, #dcfce7); border-left: 4px solid #22c55e; }
-        .timeline-done .badge { background: linear-gradient(135deg, #c6f6d5, #a7f3d0); color: #22543d; }
+        /* MODERN BUS CARD CSS */
+        .card { 
+            background: #fff; padding: 22px; border-radius: 20px; margin: 15px 0; 
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06); border: 1px solid #edf2f7; transition: transform 0.2s; 
+        }
+        .card:hover { transform: translateY(-3px); }
+        .bus-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .travel-name { font-size: 18px; font-weight: 800; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-badge { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+        .status-waiting { background: #f3f4f6; color: #6b7280; }
+        .status-scheduled { background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
+        .status-on-route { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+        .dot { height: 8px; width: 8px; background-color: #10b981; border-radius: 50%; display: inline-block; animation: blink 1.2s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        .route-visual { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; }
+        .point { text-align: center; flex: 1; }
+        .point b { font-size: 17px; display: block; color: #1a202c; }
+        .point span { font-size: 12px; color: #718096; font-weight: 600; }
+        .line { flex: 1.5; height: 2px; background: #cbd5e0; position: relative; margin: 0 15px; }
+        .line::after { content: '▶'; position: absolute; top: -8px; left: 45%; color: var(--primary); font-size: 12px; background: #fff; padding: 0 4px; }
+        .stops-preview { background: #f7fafc; border-radius: 12px; padding: 12px; margin-bottom: 15px; border: 1px solid #edf2f7; }
+        .timeline-item { display: flex; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #edf2f7; }
+        .timeline-item:last-child { border-bottom: none; }
+        .badge { font-size: 9px; padding: 3px 6px; border-radius: 5px; margin-left: auto; font-weight: bold; }
+        .boarding { background: #e9f5f3; color: #2a9d8f; }
+        .dropping { background: #fef2f2; color: #e63946; }
 
-        /* Trip Timeline */
-        .trip-timeline { background: #fff; border-radius: 15px; padding: 20px; margin: 20px 0; border: 1px solid #e2e8f0; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .timeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9; }
-        .timeline-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
-        .timeline-table th { text-align: left; padding: 15px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-bottom: 3px solid var(--primary); color: var(--secondary); font-weight: 700; }
-        .timeline-table td { padding: 15px; border-bottom: 2px solid #f1f5f9; transition: background 0.3s; }
-        .timeline-table tr:hover td { background: rgba(42, 157, 143, 0.05); }
-        .time-cell { font-family: 'Courier New', monospace; font-weight: 600; }
-        .delay-good { color: #22c55e; font-weight: bold; }
-        .delay-bad { color: #ef4444; font-weight: bold; }
-        .delay-neutral { color: #64748b; }
-        
-        /* Journey Summary */
-        .journey-summary { background: linear-gradient(135deg, #2d3748, #4a5568, #1e293b); color: white; border-radius: 15px; padding: 25px; margin: 20px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
-        .journey-summary::before { content: ''; position: absolute; top: 0; right: 0; width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,214,10,0.1) 0%, transparent 70%); }
-        .summary-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 20px; }
-        .summary-stat { text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s; }
-        .summary-stat:hover { transform: translateY(-5px); background: rgba(255,255,255,0.15); }
-        .summary-value { font-size: 28px; font-weight: 900; color: var(--accent); margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .summary-label { font-size: 12px; opacity: 0.9; letter-spacing: 1px; text-transform: uppercase; }
-        
-        /* History Section */
-        .history-section { background: linear-gradient(135deg, #fff, #f8fafc); border-radius: 15px; padding: 25px; margin: 20px 0; border: 1px solid #e2e8f0; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9; }
-        .history-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-        .history-card { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 5px 15px rgba(0,0,0,0.03); transition: all 0.3s; position: relative; overflow: hidden; }
-        .history-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
-        .history-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .history-date { font-size: 13px; color: #64748b; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .history-status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
-        .status-completed { background: linear-gradient(135deg, #c6f6d5, #a7f3d0); color: #22543d; }
-        .history-times { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; }
-        
-        /* KM Tracking Section */
-        .km-tracking { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; border-radius: 15px; padding: 25px; margin: 20px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .km-tracking-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .km-tracking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .km-track-item { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); }
-        .km-track-item.reached { background: rgba(34, 197, 94, 0.2); border-color: #22c55e; }
-        
-        /* Welcome Area */
-        #welcomeArea { text-align: center; padding: 100px 20px; color: var(--secondary); background: #fff; border-radius: 25px; border: 3px dashed #e2e8f0; margin: 30px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        
-        /* Map Modal */
-        .map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; z-index: 9999; }
-        .map-close { position: absolute; top: 20px; right: 20px; background: var(--accent); color: #000; width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 22px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.3s; }
-        .map-close:hover { transform: rotate(90deg); }
-        #mapFrame { width: 100%; height: 100%; border: none; }
-        
-        /* History Modal */
-        .history-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; z-index: 9999; overflow-y: auto; padding: 20px; }
-        .history-modal-content { background: #fff; margin: 30px auto; max-width: 900px; border-radius: 20px; padding: 30px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-        .history-modal-close { position: absolute; top: 20px; right: 20px; background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 50%; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        /* Toggle Switch */
-        .toggle-switch { position: relative; display: inline-block; width: 60px; height: 28px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(32px); }
-        
-        /* Loading */
-        .loading { text-align: center; padding: 60px; color: #666; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 30px auto; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Buttons */
-        .btn-small { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; transition: all 0.3s; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
-        .btn-edit { background: linear-gradient(135deg, #ff9f1c, #ffaf40); color: white; }
-        .btn-delete { background: linear-gradient(135deg, #e63946, #ef4444); color: white; }
-        .btn-history { background: linear-gradient(135deg, #0077b6, #1d4ed8); color: white; }
-        .btn-export { background: linear-gradient(135deg, #38b000, #22c55e); color: white; }
-        
-        /* Watcher Integration */
-        .watcher-section { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 15px; padding: 25px; margin: 20px 0; }
-        .watcher-input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        .watcher-input-group input { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; }
-        .watcher-input-group input::placeholder { color: rgba(255,255,255,0.5); }
-        
-        /* Watcher API Section */
-        .watcher-api-section { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; border-radius: 15px; padding: 25px; margin: 20px 0; }
-        .api-endpoint { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 10px 0; font-family: monospace; border-left: 4px solid var(--accent); }
-        
-        /* Modal Overlay */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 9998; backdrop-filter: blur(5px); }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .search-grid { grid-template-columns: 1fr; }
-            .upcoming { flex-direction: column; }
-            .summary-stats { grid-template-columns: repeat(2, 1fr); }
-            .tracking-stats { grid-template-columns: repeat(2, 1fr); }
-        }
-    </style>
+        #welcomeArea { text-align: center; padding: 80px 20px; color: var(--secondary); background: #fff; border-radius: 20px; border: 2px dashed #ddd; }
+        .map-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; }
+        .map-close { position: absolute; top: 15px; right: 15px; background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 50%; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #mapFrame { width: 100%; height: 100%; border: none; }
+    </style>
 </head>
 <body>
-    <header>
-        <h3 style="margin:0; color:var(--secondary); display:flex; align-items:center; gap:10px;">
-            <span style="font-size:28px;">🚍</span> 
-            <span>BUS TRACKING SYSTEM</span>
-        </h3>
-        <div class="header-right">
-            <div id="liveClock" style="background:linear-gradient(135deg, var(--primary), #5bc0be); color:white;">00:00:00</div>
-            <div id="loggedInLinks" class="hidden">
-                <span id="userEmailDisplay" style="font-size:13px; color:#666; background:#f1f5f9; padding:6px 12px; border-radius:20px;"></span>
-                <button id="logoutBtn" class="btn-main" style="background:linear-gradient(135deg, #e63946, #ef4444) !important;">Log Out</button>
-            </div>
-        </div>
-    </header>
-
-    <div class="container">
-        <!-- LOGIN SECTION -->
-        <div id="authWall">
-            <div style="text-align:center; background:white; padding:50px; border-radius:25px; box-shadow:0 20px 60px rgba(0,0,0,0.1); max-width:450px; margin:100px auto; border:2px solid #f1f5f9;">
-                <div style="font-size:60px; margin-bottom:20px;">🚍</div>
-                <h2 style="color:var(--secondary); margin-bottom:30px; font-weight:800;">Login to Track Buses</h2>
-                <input type="email" id="uEmail" placeholder="Enter email address" style="margin-bottom:20px; border:2px solid #e2e8f0;">
-                <input type="password" id="uPass" placeholder="Enter password" style="border:2px solid #e2e8f0;">
-                <div id="loginError" style="color:#e63946; font-size:13px; margin-top:10px; min-height:20px;"></div>
-                <button class="btn-main" style="width:100%; margin-top:25px; padding:15px; font-size:16px; background:linear-gradient(135deg, var(--primary), #5bc0be);" id="loginBtn">Login</button>
-            </div>
-        </div>
-
-        <!-- MAIN CONTENT -->
-        <div id="mainContent" class="hidden">
-            <!-- Dashboard -->
-            <div class="upcoming">
-                <div class="up-box">
-                    <div style="font-size:11px; color:#cbd5e0; letter-spacing:1px;">NEXT DEPARTURE</div>
-                    <div id="depDate" style="font-size:12px; font-weight:bold; color:#5bc0be; margin-top:5px;">Today</div>
-                    <b id="depBusName" style="color:var(--accent); font-size:18px; display:block; margin:10px 0;">Loading...</b>
-                    <div id="depCityInfo" style="font-size:13px; margin-top:5px; opacity:0.9;"></div>
-                    <div class="count" id="depCounter">--:--:--</div>
-                </div>
-                <div class="up-box">
-                    <div style="font-size:11px; color:#cbd5e0; letter-spacing:1px;">NEXT ARRIVAL</div>
-                    <div id="arrDate" style="font-size:12px; font-weight:bold; color:#5bc0be; margin-top:5px;">Today</div>
-                    <b id="arrBusName" style="color:var(--accent); font-size:18px; display:block; margin:10px 0;">Loading...</b>
-                    <div id="arrCityInfo" style="font-size:13px; margin-top:5px; opacity:0.9;"></div>
-                    <div class="count" id="arrCounter">--:--:--</div>
-                </div>
-            </div>
-
-            <!-- ADMIN PORTAL -->
-            <div id="adminPortal" class="admin-panel hidden">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px">
-                    <h3 style="margin:0; color:var(--secondary); display:flex; align-items:center; gap:10px;">🛠 Admin Portal</h3>
-                    <div style="display:flex; gap:12px;">
-                        <button onclick="exportToExcel()" class="btn-main" style="background:linear-gradient(135deg, #0077b6, #1d4ed8); padding:10px 20px;">📊 Export Data</button>
-                        <button onclick="showHistoryManagement()" class="btn-main" style="background:linear-gradient(135deg, #9d4edd, #7c3aed); padding:10px 20px;">📅 History</button>
-                    </div>
-                </div>
-                
-                <!-- Watcher KM API Documentation -->
-                <div class="watcher-api-section" id="watcherAPISection">
-                    <h4 style="margin:0 0 20px 0; color:var(--accent);">🚀 WATCHER.PY INTEGRATION API</h4>
-                    <p style="font-size:14px; color:#cbd5e0; margin-bottom:20px;">
-                        Use these API endpoints to automatically update KM from your watcher.py script:
-                    </p>
-                    
-                    <div class="api-endpoint">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="color:var(--accent); font-weight:bold;">POST /api/update-km</span>
-                            <span style="background:#22c55e; padding:4px 10px; border-radius:4px; font-size:12px;">ACTIVE</span>
-                        </div>
-                        <div style="margin-top:10px; font-size:13px;">
-                            <div><strong>Body:</strong> <code>{ busId: "BUS_ID", km: 150, location: "Current Area" }</code></div>
-                            <div><strong>Example:</strong></div>
-                            <pre style="background:rgba(0,0,0,0.3); padding:10px; border-radius:5px; margin-top:5px; font-size:12px;">
-fetch('/api/update-km', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-        busId: "bus_123",
-        km: 150,
-        location: "Chennai Highway"
-    })
-})</pre>
-                        </div>
-                    </div>
-                    
-                    <div class="api-endpoint">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="color:var(--accent); font-weight:bold;">GET /api/get-buses</span>
-                            <span style="background:#22c55e; padding:4px 10px; border-radius:4px; font-size:12px;">ACTIVE</span>
-                        </div>
-                        <div style="margin-top:10px; font-size:13px;">
-                            <div><strong>Returns:</strong> List of all buses with their current KM</div>
-                            <div><strong>Example watcher.py integration:</strong></div>
-                            <pre style="background:rgba(0,0,0,0.3); padding:10px; border-radius:5px; margin-top:5px; font-size:12px;">
-# watcher.py example
-import requests
-import json
-
-def update_bus_km(bus_id, current_km, location):
-    url = "YOUR_DOMAIN/api/update-km"
-    data = {
-        "busId": bus_id,
-        "km": current_km,
-        "location": location
-    }
-    response = requests.post(url, json=data)
-    return response.json()</pre>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Watcher KM Manual Input -->
-                <div class="watcher-section" id="watcherSection">
-                    <h4 style="margin:0 0 20px 0; color:var(--accent);">📡 WATCHER KM MANUAL TEST</h4>
-                    <div class="watcher-input-group">
-                        <input type="text" id="watcherBusId" placeholder="Bus ID (optional)">
-                        <input type="number" id="watcherKM" placeholder="Enter Current KM">
-                        <input type="text" id="watcherLocation" placeholder="Current Location">
-                        <button onclick="processWatcherKM()" class="btn-main" style="background:linear-gradient(135deg, var(--accent), #ffc300);">Update KM</button>
-                    </div>
-                    <div id="watcherStatus" style="font-size:13px; color:#cbd5e0; margin-top:10px;"></div>
-                </div>
-                
-                <!-- Bus Form -->
-                <input id="travel" placeholder="Travels Name (e.g., TTT TRAVELS)">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:15px;">
-                    <select id="depCityAdmin"><option value="">Select Departure City</option></select>
-                    <input id="depTimeInput" placeholder="Departure Time (e.g. 06:30 PM)">
-                    <select id="destCityAdmin"><option value="">Select Destination City</option></select>
-                    <input id="destTimeInput" placeholder="Arrival Time (e.g. 06:30 AM)">
-                </div>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin:20px 0;">
-                    <input id="serviceNo" placeholder="Service No (e.g. TTTRNAZARETH-CHENNAI-0615PM)">
-                    <input id="trackLink" placeholder="Tracking Link">
-                </div>
-                
-                <button onclick="addNewCity()" class="btn-main" style="background:#6c757d; font-size:12px; padding:8px 15px; margin-top:10px;">➕ Add New City</button>
-                
-                <!-- KM Tracking Section -->
-                <div class="km-tracking" id="kmTrackingSection">
-                    <div class="km-tracking-header">
-                        <h4 style="margin:0; color:var(--accent);">📍 KM-BASED TIME TRACKING</h4>
-                        <div id="currentKMDisplay" style="font-size:24px; font-weight:bold; color:var(--accent);">0 KM</div>
-                    </div>
-                    <div id="kmTrackingGrid" class="km-tracking-grid">
-                        <!-- KM tracking items will be inserted here -->
-                    </div>
-                </div>
-                
-                <!-- Route Stops -->
-                <div style="margin: 25px 0; padding: 20px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 15px; border-left: 5px solid var(--primary);">
-                    <h4 style="margin:0 0 15px 0; color: var(--secondary);">📍 Route Stops & KM Tracking</h4>
-                    <p style="font-size:13px; color:#666; margin-bottom:15px;">Add stops with KM markers for automatic time recording when watcher KM matches</p>
-                    <div id="dynamicStops"></div>
-                </div>
-                
-                <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin-bottom:15px; margin-top:15px;">➕ Add Route Stop</button>
-                
-                <input type="hidden" id="editingBusId">
-                <button onclick="saveBusToFirebase()" class="btn-main" id="saveBtn" style="width:100%; padding:15px; background:linear-gradient(135deg, var(--primary), #5bc0be); font-size:16px;">💾 Save Bus Record</button>
-                <button onclick="clearAdminForm()" class="btn-main" style="width:100%; margin-top:15px; background:#6c757d;">🗑️ Clear Form</button>
-            </div>
-
-            <!-- SEARCH SECTION -->
-            <div class="search-grid">
-                <input id="searchBox" placeholder="🔍 Search bus name or city...">
-                <select id="stopTypeFilter">
-                    <option value="All">All Stops</option>
-                    <option value="Boarding">Boarding Points</option>
-                    <option value="Dropping">Dropping Points</option>
-                </select>
-                <select id="sortOption">
-                    <option value="none">Sort By</option>
-                    <option value="early">Early Departure</option>
-                    <option value="late">Late Departure</option>
-                </select>
-                <button onclick="clearAllSearch()" class="btn-main" style="background:#555">Clear All</button>
-            </div>
-            
-            <div class="city-filter-row">
-                <select id="fromCity"><option value="">Select Boarding City</option></select>
-                <select id="toCity"><option value="">Select Destination City</option></select>
-            </div>
-
-            <!-- WELCOME AREA -->
-            <div id="welcomeArea">
-                <div style="font-size: 80px; margin-bottom: 20px; color: var(--primary);">🚍</div>
-                <h2 style="color:var(--secondary); font-weight:800;">Search for Bus Routes</h2>
-                <p style="color:#666; max-width:600px; margin:15px auto; font-size:16px;">
-                    <strong>Search Example:</strong><br>
-                    • Enter "Chennai to Thoothukudi" to find buses going from Chennai → Thoothukudi<br>
-                    • Buses going Thoothukudi → Chennai will NOT be shown<br>
-                    • Use filters for precise route matching
-                </p>
-                <div style="margin-top:40px; display:flex; justify-content:center; gap:25px; flex-wrap:wrap;">
-                    <div style="background:#f8f9fa; padding:20px; border-radius:15px; min-width:180px; border:2px solid #e2e8f0;">
-                        <div style="font-size:13px; color:#999; letter-spacing:1px;">Total Buses</div>
-                        <div id="totalBuses" style="font-size:32px; font-weight:900; color:var(--primary); margin-top:10px;">0</div>
-                    </div>
-                    <div style="background:#f8f9fa; padding:20px; border-radius:15px; min-width:180px; border:2px solid #e2e8f0;">
-                        <div style="font-size:13px; color:#999; letter-spacing:1px;">Active Today</div>
-                        <div id="activeBuses" style="font-size:32px; font-weight:900; color:var(--primary); margin-top:10px;">0</div>
-                    </div>
-                    <div style="background:#f8f9fa; padding:20px; border-radius:15px; min-width:180px; border:2px solid #e2e8f0;">
-                        <div style="font-size:13px; color:#999; letter-spacing:1px;">Watcher Active</div>
-                        <div id="watcherActive" style="font-size:32px; font-weight:900; color:var(--accent); margin-top:10px;">Yes</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- BUS DISPLAY AREA -->
-            <div id="busDisplayArea" class="hidden">
-                <div class="loading" id="loadingIndicator">
-                    <div class="spinner"></div>
-                    <p style="font-size:16px; margin-top:20px;">Loading buses...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAP MODAL -->
-    <div class="map-modal" id="mapModal">
-        <button class="map-close" onclick="closeMap()">✕</button>
-        <iframe id="mapFrame"></iframe>
-    </div>
-
-    <!-- HISTORY MODAL -->
-    <div class="history-modal" id="historyModal">
-        <div class="history-modal-content">
-            <button class="history-modal-close" onclick="closeHistoryModal()">✕</button>
-            <div id="historyModalContent"></div>
-        </div>
-    </div>
-
-    <!-- MODAL OVERLAY -->
-    <div class="modal-overlay" id="modalOverlay"></div>
-
-    <!-- Excel Export Script -->
-    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
-        // Firebase Configuration
-        const firebaseConfig = { 
-            apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", 
-            authDomain: "smart-bus-tracking-2ba21.firebaseapp.com", 
-            projectId: "smart-bus-tracking-2ba21" 
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        // Constants
-        const ADMIN_EMAIL = "admin@wintracking.com";
-        
-        // Global Variables
-        let busDataArr = [];
-        let allCities = new Set();
-        let depInterval = null;
-        let arrInterval = null;
-        let isInitialized = false;
-        let currentEditingBus = null;
-        let watcherKMValue = 0;
-        let watcherActive = true;
-
-        // ==================== INITIALIZATION ====================
-        
-        // Update live clock
-        setInterval(() => {
-            const clock = document.getElementById('liveClock');
-            if (clock) {
-                const now = new Date();
-                clock.innerText = now.toLocaleTimeString('en-US', { 
-                    hour12: false,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
-            }
-        }, 1000);
-
-        // ==================== AUTHENTICATION ====================
-        
-        onAuthStateChanged(auth, user => {
-            const main = document.getElementById('mainContent');
-            const wall = document.getElementById('authWall');
-            const adminPortal = document.getElementById('adminPortal');
-            
-            if (user) {
-                // User is logged in
-                main.classList.remove('hidden');
-                wall.classList.add('hidden');
-                document.getElementById('loggedInLinks').classList.remove('hidden');
-                document.getElementById('userEmailDisplay').innerText = user.email;
-                
-                // Show admin portal only for admin
-                if (user.email === ADMIN_EMAIL) {
-                    adminPortal.classList.remove('hidden');
-                } else {
-                    adminPortal.classList.add('hidden');
-                }
-                
-                // Set flag and rebuild UI
-                isInitialized = true;
-                rebuildUI();
-                
-            } else {
-                // User is logged out
-                main.classList.add('hidden');
-                wall.classList.remove('hidden');
-                document.getElementById('loggedInLinks').classList.add('hidden');
-                isInitialized = false;
-            }
-        });
-
-        // Login button handler
-        document.getElementById('loginBtn').onclick = async () => {
-            const email = document.getElementById('uEmail').value.trim();
-            const password = document.getElementById('uPass').value;
-            const errorDiv = document.getElementById('loginError');
-            
-            errorDiv.textContent = '';
-            
-            if (!email || !password) {
-                errorDiv.textContent = 'Please enter both email and password';
-                return;
-            }
-            
-            try {
-                // Try to login
-                await signInWithEmailAndPassword(auth, email, password);
-                // Success - auth state change will handle UI
-            } catch (error) {
-                // Show friendly error messages
-                switch(error.code) {
-                    case 'auth/invalid-email':
-                        errorDiv.textContent = 'Invalid email address';
-                        break;
-                    case 'auth/user-not-found':
-                        errorDiv.textContent = 'User not found';
-                        break;
-                    case 'auth/wrong-password':
-                        errorDiv.textContent = 'Incorrect password';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorDiv.textContent = 'Too many failed attempts. Try again later';
-                        break;
-                    default:
-                        errorDiv.textContent = 'Login failed. Please try again';
-                }
-            }
-        };
-
-        // Logout button handler
-        document.getElementById('logoutBtn').onclick = () => {
-            signOut(auth).catch(error => {
-                console.error('Logout error:', error);
-            });
-        };
-
-        // ==================== UTILITY FUNCTIONS ====================
-
-        function parseTimeToDate(timeStr, referenceDate = null) {
-            if (!timeStr || !timeStr.includes(" ")) return null;
-            
-            const now = referenceDate || new Date();
-            let [time, mod] = timeStr.split(" ");
-            let [h, m] = time.split(":").map(Number);
-            
-            // Convert to 24-hour format
-            if (mod.toUpperCase() === "PM" && h !== 12) h += 12;
-            if (mod.toUpperCase() === "AM" && h === 12) h = 0;
-            
-            // Create date object
-            let target = new Date(now);
-            target.setHours(h, m, 0, 0);
-            
-            // If time is in the past, add one day
-            if (target < now) {
-                target.setDate(target.getDate() + 1);
-            }
-            
-            return target;
-        }
-
-        function parseTimeToMinutes(timeStr) {
-            if (!timeStr) return 0;
-            let [time, ampm] = timeStr.split(" ");
-            let [h, m] = time.split(":").map(Number);
-            if (ampm === "PM" && h !== 12) h += 12;
-            if (ampm === "AM" && h === 12) h = 0;
-            return h * 60 + m;
-        }
-
-        function formatTimeRemaining(seconds) {
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = seconds % 60;
-            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        }
-
-        function calculateTimeDifference(scheduled, actual) {
-            if (!scheduled || !actual) return null;
-            
-            const schedMins = parseTimeToMinutes(scheduled);
-            const actualMins = parseTimeToMinutes(actual);
-            
-            const diff = actualMins - schedMins;
-            return {
-                minutes: diff,
-                formatted: diff === 0 ? "On Time" : 
-                          diff > 0 ? `+${diff} min` : 
-                          `${diff} min`,
-                colorClass: diff === 0 ? "delay-neutral" : 
-                           diff > 0 ? "delay-bad" : "delay-good"
-            };
-        }
-
-        function calculateJourneyStats(bus) {
-            if (!bus.depTime || !bus.destTime) return null;
-            
-            const depTime = parseTimeToDate(bus.depTime);
-            const destTime = parseTimeToDate(bus.destTime, depTime);
-            
-            if (!depTime || !destTime) return null;
-            
-            const scheduledDuration = (destTime - depTime) / (1000 * 60); // in minutes
-            
-            let actualDuration = scheduledDuration;
-            if (bus.actualDeparture && bus.actualArrival) {
-                const actualDep = parseTimeToDate(bus.actualDeparture);
-                const actualArr = parseTimeToDate(bus.actualArrival, actualDep);
-                actualDuration = (actualArr - actualDep) / (1000 * 60);
-            }
-            
-            const delay = actualDuration - scheduledDuration;
-            const totalDistance = bus.route?.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0) || 500;
-            const avgSpeed = totalDistance / (actualDuration / 60); // km/h
-            
-            return {
-                scheduledDuration: `${Math.floor(scheduledDuration/60)}h ${scheduledDuration%60}m`,
-                actualDuration: `${Math.floor(actualDuration/60)}h ${actualDuration%60}m`,
-                delay: delay,
-                delayFormatted: delay === 0 ? "On Time" : 
-                               delay > 0 ? `+${Math.round(delay)} min` : 
-                               `${Math.round(delay)} min`,
-                avgSpeed: avgSpeed.toFixed(1),
-                onTimePerformance: bus.history ? calculateOnTimePerformance(bus.history) : "N/A"
-            };
-        }
-
-        function calculateOnTimePerformance(history) {
-            if (!history || history.length === 0) return "0%";
-            
-            const onTimeTrips = history.filter(trip => {
-                if (!trip.actualDeparture || !trip.actualArrival) return false;
-                const delay = calculateTimeDifference(trip.depTime, trip.actualDeparture);
-                return delay && Math.abs(delay.minutes) <= 5;
-            }).length;
-            
-            return `${Math.round((onTimeTrips / history.length) * 100)}%`;
-        }
-
-        function getCurrentTimeFormatted() {
-            const now = new Date();
-            let hours = now.getHours();
-            let minutes = now.getMinutes();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12;
-            hours = hours ? hours : 12; // the hour '0' should be '12'
-            minutes = minutes < 10 ? '0' + minutes : minutes;
-            return `${hours}:${minutes} ${ampm}`;
-        }
-
-        // ==================== FIXED SEARCH LOGIC ====================
-        // This fixes the issue where searching Chennai to Thoothukudi shows buses going in opposite direction
-
-        function getBusRouteCities(bus) {
-            // Get all cities in the route in order
-            const cities = [];
-            
-            // Add departure city
-            if (bus.depCity) cities.push(bus.depCity.toLowerCase());
-            
-            // Add route stops
-            if (bus.route && Array.isArray(bus.route)) {
-                bus.route.forEach(stop => {
-                    if (stop.city) cities.push(stop.city.toLowerCase());
-                });
-            }
-            
-            // Add destination city
-            if (bus.destCity) cities.push(bus.destCity.toLowerCase());
-            
-            return cities;
-        }
-
-        function isCityInRoute(bus, city, isDeparture = true) {
-            const cities = getBusRouteCities(bus);
-            const searchCity = city.toLowerCase();
-            
-            if (isDeparture) {
-                // For departure city, check if it exists in route and is not the destination
-                return cities.includes(searchCity) && 
-                       cities.indexOf(searchCity) < cities.length - 1;
-            } else {
-                // For destination city, check if it exists in route and is after departure
-                return cities.includes(searchCity) && 
-                       cities.indexOf(searchCity) > 0;
-            }
-        }
-
-        function isDirectionValid(bus, fromCity, toCity) {
-            const cities = getBusRouteCities(bus);
-            const from = fromCity.toLowerCase();
-            const to = toCity.toLowerCase();
-            
-            const fromIndex = cities.indexOf(from);
-            const toIndex = cities.indexOf(to);
-            
-            // Both cities must exist in the route
-            if (fromIndex === -1 || toIndex === -1) return false;
-            
-            // Destination must be after departure in the route
-            return fromIndex < toIndex;
-        }
-
-        // ==================== WATCHER KM AUTOMATION ====================
-
-        // Global function for watcher.py to call
-        window.updateBusKMFromWatcher = async function(busId, km, location) {
-            try {
-                const bus = busDataArr.find(b => b.id === busId);
-                if (!bus) {
-                    return { success: false, error: "Bus not found" };
-                }
-                
-                console.log(`📡 Watcher updating bus ${busId}: KM=${km}, Location=${location}`);
-                
-                // Update local data
-                bus.live_km = parseInt(km);
-                bus.current_area = location;
-                bus.last_sync = new Date().toISOString();
-                bus.status = 'Moving';
-                
-                // Check for KM-based stop matching
-                let updatesMade = false;
-                const updatedRoute = [...bus.route];
-                
-                // Check each tracked stop for KM match
-                updatedRoute.forEach((stop, index) => {
-                    if (stop.is_tracked && Math.abs(stop.km_marker - km) <= 10 && !stop.actual_time) {
-                        // KM match found! Record actual time
-                        stop.actual_time = getCurrentTimeFormatted();
-                        stop.reached_at = new Date().toISOString();
-                        updatesMade = true;
-                        
-                        console.log(`✅ ${stop.city} reached at ${stop.actual_time} (${stop.km_marker}KM)`);
-                        
-                        // Check if this is the last stop (arrival)
-                        if (index === updatedRoute.length - 1) {
-                            // This is the last stop before destination
-                            // Auto-record arrival time if close to destination KM
-                            const totalDistance = updatedRoute.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0);
-                            if (km >= totalDistance - 20) {
-                                // Auto-record arrival
-                                bus.actualArrival = getCurrentTimeFormatted();
-                                console.log(`🎉 Destination reached! Arrival recorded at ${bus.actualArrival}`);
-                            }
-                        }
-                    }
-                });
-                
-                // Update in Firebase
-                const updateData = {
-                    live_km: km,
-                    current_area: location,
-                    last_sync: new Date().toISOString(),
-                    status: 'Moving'
-                };
-                
-                if (updatesMade) {
-                    updateData.route = updatedRoute;
-                }
-                
-                if (bus.actualArrival) {
-                    updateData.actualArrival = bus.actualArrival;
-                }
-                
-                await updateDoc(doc(db, "buses", busId), updateData);
-                
-                // Rebuild UI
-                rebuildUI();
-                
-                return { 
-                    success: true, 
-                    message: `Bus ${busId} updated to KM ${km}`,
-                    updates: updatesMade ? "Stop times recorded" : "Location only"
-                };
-                
-            } catch (error) {
-                console.error("Watcher update error:", error);
-                return { success: false, error: error.message };
-            }
-        };
-
-        // Manual watcher KM update (for testing)
-        window.processWatcherKM = async () => {
-            const busIdInput = document.getElementById('watcherBusId');
-            const kmInput = document.getElementById('watcherKM');
-            const locationInput = document.getElementById('watcherLocation');
-            const statusDiv = document.getElementById('watcherStatus');
-            
-            let busId = busIdInput.value.trim();
-            const km = parseInt(kmInput.value);
-            const location = locationInput.value.trim();
-            
-            if (!km || isNaN(km)) {
-                statusDiv.innerHTML = '<span style="color:#ef4444;">⚠️ Please enter a valid KM value</span>';
-                return;
-            }
-            
-            // If no bus ID provided, use the current editing bus
-            if (!busId && currentEditingBus) {
-                busId = currentEditingBus.id;
-            }
-            
-            if (!busId) {
-                statusDiv.innerHTML = '<span style="color:#ef4444;">⚠️ Please enter a Bus ID or select a bus to edit</span>';
-                return;
-            }
-            
-            statusDiv.innerHTML = `<span style="color:#cbd5e0;">Processing update for bus ${busId}...</span>`;
-            
-            const result = await window.updateBusKMFromWatcher(busId, km, location || "Unknown Location");
-            
-            if (result.success) {
-                statusDiv.innerHTML = `<span style="color:#22c55e;">✅ ${result.message}</span>`;
-                if (result.updates) {
-                    statusDiv.innerHTML += `<br><span style="color:#cbd5e0;">${result.updates}</span>`;
-                }
-            } else {
-                statusDiv.innerHTML = `<span style="color:#ef4444;">❌ Error: ${result.error}</span>`;
-            }
-        };
-
-        function updateKMTrackingGrid(bus) {
-            const kmGrid = document.getElementById('kmTrackingGrid');
-            if (!kmGrid || !bus) return;
-            
-            let html = '';
-            const allStops = [
-                { city: bus.depCity, time: bus.depTime, actual_time: bus.actualDeparture, type: 'Departure', km_marker: 0, is_tracked: false }
-            ];
-            
-            if (bus.route) {
-                allStops.push(...bus.route);
-            }
-            
-            allStops.push({ 
-                city: bus.destCity, 
-                time: bus.destTime, 
-                actual_time: bus.actualArrival, 
-                type: 'Arrival', 
-                km_marker: bus.route?.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0) || 500,
-                is_tracked: false 
-            });
-            
-            allStops.forEach((stop, index) => {
-                const isReached = stop.actual_time || (stop.km_marker <= watcherKMValue);
-                const kmClass = isReached ? 'km-track-item reached' : 'km-track-item';
-                
-                html += `
-                    <div class="${kmClass}">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <div style="font-weight:bold; font-size:14px;">${stop.city}</div>
-                                <div style="font-size:11px; opacity:0.8;">${stop.type} • ${stop.km_marker}KM</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <div style="font-size:12px;">${stop.time}</div>
-                                ${stop.actual_time ? 
-                                    `<div style="font-size:11px; color:#22c55e;">${stop.actual_time} ✓</div>` : 
-                                    `<div style="font-size:11px; opacity:0.6;">--:--</div>`
-                                }
-                            </div>
-                        </div>
-                        ${stop.is_tracked ? `<div style="font-size:10px; margin-top:5px; color:#cbd5e0;">📍 Tracked at ${stop.km_marker}KM</div>` : ''}
-                    </div>
-                `;
-            });
-            
-            kmGrid.innerHTML = html;
-        }
-
-        // ==================== UI FUNCTIONS ====================
-
-        function updateCityDropdowns() {
-            const sorted = Array.from(allCities).sort();
-            const opts = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
-            
-            // Update all dropdowns
-            const dropdowns = ['depCityAdmin', 'destCityAdmin', 'fromCity', 'toCity'];
-            dropdowns.forEach(id => {
-                const dropdown = document.getElementById(id);
-                if (dropdown) {
-                    const currentValue = dropdown.value;
-                    dropdown.innerHTML = `<option value="">Select ${id.includes('dep') ? 'Departure' : id.includes('dest') ? 'Destination' : id.includes('from') ? 'Boarding' : 'Destination'} City</option>` + opts;
-                    dropdown.value = currentValue;
-                }
-            });
-            
-            // Update existing stop entry dropdowns
-            document.querySelectorAll('.s-city').forEach(select => {
-                const currentValue = select.value;
-                select.innerHTML = `<option value="">Select City</option>` + opts;
-                select.value = currentValue;
-            });
-        }
-
-        function getBusStatus(bus) {
-            const now = new Date();
-            const depTime = parseTimeToDate(bus.depTime);
-            
-            if (!depTime) return `<div class="status-badge status-waiting">Schedule TBD</div>`;
-            
-            const arrTime = parseTimeToDate(bus.destTime, depTime);
-            
-            // Handle overnight journeys
-            if (arrTime < depTime) {
-                arrTime.setDate(arrTime.getDate() + 1);
-            }
-            
-            if (now < depTime) {
-                const diffHrs = (depTime - now) / (1000 * 60 * 60);
-                if (diffHrs <= 5) {
-                    return `<div class="status-badge status-scheduled">Departing in ${Math.ceil(diffHrs)}h</div>`;
-                }
-                return `<div class="status-badge status-waiting">Scheduled</div>`;
-            } else if (now >= depTime && now < arrTime) {
-                return `<div class="status-badge status-on-route"><span class="dot"></span> On Route</div>`;
-            }
-            return `<div class="status-badge status-arrived">Arrived</div>`;
-        }
-
-        function getKMProgress(bus) {
-            if (!bus.live_km) return '';
-            const totalDistance = bus.route?.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0) || 500;
-            const progress = Math.min(100, (bus.live_km / totalDistance) * 100);
-            return `
-                <div class="km-progress">
-                    <div style="display:flex; justify-content:space-between; font-size:12px; color:#666; margin-bottom:8px;">
-                        <span>Progress: <b>${Math.round(progress)}%</b></span>
-                        <span>${bus.live_km || 0}/${totalDistance} KM</span>
-                    </div>
-                    <div class="km-bar">
-                        <div class="km-fill" style="width: ${progress}%"></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function getLiveTrackingCard(bus) {
-            if (!bus.live_km && !bus.current_area) return '';
-            
-            const isMoving = bus.status === 'Moving';
-            const lastSync = bus.last_sync ? new Date(bus.last_sync) : null;
-            const minutesAgo = lastSync ? Math.floor((new Date() - lastSync) / 60000) : null;
-            
-            return `
-                <div class="live-tracking">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h4 style="margin:0; color:var(--accent)">📍 Live Tracking</h4>
-                        <span class="status-badge ${isMoving ? 'status-on-route' : 'status-waiting'}">
-                            ${isMoving ? '🚌 MOVING' : '⏸️ STATIONARY'}
-                        </span>
-                    </div>
-                    <div class="tracking-stats">
-                        <div class="stat-box">
-                            <div class="stat-value">${bus.live_km || 0}</div>
-                            <div class="stat-label">KM TRAVELED</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value">📍</div>
-                            <div class="stat-label">${bus.current_area || 'Syncing...'}</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value">${lastSync ? '🟢' : '🔴'}</div>
-                            <div class="stat-label">${minutesAgo ? `${minutesAgo}m ago` : 'Offline'}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function getTripTimeline(bus) {
-            const allStops = [
-                { city: bus.depCity, time: bus.depTime, actual_time: bus.actualDeparture, type: 'Boarding', km_marker: 0 }
-            ];
-            
-            if (bus.route) {
-                bus.route.forEach(stop => {
-                    allStops.push(stop);
-                });
-            }
-            
-            allStops.push({ city: bus.destCity, time: bus.destTime, actual_time: bus.actualArrival, type: 'Dropping', km_marker: bus.route?.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0) || 500 });
-            
-            const now = new Date();
-            const depTime = parseTimeToDate(bus.depTime);
-            const isCompleted = now > parseTimeToDate(bus.destTime, depTime) || bus.status === 'completed';
-            
-            let timelineHTML = `
-                <div class="trip-timeline">
-                    <div class="timeline-header">
-                        <h4 style="margin:0; color:var(--secondary); display:flex; align-items:center; gap:10px;">
-                            <span>🕐</span>
-                            <span>${isCompleted ? 'COMPLETE TIMELINE' : 'TRIP TIMINGS'}</span>
-                        </h4>
-                        ${bus.actualArrival ? `<span class="status-badge ${isCompleted ? 'status-arrived' : 'status-on-route'}">${isCompleted ? '✓ Completed' : 'In Progress'}</span>` : ''}
-                    </div>
-                    <table class="timeline-table">
-                        <thead>
-                            <tr>
-                                <th>STOP</th>
-                                <th>SCHEDULED</th>
-                                <th>ACTUAL</th>
-                                <th>DELAY</th>
-                                <th>KM</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-            
-            allStops.forEach((stop, index) => {
-                const delay = calculateTimeDifference(stop.time, stop.actual_time);
-                const isPassed = stop.actual_time || (index === 0 && now > parseTimeToDate(stop.time));
-                
-                timelineHTML += `
-                    <tr ${isPassed ? 'style="background:linear-gradient(90deg, rgba(42, 157, 143, 0.05), transparent);"' : ''}>
-                        <td>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="color:${stop.type === 'Boarding' ? 'var(--primary)' : '#e63946'};">${stop.type === 'Boarding' ? '⬆️' : '⬇️'}</span>
-                                <div>
-                                    <b>${stop.city}</b>
-                                    <div style="font-size:11px; color:#718096;">${stop.type}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="time-cell">${stop.time}</td>
-                        <td class="time-cell">${stop.actual_time || '--:--'}</td>
-                        <td class="${delay?.colorClass || 'delay-neutral'}">${delay?.formatted || '--'}</td>
-                        <td>${stop.km_marker || 0}KM</td>
-                    </tr>
-                `;
-            });
-            
-            timelineHTML += `
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            
-            return timelineHTML;
-        }
-
-        function getJourneySummary(bus) {
-            const stats = calculateJourneyStats(bus);
-            if (!stats) return '';
-            
-            return `
-                <div class="journey-summary">
-                    <h4 style="margin:0 0 15px 0; color:var(--accent); display:flex; align-items:center; gap:10px;">
-                        <span>📊</span>
-                        <span>JOURNEY SUMMARY</span>
-                    </h4>
-                    <div class="summary-stats">
-                        <div class="summary-stat">
-                            <div class="summary-value">${stats.scheduledDuration}</div>
-                            <div class="summary-label">SCHEDULED</div>
-                        </div>
-                        <div class="summary-stat">
-                            <div class="summary-value">${stats.actualDuration}</div>
-                            <div class="summary-label">ACTUAL</div>
-                        </div>
-                        <div class="summary-stat">
-                            <div class="summary-value" style="color:${stats.delay === 0 ? '#22c55e' : stats.delay > 0 ? '#ef4444' : '#3b82f6'}">
-                                ${stats.delayFormatted}
-                            </div>
-                            <div class="summary-label">DELAY</div>
-                        </div>
-                        <div class="summary-stat">
-                            <div class="summary-value">${stats.avgSpeed}</div>
-                            <div class="summary-label">AVG SPEED</div>
-                        </div>
-                    </div>
-                    ${stats.onTimePerformance !== "N/A" ? `
-                        <div style="text-align:center; margin-top:20px; font-size:13px; opacity:0.9;">
-                            On-time Performance: <b style="color:var(--accent);">${stats.onTimePerformance}</b>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        function getHistorySection(bus) {
-            if (!bus.history || bus.history.length === 0) return '';
-            
-            const recentHistory = bus.history.slice(0, 4);
-            
-            let historyHTML = `
-                <div class="history-section">
-                    <div class="history-header">
-                        <h4 style="margin:0; color:var(--secondary); display:flex; align-items:center; gap:10px;">
-                            <span>📅</span>
-                            <span>PAST 4 DAYS HISTORY</span>
-                        </h4>
-                        <button onclick="viewDetailedHistory('${bus.id}')" class="btn-main" style="background:linear-gradient(135deg, #0077b6, #1d4ed8); padding:8px 16px; font-size:12px;">View All</button>
-                    </div>
-                    <div class="history-grid">
-            `;
-            
-            recentHistory.forEach(trip => {
-                const date = new Date(trip.date);
-                const delay = calculateTimeDifference(trip.depTime, trip.actualDeparture);
-                const isToday = date.toDateString() === new Date().toDateString();
-                
-                historyHTML += `
-                    <div class="history-card">
-                        <div class="history-date">
-                            <span>📅</span>
-                            ${isToday ? 'Today' : date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
-                            ${isToday ? `(${date.toLocaleDateString('en-GB')})` : ''}
-                        </div>
-                        <span class="history-status status-completed">Completed ✓</span>
-                        <div class="history-times">
-                            <div>
-                                <div style="font-size:10px; color:#718096; letter-spacing:1px;">DEPARTURE</div>
-                                <div style="font-weight:bold; margin-top:3px;">${trip.depTime} → ${trip.actualDeparture || '--:--'}</div>
-                            </div>
-                            <div>
-                                <div style="font-size:10px; color:#718096; letter-spacing:1px;">ARRIVAL</div>
-                                <div style="font-weight:bold; margin-top:3px;">${trip.destTime} → ${trip.actualArrival || '--:--'}</div>
-                            </div>
-                        </div>
-                        <div style="margin-top:10px; text-align:center;">
-                            <span class="${delay?.colorClass || 'delay-neutral'}" style="font-weight:bold; font-size:13px;">
-                                ${delay?.formatted || 'No data'}
-                            </span>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            historyHTML += `
-                    </div>
-                    <div style="display:flex; justify-content:center; gap:15px; margin-top:20px;">
-                        <button onclick="exportTripHistory('${bus.id}')" class="btn-main" style="background:linear-gradient(135deg, #38b000, #22c55e); padding:8px 16px; font-size:12px;">📥 Export to Excel</button>
-                        <button onclick="viewDetailedHistory('${bus.id}')" class="btn-main" style="background:linear-gradient(135deg, #0077b6, #1d4ed8); padding:8px 16px; font-size:12px;">📊 View Detailed</button>
-                    </div>
-                </div>
-            `;
-            
-            return historyHTML;
-        }
-
-        // ==================== DASHBOARD FUNCTIONS ====================
-
-        function updateDashboard() {
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            
-            // Clear existing intervals
-            if (depInterval) clearInterval(depInterval);
-            if (arrInterval) clearInterval(arrInterval);
-            
-            // Find next departure
-            let nextDeparture = null;
-            busDataArr.forEach(bus => {
-                const depTime = parseTimeToDate(bus.depTime, today);
-                if (depTime && depTime > now) {
-                    if (!nextDeparture || depTime < nextDeparture.time) {
-                        nextDeparture = { bus, time: depTime, isTomorrow: false };
-                    }
-                }
-                
-                // Check tomorrow
-                const depTimeTomorrow = parseTimeToDate(bus.depTime, tomorrow);
-                if (depTimeTomorrow && (!nextDeparture || depTimeTomorrow < nextDeparture.time)) {
-                    nextDeparture = { bus, time: depTimeTomorrow, isTomorrow: true };
-                }
-            });
-            
-            // Find next arrival
-            let nextArrival = null;
-            busDataArr.forEach(bus => {
-                const depTime = parseTimeToDate(bus.depTime, today);
-                if (!depTime) return;
-                
-                const arrTime = parseTimeToDate(bus.destTime, depTime);
-                if (arrTime < depTime) {
-                    arrTime.setDate(arrTime.getDate() + 1);
-                }
-                
-                if (arrTime && arrTime > now) {
-                    const isTomorrow = arrTime.getDate() !== today.getDate();
-                    if (!nextArrival || arrTime < nextArrival.time) {
-                        nextArrival = { bus, time: arrTime, isTomorrow };
-                    }
-                }
-            });
-            
-            // Update departure panel
-            const depDateElem = document.getElementById('depDate');
-            const depBusNameElem = document.getElementById('depBusName');
-            const depCityInfoElem = document.getElementById('depCityInfo');
-            const depCounterElem = document.getElementById('depCounter');
-            
-            if (depDateElem && depBusNameElem && depCityInfoElem && depCounterElem) {
-                if (nextDeparture) {
-                    const dateStr = nextDeparture.isTomorrow ? 
-                        `Tomorrow (${nextDeparture.time.toLocaleDateString('en-GB')})` : 
-                        `Today (${nextDeparture.time.toLocaleDateString('en-GB')})`;
-                    
-                    depDateElem.innerText = dateStr;
-                    depBusNameElem.innerText = nextDeparture.bus.travel;
-                    depCityInfoElem.innerText = 
-                        `${nextDeparture.bus.depCity} → ${nextDeparture.bus.destCity}`;
-                    
-                    // Start countdown
-                    depInterval = setInterval(() => {
-                        const diff = Math.max(0, Math.floor((nextDeparture.time - new Date()) / 1000));
-                        depCounterElem.innerText = formatTimeRemaining(diff);
-                    }, 1000);
-                } else {
-                    depDateElem.innerText = 'No schedule';
-                    depBusNameElem.innerText = 'No departures';
-                    depCityInfoElem.innerText = '';
-                    depCounterElem.innerText = '--:--:--';
-                }
-            }
-            
-            // Update arrival panel
-            const arrDateElem = document.getElementById('arrDate');
-            const arrBusNameElem = document.getElementById('arrBusName');
-            const arrCityInfoElem = document.getElementById('arrCityInfo');
-            const arrCounterElem = document.getElementById('arrCounter');
-            
-            if (arrDateElem && arrBusNameElem && arrCityInfoElem && arrCounterElem) {
-                if (nextArrival) {
-                    const dateStr = nextArrival.isTomorrow ? 
-                        `Tomorrow (${nextArrival.time.toLocaleDateString('en-GB')})` : 
-                        `Today (${nextArrival.time.toLocaleDateString('en-GB')})`;
-                    
-                    arrDateElem.innerText = dateStr;
-                    arrBusNameElem.innerText = nextArrival.bus.travel;
-                    arrCityInfoElem.innerText = 
-                        `Arriving at ${nextArrival.bus.destCity}`;
-                    
-                    // Start countdown
-                    arrInterval = setInterval(() => {
-                        const diff = Math.max(0, Math.floor((nextArrival.time - new Date()) / 1000));
-                        arrCounterElem.innerText = formatTimeRemaining(diff);
-                    }, 1000);
-                } else {
-                    arrDateElem.innerText = 'No schedule';
-                    arrBusNameElem.innerText = 'No arrivals';
-                    arrCityInfoElem.innerText = '';
-                    arrCounterElem.innerText = '--:--:--';
-                }
-            }
-            
-            // Update stats
-            const totalBusesElem = document.getElementById('totalBuses');
-            const activeBusesElem = document.getElementById('activeBuses');
-            const watcherActiveElem = document.getElementById('watcherActive');
-            
-            if (totalBusesElem) totalBusesElem.innerText = busDataArr.length;
-            if (activeBusesElem) {
-                const activeCount = busDataArr.filter(b => {
-                    const depTime = parseTimeToDate(b.depTime);
-                    return depTime && depTime > new Date();
-                }).length;
-                activeBusesElem.innerText = activeCount;
-            }
-            if (watcherActiveElem) {
-                watcherActiveElem.innerText = watcherActive ? 'Yes' : 'No';
-                watcherActiveElem.style.color = watcherActive ? 'var(--accent)' : '#ef4444';
-            }
-        }
-
-        // ==================== FIXED MAIN UI REBUILD ====================
-
-        function rebuildUI() {
-            if (!isInitialized) return;
-            
-            const term = document.getElementById('searchBox')?.value.trim().toLowerCase() || '';
-            const from = document.getElementById('fromCity')?.value || '';
-            const to = document.getElementById('toCity')?.value || '';
-            const stopType = document.getElementById('stopTypeFilter')?.value || 'All';
-            const sort = document.getElementById('sortOption')?.value || 'none';
-            const listArea = document.getElementById('busDisplayArea');
-            const welcome = document.getElementById('welcomeArea');
-            const loading = document.getElementById('loadingIndicator');
-            const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
-            
-            if (!listArea || !welcome || !loading) return;
-            
-            // Show/hide loading
-            if (busDataArr.length === 0) {
-                loading.classList.remove('hidden');
-            } else {
-                loading.classList.add('hidden');
-            }
-            
-            // Show welcome or results
-            if (!term && !from && !to) {
-                welcome.classList.remove('hidden');
-                listArea.classList.add('hidden');
-                return;
-            }
-            
-            welcome.classList.add('hidden');
-            listArea.classList.remove('hidden');
-            
-            // FIXED: Filter buses with correct direction logic
-            let filtered = busDataArr.filter(b => {
-                // Text search in bus name
-                const busNameMatch = b.travel.toLowerCase().includes(term);
-                
-                // Text search in cities
-                const allStopCities = [
-                    b.depCity?.toLowerCase() || '',
-                    ...(b.route || []).map(s => s.city?.toLowerCase() || ''),
-                    b.destCity?.toLowerCase() || ''
-                ];
-                const cityMatch = allStopCities.some(city => city.includes(term));
-                
-                // Combined text search
-                const matchText = busNameMatch || cityMatch;
-                
-                // City direction filter - FIXED LOGIC
-                let directionMatch = true;
-                if (from && to) {
-                    // Both cities specified - must match exact direction
-                    directionMatch = isDirectionValid(b, from, to);
-                } else if (from) {
-                    // Only departure city specified - must have this city as departure or stop
-                    directionMatch = isCityInRoute(b, from, true);
-                } else if (to) {
-                    // Only destination city specified - must have this city as destination or stop
-                    directionMatch = isCityInRoute(b, to, false);
-                }
-                
-                // Stop type filter
-                let matchStopType = true;
-                if (stopType !== "All") {
-                    const allStops = [
-                        { city: b.depCity, type: 'Boarding' },
-                        ...(b.route || []),
-                        { city: b.destCity, type: 'Dropping' }
-                    ];
-                    matchStopType = allStops.some(stop => stop.type === stopType);
-                }
-                
-                return matchText && directionMatch && matchStopType;
-            });
-            
-            // Sort buses
-            if (sort !== "none") {
-                filtered.sort((a, b) => parseTimeToMinutes(a.depTime) - parseTimeToMinutes(b.depTime));
-                if (sort === "late") filtered.reverse();
-            }
-            
-            // Display results
-            if (filtered.length === 0) {
-                listArea.innerHTML = `
-                    <div style="text-align:center; padding:60px; background:#fff; border-radius:20px; margin:30px 0; box-shadow:0 10px 30px rgba(0,0,0,0.05); border:2px solid #f1f5f9;">
-                        <div style="font-size:50px; margin-bottom:20px;">😕</div>
-                        <h3 style="color:var(--secondary);">No buses found</h3>
-                        <p style="color:#666; margin:10px 0 20px 0;">
-                            ${from && to ? 
-                                `No buses found from <strong>${from}</strong> to <strong>${to}</strong>` : 
-                                'Try different search terms or filters'
-                            }
-                        </p>
-                        <button onclick="clearAllSearch()" class="btn-main" style="background:linear-gradient(135deg, var(--primary), #5bc0be);">Clear Search</button>
-                    </div>
-                `;
-                return;
-            }
-            
-            listArea.innerHTML = '';
-            filtered.forEach(b => {
-                const card = document.createElement("div");
-                card.className = "card";
-                
-                // Check if trip is completed
-                const now = new Date();
-                const depTime = parseTimeToDate(b.depTime);
-                const isCompleted = depTime && now > parseTimeToDate(b.destTime, depTime);
-                
-                card.innerHTML = `
-                    <div class="bus-header">
-                        <div>
-                            <div class="travel-name">
-                                <span>🚍</span>
-                                <span>${b.travel}</span>
-                            </div>
-                            ${getBusStatus(b)}
-                        </div>
-                        ${isAdmin ? `
-                            <div style="display:flex; gap:8px;">
-                                <button onclick="triggerEdit('${b.id}')" class="btn-small btn-edit">✏️ Edit</button>
-                                <button onclick="triggerDelete('${b.id}')" class="btn-small btn-delete">🗑️ Delete</button>
-                                ${isCompleted ? `<button onclick="viewDetailedHistory('${b.id}')" class="btn-small btn-history">📊 History</button>` : ''}
-                            </div>
-                        ` : ''}
-                    </div>
-                    
-                    ${getLiveTrackingCard(b)}
-                    
-                    <div class="route-visual">
-                        <div class="point">
-                            <span>${b.depTime}</span>
-                            <b>${b.depCity}</b>
-                        </div>
-                        <div class="line"></div>
-                        <div class="point">
-                            <span>${b.destTime}</span>
-                            <b>${b.destCity}</b>
-                        </div>
-                    </div>
-                    
-                    ${getKMProgress(b)}
-                    
-                    ${(b.actualDeparture || b.actualArrival) ? getJourneySummary(b) : ''}
-                    
-                    ${(b.actualDeparture || b.actualArrival || b.route?.some(s => s.actual_time)) ? getTripTimeline(b) : ''}
-                    
-                    ${b.history && b.history.length > 0 ? getHistorySection(b) : ''}
-                    
-                    <div class="stops-preview">
-                        <div style="font-size:10px; color:#999; margin-bottom:5px; text-transform:uppercase;">
-                            Route Stops ${b.route ? `(${b.route.length} stops)` : ''}
-                        </div>
-                        ${(b.route || []).map(r => `
-                            <div class="timeline-item ${r.actual_time ? 'timeline-done' : ''}">
-                                <span style="color:var(--primary); margin-right:8px">${r.actual_time ? '✓' : '•'}</span>
-                                <span style="flex:1"><b>${r.city}</b></span>
-                                <span style="color:#666; margin-right:10px; font-size:11px;">${r.actual_time ? `${r.time} → ${r.actual_time}` : r.time}</span>
-                                ${r.km_marker ? `<span style="font-size:9px; background:#e2e8f0; padding:2px 6px; border-radius:3px; margin-right:5px;">${r.km_marker}KM</span>` : ''}
-                                <span class="badge ${r.type.toLowerCase()}">${r.type}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <button class="btn-main" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, var(--primary), #5bc0be);" onclick="openMap('${b.link}')">
-                        📍 Track Live Location
-                    </button>
-                `;
-                
-                listArea.appendChild(card);
-            });
-        }
-
-        // ==================== FIREBASE DATA LISTENER ====================
-
-        onSnapshot(collection(db, "buses"), snap => {
-            console.log("📡 Firebase data updated:", snap.docs.length, "buses");
-            
-            if (snap.empty) {
-                busDataArr = [];
-                console.log("No buses found in database");
-            } else {
-                busDataArr = snap.docs.map(d => {
-                    const data = d.data();
-                    return {
-                        id: d.id,
-                        travel: data.travel || '',
-                        depCity: data.depCity || '',
-                        depTime: data.depTime || '',
-                        destCity: data.destCity || '',
-                        destTime: data.destTime || '',
-                        serviceNo: data.serviceNo || '',
-                        link: data.link || '',
-                        live_km: data.live_km || 0,
-                        current_area: data.current_area || '',
-                        status: data.status || '',
-                        last_sync: data.last_sync || '',
-                        actualDeparture: data.actualDeparture || '',
-                        actualArrival: data.actualArrival || '',
-                        history: data.history || [],
-                        route: (data.route || []).map(stop => ({
-                            city: stop.city || '',
-                            time: stop.time || '',
-                            type: stop.type || 'Boarding',
-                            km_marker: stop.km_marker || '',
-                            is_tracked: stop.is_tracked || false,
-                            actual_time: stop.actual_time || '',
-                            reached_at: stop.reached_at || ''
-                        }))
-                    };
-                });
-                
-                // Extract all cities
-                allCities.clear();
-                busDataArr.forEach(b => {
-                    if (b.depCity) allCities.add(b.depCity);
-                    if (b.destCity) allCities.add(b.destCity);
-                    b.route?.forEach(s => {
-                        if (s.city) allCities.add(s.city);
-                    });
-                });
-                
-                updateCityDropdowns();
-            }
-            
-            updateDashboard();
-            rebuildUI();
-            
-        }, error => {
-            console.error("Firebase error:", error);
-            alert("Error loading data. Please refresh the page.");
-        });
-
-        // ==================== ADMIN FUNCTIONS ====================
-
-        window.triggerEdit = (id) => {
-            const bus = busDataArr.find(b => b.id === id);
-            if (!bus) {
-                alert("Bus not found!");
-                return;
-            }
-            
-            currentEditingBus = bus;
-            document.getElementById('editingBusId').value = id;
-            document.getElementById('travel').value = bus.travel;
-            document.getElementById('depCityAdmin').value = bus.depCity;
-            document.getElementById('depTimeInput').value = bus.depTime;
-            document.getElementById('destCityAdmin').value = bus.destCity;
-            document.getElementById('destTimeInput').value = bus.destTime;
-            document.getElementById('serviceNo').value = bus.serviceNo || '';
-            document.getElementById('trackLink').value = bus.link;
-            
-            // Update current KM display
-            document.getElementById('currentKMDisplay').innerText = `${bus.live_km || 0} KM`;
-            
-            // Update KM tracking grid
-            updateKMTrackingGrid(bus);
-            
-            // Clear and repopulate stops
-            const dynamicStops = document.getElementById('dynamicStops');
-            dynamicStops.innerHTML = '';
-            
-            if (bus.route && bus.route.length > 0) {
-                bus.route.forEach(stop => {
-                    addStopField(stop.city, stop.time, stop.type, stop.km_marker, stop.is_tracked);
-                });
-            }
-            
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-
-        window.triggerDelete = async (id) => {
-            if (!confirm("Are you sure you want to delete this bus?")) return;
-            
-            try {
-                await deleteDoc(doc(db, "buses", id));
-                alert("Bus deleted successfully!");
-            } catch (error) {
-                alert("Error deleting bus: " + error.message);
-            }
-        };
-
-        window.toggleKMInput = (checkbox) => {
-            const kmInput = checkbox.closest('.stop-entry').querySelector('.km-input');
-            kmInput.style.display = checkbox.checked ? 'block' : 'none';
-            kmInput.required = checkbox.checked;
-        };
-
-        window.addStopField = (city = '', time = '', type = 'Boarding', km_marker = '', is_tracked = false) => {
-            const dynamicStops = document.getElementById('dynamicStops');
-            if (!dynamicStops) return;
-            
-            const d = document.createElement("div");
-            d.className = "stop-entry";
-            d.style.marginBottom = "15px";
-            
-            const sortedCities = Array.from(allCities).sort();
-            const cityOptions = sortedCities.map(cityOpt => 
-                `<option value="${cityOpt}" ${cityOpt === city ? 'selected' : ''}>${cityOpt}</option>`
-            ).join('');
-            
-            d.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr auto auto; gap: 8px; align-items: center;">
-                    <select class="s-city" style="padding: 10px;">
-                        <option value="">Select City</option>
-                        ${cityOptions}
-                    </select>
-                    <input placeholder="Time (e.g. 08:30 PM)" class="s-time" style="padding: 10px;" value="${time}">
-                    <select class="s-type" style="padding: 10px;">
-                        <option value="Boarding" ${type === 'Boarding' ? 'selected' : ''}>Boarding</option>
-                        <option value="Dropping" ${type === 'Dropping' ? 'selected' : ''}>Dropping</option>
-                    </select>
-                    <div style="display:flex; align-items:center; gap:5px;">
-                        <label class="toggle-switch">
-                            <input type="checkbox" class="track-toggle" ${is_tracked ? 'checked' : ''} onchange="toggleKMInput(this)">
-                            <span class="slider"></span>
-                        </label>
-                        <span style="font-size:11px; color:#666;">KM Track</span>
-                    </div>
-                    <button onclick="this.parentElement.parentElement.remove()" style="background:#e63946; color:white; border:none; border-radius:5px; width:30px; height:30px; cursor:pointer; font-size:12px;">X</button>
-                </div>
-                <input type="number" placeholder="KM Marker (e.g., 150)" class="km-input" 
-                       style="display: ${is_tracked ? 'block' : 'none'}; margin-top: 5px; padding: 8px; border-radius: 8px; border: 1px solid #ddd; width: calc(100% - 16px);" 
-                       value="${km_marker}">
-            `;
-            
-            dynamicStops.appendChild(d);
-        };
-
-        window.saveBusToFirebase = async () => {
-            try {
-                const id = document.getElementById('editingBusId').value;
-                const stops = [];
-                
-                document.querySelectorAll('.stop-entry').forEach(r => {
-                    const city = r.querySelector('.s-city').value;
-                    const time = r.querySelector('.s-time').value;
-                    const type = r.querySelector('.s-type').value;
-                    const km_marker = r.querySelector('.km-input').value;
-                    const is_tracked = r.querySelector('.track-toggle').checked;
-                    
-                    if (city && time && type) {
-                        stops.push({
-                            city,
-                            time,
-                            type,
-                            km_marker: is_tracked ? km_marker : '',
-                            is_tracked,
-                            actual_time: ''
-                        });
-                    }
-                });
-                
-                const payload = {
-                    travel: document.getElementById('travel').value,
-                    depCity: document.getElementById('depCityAdmin').value,
-                    depTime: document.getElementById('depTimeInput').value,
-                    destCity: document.getElementById('destCityAdmin').value,
-                    destTime: document.getElementById('destTimeInput').value,
-                    serviceNo: document.getElementById('serviceNo').value,
-                    link: document.getElementById('trackLink').value,
-                    route: stops,
-                    last_updated: new Date().toISOString()
-                };
-                
-                // Validate required fields
-                if (!payload.travel || !payload.depCity || !payload.depTime || !payload.destCity || !payload.destTime) {
-                    alert("Please fill in all required fields: Travel Name, Departure City/Time, Destination City/Time");
-                    return;
-                }
-                
-                if (id) {
-                    // Update existing
-                    await updateDoc(doc(db, "buses", id), payload);
-                    alert("Bus updated successfully!");
-                } else {
-                    // Add new
-                    await addDoc(collection(db, "buses"), payload);
-                    alert("Bus added successfully!");
-                }
-                
-                // Clear form
-                clearAdminForm();
-                
-            } catch (error) {
-                console.error("Save error:", error);
-                alert("Error saving bus: " + error.message);
-            }
-        };
-
-        window.clearAdminForm = () => {
-            document.getElementById('editingBusId').value = '';
-            document.getElementById('travel').value = '';
-            document.getElementById('depCityAdmin').value = '';
-            document.getElementById('depTimeInput').value = '';
-            document.getElementById('destCityAdmin').value = '';
-            document.getElementById('destTimeInput').value = '';
-            document.getElementById('serviceNo').value = '';
-            document.getElementById('trackLink').value = '';
-            document.getElementById('dynamicStops').innerHTML = '';
-            document.getElementById('kmTrackingGrid').innerHTML = '';
-            document.getElementById('currentKMDisplay').innerText = '0 KM';
-            document.getElementById('watcherKM').value = '';
-            document.getElementById('watcherLocation').value = '';
-            document.getElementById('watcherBusId').value = '';
-            document.getElementById('watcherStatus').innerHTML = '';
-            currentEditingBus = null;
-        };
-
-        window.addNewCity = () => {
-            const city = prompt("Enter new city name:");
-            if (city && city.trim() !== '') {
-                allCities.add(city.trim());
-                updateCityDropdowns();
-                alert(`City "${city}" added successfully!`);
-            }
-        };
-
-        // ==================== COMPLETE TRIP FUNCTION ====================
-
-        window.completeTrip = async () => {
-            if (!currentEditingBus) {
-                alert("No bus selected for editing");
-                return;
-            }
-            
-            if (!currentEditingBus.actualArrival) {
-                alert("Please record arrival time first!");
-                return;
-            }
-            
-            if (!confirm("Mark this trip as completed? This will save it to history.")) {
-                return;
-            }
-            
-            try {
-                const today = new Date().toISOString().split('T')[0];
-                const historyEntry = {
-                    date: today,
-                    depCity: currentEditingBus.depCity,
-                    depTime: currentEditingBus.depTime,
-                    actualDeparture: currentEditingBus.actualDeparture || '',
-                    destCity: currentEditingBus.destCity,
-                    destTime: currentEditingBus.destTime,
-                    actualArrival: currentEditingBus.actualArrival || '',
-                    route: currentEditingBus.route || [],
-                    total_distance: currentEditingBus.route?.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0) || 500,
-                    recordedAt: new Date().toISOString()
-                };
-                
-                const updatedHistory = [...(currentEditingBus.history || []), historyEntry];
-                
-                await updateDoc(doc(db, "buses", currentEditingBus.id), {
-                    history: updatedHistory,
-                    status: 'completed'
-                });
-                
-                alert("Trip marked as completed and added to history!");
-                
-                // Refresh the bus data
-                const bus = busDataArr.find(b => b.id === currentEditingBus.id);
-                if (bus) {
-                    bus.history = updatedHistory;
-                    bus.status = 'completed';
-                }
-                
-                // Rebuild UI
-                rebuildUI();
-                
-            } catch (error) {
-                console.error("Error completing trip:", error);
-                alert("Error completing trip: " + error.message);
-            }
-        };
-
-        // ==================== HISTORY FUNCTIONS ====================
-
-        window.viewDetailedHistory = async (busId) => {
-            const bus = busDataArr.find(b => b.id === busId);
-            if (!bus) {
-                alert("Bus not found!");
-                return;
-            }
-            
-            const historyModal = document.getElementById('historyModal');
-            const modalContent = document.getElementById('historyModalContent');
-            const overlay = document.getElementById('modalOverlay');
-            
-            let historyHTML = `
-                <h2 style="color:var(--secondary); margin-bottom:10px;">📊 TRIP HISTORY</h2>
-                <div style="font-size:14px; color:#666; margin-bottom:20px;">
-                    ${bus.travel} • ${bus.depCity} → ${bus.destCity}
-                </div>
-                
-                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-                    <select id="historyFilter" style="width:150px; padding:8px;" onchange="filterHistory('${busId}')">
-                        <option value="7">Last 7 days</option>
-                        <option value="30">Last 30 days</option>
-                        <option value="90">Last 90 days</option>
-                        <option value="all">All time</option>
-                    </select>
-                    <button onclick="exportHistoryToExcel('${busId}')" class="btn-main" style="background:linear-gradient(135deg, #38b000, #22c55e);">
-                        📥 Export to Excel
-                    </button>
-                </div>
-            `;
-            
-            if (!bus.history || bus.history.length === 0) {
-                historyHTML += `
-                    <div style="text-align:center; padding:40px; color:#666;">
-                        <div style="font-size:40px; margin-bottom:15px;">📊</div>
-                        <h3>No History Available</h3>
-                        <p>Complete trips will appear here</p>
-                    </div>
-                `;
-            } else {
-                historyHTML += `<div id="historyList">`;
-                
-                bus.history.forEach((trip, index) => {
-                    const date = new Date(trip.date);
-                    const delay = calculateTimeDifference(trip.depTime, trip.actualDeparture);
-                    const stats = calculateJourneyStats({
-                        depTime: trip.depTime,
-                        destTime: trip.destTime,
-                        actualDeparture: trip.actualDeparture,
-                        actualArrival: trip.actualArrival
-                    });
-                    
-                    historyHTML += `
-                        <div class="history-card" style="margin-bottom:15px;">
-                            <div class="history-header" style="display:flex; justify-content:space-between; align-items:center;">
-                                <h4 style="margin:0; color:var(--secondary);">
-                                    ${date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                                </h4>
-                                <span class="${delay?.colorClass || 'delay-neutral'}" style="font-weight:bold;">
-                                    ${delay?.formatted || 'No data'}
-                                </span>
-                            </div>
-                            
-                            <div style="margin:10px 0; display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
-                                <div>
-                                    <div style="font-size:11px; color:#718096;">Departure</div>
-                                    <div style="font-weight:bold;">${trip.depTime} → ${trip.actualDeparture || '--:--'}</div>
-                                </div>
-                                <div>
-                                    <div style="font-size:11px; color:#718096;">Arrival</div>
-                                    <div style="font-weight:bold;">${trip.destTime} → ${trip.actualArrival || '--:--'}</div>
-                                </div>
-                            </div>
-                            
-                            ${stats ? `
-                                <div style="background:#f8fafc; border-radius:8px; padding:10px; margin:10px 0;">
-                                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center;">
-                                        <div>
-                                            <div style="font-size:11px; color:#718096;">Duration</div>
-                                            <div style="font-weight:bold;">${stats.actualDuration}</div>
-                                        </div>
-                                        <div>
-                                            <div style="font-size:11px; color:#718096;">Avg Speed</div>
-                                            <div style="font-weight:bold;">${stats.avgSpeed} km/h</div>
-                                        </div>
-                                        <div>
-                                            <div style="font-size:11px; color:#718096;">Stops Recorded</div>
-                                            <div style="font-weight:bold;">${trip.route.filter(s => s.actual_time).length}/${trip.route.length}</div>
-                                        </div>
-                                        <div>
-                                            <div style="font-size:11px; color:#718096;">Status</div>
-                                            <div style="font-weight:bold; color:#38a169;">Completed</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ` : ''}
-                            
-                            ${trip.route && trip.route.length > 0 ? `
-                                <div style="font-size:12px; color:#718096; margin-top:10px;">Recorded Stops:</div>
-                                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">
-                                    ${trip.route.map(stop => `
-                                        <span style="font-size:11px; padding:3px 8px; background:${stop.actual_time ? '#c6f6d5' : '#fed7d7'}; border-radius:4px; color:${stop.actual_time ? '#22543d' : '#742a2a'}">
-                                            ${stop.city} ${stop.actual_time ? '✓' : '✗'}
-                                        </span>
-                                    `).join('')}
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                });
-                
-                historyHTML += `</div>`;
-            }
-            
-            modalContent.innerHTML = historyHTML;
-            historyModal.style.display = 'block';
-            overlay.style.display = 'block';
-        };
-
-        window.closeHistoryModal = () => {
-            document.getElementById('historyModal').style.display = 'none';
-            document.getElementById('modalOverlay').style.display = 'none';
-        };
-
-        window.filterHistory = (busId) => {
-            alert("History filtering would be implemented here");
-        };
-
-        window.exportHistoryToExcel = (busId) => {
-            const bus = busDataArr.find(b => b.id === busId);
-            if (!bus || !bus.history || bus.history.length === 0) {
-                alert("No history data to export!");
-                return;
-            }
-            
-            // Prepare data for Excel
-            const excelData = [];
-            
-            // Header row
-            excelData.push([
-                'Date', 'Bus', 'Route', 'Departure (Scheduled)', 
-                'Departure (Actual)', 'Arrival (Scheduled)', 'Arrival (Actual)',
-                'Delay', 'Duration', 'Avg Speed (km/h)', 'Stops Recorded'
-            ]);
-            
-            // Data rows
-            bus.history.forEach(trip => {
-                const date = new Date(trip.date);
-                const delay = calculateTimeDifference(trip.depTime, trip.actualDeparture);
-                const stats = calculateJourneyStats({
-                    depTime: trip.depTime,
-                    destTime: trip.destTime,
-                    actualDeparture: trip.actualDeparture,
-                    actualArrival: trip.actualArrival
-                });
-                
-                excelData.push([
-                    date.toLocaleDateString('en-GB'),
-                    bus.travel,
-                    `${bus.depCity} → ${bus.destCity}`,
-                    trip.depTime,
-                    trip.actualDeparture || '--:--',
-                    trip.destTime,
-                    trip.actualArrival || '--:--',
-                    delay?.formatted || '--',
-                    stats?.actualDuration || '--',
-                    stats?.avgSpeed || '--',
-                    `${trip.route?.filter(s => s.actual_time).length || 0}/${trip.route?.length || 0}`
-                ]);
-            });
-            
-            // Create worksheet
-            const ws = XLSX.utils.aoa_to_sheet(excelData);
-            
-            // Create workbook
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Trip History");
-            
-            // Generate Excel file
-            const fileName = `${bus.travel}_History_${new Date().toISOString().split('T')[0]}.xlsx`;
-            XLSX.writeFile(wb, fileName);
-            
-            alert(`History exported to ${fileName}`);
-        };
-
-        window.exportTripHistory = exportHistoryToExcel;
-
-        window.showHistoryManagement = () => {
-            alert("History management panel would open here");
-        };
-
-        // ==================== UI EVENT HANDLERS ====================
-
-        window.clearAllSearch = () => {
-            const searchBox = document.getElementById('searchBox');
-            const fromCity = document.getElementById('fromCity');
-            const toCity = document.getElementById('toCity');
-            const stopTypeFilter = document.getElementById('stopTypeFilter');
-            const sortOption = document.getElementById('sortOption');
-            
-            if (searchBox) searchBox.value = '';
-            if (fromCity) fromCity.value = '';
-            if (toCity) toCity.value = '';
-            if (stopTypeFilter) stopTypeFilter.value = 'All';
-            if (sortOption) sortOption.value = 'none';
-            rebuildUI();
-        };
-
-        window.openMap = (url) => {
-            if (!url) {
-                alert("No tracking link available for this bus.");
-                return;
-            }
-            const mapFrame = document.getElementById('mapFrame');
-            const mapModal = document.getElementById('mapModal');
-            const overlay = document.getElementById('modalOverlay');
-            if (mapFrame && mapModal) {
-                mapFrame.src = url;
-                mapModal.style.display = 'block';
-                overlay.style.display = 'block';
-            }
-        };
-
-        window.closeMap = () => {
-            const mapFrame = document.getElementById('mapFrame');
-            const mapModal = document.getElementById('mapModal');
-            const overlay = document.getElementById('modalOverlay');
-            if (mapFrame && mapModal) {
-                mapFrame.src = '';
-                mapModal.style.display = 'none';
-                overlay.style.display = 'none';
-            }
-        };
-
-        window.exportToExcel = () => {
-            if (busDataArr.length === 0) {
-                alert("No data to export!");
-                return;
-            }
-            
-            // Prepare data for Excel
-            const excelData = [];
-            
-            // Header row
-            excelData.push([
-                'Bus Name', 'Departure City', 'Departure Time', 'Actual Departure',
-                'Destination City', 'Arrival Time', 'Actual Arrival', 'Status',
-                'Live KM', 'Current Area', 'Service No', 'Total Stops'
-            ]);
-            
-            // Data rows
-            busDataArr.forEach(bus => {
-                const status = getBusStatus(bus).includes('On Route') ? 'On Route' : 
-                              getBusStatus(bus).includes('Scheduled') ? 'Scheduled' : 
-                              getBusStatus(bus).includes('Arrived') ? 'Arrived' : 'Waiting';
-                
-                excelData.push([
-                    bus.travel,
-                    bus.depCity,
-                    bus.depTime,
-                    bus.actualDeparture || '--:--',
-                    bus.destCity,
-                    bus.destTime,
-                    bus.actualArrival || '--:--',
-                    status,
-                    bus.live_km || 0,
-                    bus.current_area || '--',
-                    bus.serviceNo || '--',
-                    bus.route?.length || 0
-                ]);
-            });
-            
-            // Create worksheet
-            const ws = XLSX.utils.aoa_to_sheet(excelData);
-            
-            // Create workbook
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Bus Data");
-            
-            // Generate Excel file
-            const fileName = `Bus_Tracking_Data_${new Date().toISOString().split('T')[0]}.xlsx`;
-            XLSX.writeFile(wb, fileName);
-            
-            alert(`Data exported to ${fileName}`);
-        };
-
-        // ==================== EVENT LISTENERS ====================
-
-        function setupEventListeners() {
-            const searchBox = document.getElementById('searchBox');
-            const fromCity = document.getElementById('fromCity');
-            const toCity = document.getElementById('toCity');
-            const stopTypeFilter = document.getElementById('stopTypeFilter');
-            const sortOption = document.getElementById('sortOption');
-            
-            if (searchBox) searchBox.addEventListener('input', rebuildUI);
-            if (fromCity) fromCity.addEventListener('change', rebuildUI);
-            if (toCity) toCity.addEventListener('change', rebuildUI);
-            if (stopTypeFilter) stopTypeFilter.addEventListener('change', rebuildUI);
-            if (sortOption) sortOption.addEventListener('change', rebuildUI);
-        }
-
-        // Add keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            // ESC to close modals
-            if (e.key === 'Escape') {
-                if (document.getElementById('mapModal').style.display === 'block') {
-                    closeMap();
-                }
-                if (document.getElementById('historyModal').style.display === 'block') {
-                    closeHistoryModal();
-                }
-            }
-            // Ctrl+F to focus search
-            if (e.ctrlKey && e.key === 'f') {
-                e.preventDefault();
-                const searchBox = document.getElementById('searchBox');
-                if (searchBox) searchBox.focus();
-            }
-        });
-
-        // Close modals when clicking overlay
-        document.getElementById('modalOverlay').addEventListener('click', () => {
-            closeMap();
-            closeHistoryModal();
-        });
-
-        // ==================== SIMULATE WATCHER.PY INTEGRATION ====================
-        // This simulates automatic KM updates from watcher.py
-        
-        function simulateWatcherUpdates() {
-            if (!watcherActive || busDataArr.length === 0) return;
-            
-            // Simulate updates every 30 seconds
-            setInterval(() => {
-                // Randomly update one bus
-                if (busDataArr.length > 0 && Math.random() > 0.7) {
-                    const randomBus = busDataArr[Math.floor(Math.random() * busDataArr.length)];
-                    if (randomBus && randomBus.route && randomBus.route.length > 0) {
-                        const maxKM = randomBus.route.reduce((max, stop) => Math.max(max, stop.km_marker || 0), 0);
-                        const currentKM = randomBus.live_km || 0;
-                        const newKM = Math.min(maxKM, currentKM + Math.floor(Math.random() * 50) + 10);
-                        const locations = ["Chennai Highway", "Madurai Bypass", "Trichy Toll", "Coimbatore Road", "Salem Junction"];
-                        const location = locations[Math.floor(Math.random() * locations.length)];
-                        
-                        window.updateBusKMFromWatcher(randomBus.id, newKM, location);
-                    }
-                }
-            }, 30000); // Every 30 seconds
-        }
-
-        // ==================== INITIAL SETUP ====================
-        
-        console.log("Bus Tracking System initialized with all features");
-        console.log("✅ Fixed search logic: Chennai to Thoothukudi won't show opposite direction");
-        console.log("✅ Watcher.py integration ready with updateBusKMFromWatcher() API");
-        
-        // Setup event listeners when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
-            simulateWatcherUpdates();
-        });
-
-    </script>
+    <header>
+        <h3 style="margin:0; color:var(--secondary)">🚍 BUS TRACKING</h3>
+        <div class="header-right">
+            <div id="liveClock">00:00:00</div>
+            <div id="loggedInLinks" class="hidden">
+                <span id="userEmailDisplay" style="font-size: 13px; color: #666;"></span>
+                <button id="logoutBtn" class="btn-main" style="background:#e63946 !important; padding: 8px 15px;">Log Out</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="authWall">
+            <div style="text-align:center; background:white; padding:40px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.1); max-width:400px; margin:80px auto;">
+                <h2>Login</h2>
+                <input type="email" id="uEmail" placeholder="enter login id">
+                <input type="password" id="uPass" placeholder="enter password">
+                <button class="btn-main" style="width:100%; margin-top:15px;" id="loginBtn">Login</button>
+            </div>
+        </div>
+
+        <div id="mainContent" class="hidden">
+            <div class="upcoming">
+                <div class="up-box">
+                    <div style="font-size:10px; color:#aaa;">Next Departure</div>
+                    <div id="depDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
+                    <b id="depBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
+                    <div id="depCityInfo" style="font-size:12px;"></div>
+                    <div class="count" id="depCounter">00:00:00</div>
+                </div>
+                <div class="up-box">
+                    <div style="font-size:10px; color:#aaa;">Next Arrival</div>
+                    <div id="arrDate" style="font-size:11px; font-weight:bold; color:#5bc0be;"></div>
+                    <b id="arrBusName" style="color:var(--accent); font-size:16px;">Ready...</b>
+                    <div id="arrCityInfo" style="font-size:12px;"></div>
+                    <div class="count" id="arrCounter">00:00:00</div>
+                </div>
+            </div>
+
+            <div id="adminPortal" class="admin-panel hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                    <h3 id="portalTitle">🛠 Admin Portal</h3>
+                    <button onclick="exportToExcel()" class="btn-main" style="background:#0077b6; padding:8px 15px; font-size:12px">📊 Export to Excel</button>
+                </div>
+                <input id="travel" placeholder="Travels Name">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+                    <select id="depCityAdmin"><option value="">Select Departure City</option></select>
+                    <input id="depTimeInput" placeholder="Time (e.g. 05:50 PM)">
+                    <select id="destCityAdmin"><option value="">Select Destination City</option></select>
+                    <input id="destTimeInput" placeholder="Time (e.g. 06:55 AM)">
+                </div>
+                <button onclick="addNewCity()" class="btn-main" style="background:#6c757d; font-size:11px; padding:5px 10px; margin-top:5px;">➕ Add New City Name</button>
+                <div id="dynamicStops"></div>
+                <button onclick="addStopField()" class="btn-main" style="background:#eee; color:#333; width:100%; margin-bottom:12px; margin-top:10px;">➕ Add Route Stop</button>
+                <input id="trackLink" placeholder="Tracking Link">
+                <input type="hidden" id="editingBusId">
+                <button onclick="saveBusToFirebase()" class="btn-main" id="saveBtn" style="width:100%">💾 Save Bus Record</button>
+            </div>
+
+            <div class="search-grid">
+                <input id="searchBox" placeholder="🔍 Search bus name or city...">
+                <select id="stopTypeFilter">
+                    <option value="All">All Stops</option>
+                    <option value="Boarding">Boarding Points</option>
+                    <option value="Dropping">Dropping Points</option>
+                </select>
+                <select id="sortOption">
+                    <option value="none">Sort By</option>
+                    <option value="early">Early Departure</option>
+                    <option value="late">Late Departure</option>
+                </select>
+                <button onclick="clearAllSearch()" class="btn-main" style="background:#555">Clear All</button>
+            </div>
+            <div class="city-filter-row">
+                <select id="fromCity"><option value="">Select Boarding City</option></select>
+                <select id="toCity"><option value="">Select Destination</option></select>
+            </div>
+
+            <div id="welcomeArea">
+                <div style="font-size: 50px; margin-bottom: 15px;">🔍</div>
+                <h2>Search to get results</h2>
+                <p>Enter a bus name or select a city to see tracking details.</p>
+            </div>
+            <div id="busDisplayArea" class="hidden"></div>
+        </div>
+    </div>
+
+    <div class="map-modal" id="mapModal">
+        <button class="map-close" onclick="closeMap()">✕</button>
+        <iframe id="mapFrame"></iframe>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyCW9wkmqETdDvGg6QraDnS6jtgmR_7lTX0", authDomain: "smart-bus-tracking-2ba21.firebaseapp.com", projectId: "smart-bus-tracking-2ba21" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const ADMIN_EMAIL = "admin@wintracking.com";
+        let busDataArr = [];
+        let allCities = new Set();
+
+        setInterval(() => {
+            document.getElementById('liveClock').innerText = new Date().toLocaleTimeString();
+            if (!document.getElementById('busDisplayArea').classList.contains('hidden')) rebuildUI();
+        }, 1000);
+
+        onAuthStateChanged(auth, user => {
+            const main = document.getElementById('mainContent'), wall = document.getElementById('authWall'), adminPortal = document.getElementById('adminPortal');
+            if (user) {
+                main.classList.remove('hidden'); wall.classList.add('hidden');
+                document.getElementById('loggedInLinks').classList.remove('hidden');
+                document.getElementById('userEmailDisplay').innerText = user.email;
+
+                if (user.email === ADMIN_EMAIL) {
+                    adminPortal.classList.remove('hidden');
+                } else {
+                    adminPortal.classList.add('hidden');
+                }
+                rebuildUI();
+            } else {
+                main.classList.add('hidden'); wall.classList.remove('hidden');
+            }
+        });
+
+        function parseTimeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            let [time, ampm] = timeStr.split(" ");
+            let [h, m] = time.split(":").map(Number);
+            if (ampm === "PM" && h !== 12) h += 12;
+            if (ampm === "AM" && h === 12) h = 0;
+            return h * 60 + m;
+        }
+
+        function parseTimeToDate(timeStr) {
+            if (!timeStr || !timeStr.includes(" ")) return null;
+            const now = new Date();
+            let [time, mod] = timeStr.split(" ");
+            let [h, m] = time.split(":").map(Number);
+            if (mod.toUpperCase() === "PM" && h !== 12) h += 12;
+            if (mod.toUpperCase() === "AM" && h === 12) h = 0;
+            let target = new Date(); target.setHours(h, m, 0, 0);
+            if (target < now) target.setDate(target.getDate() + 1);
+            return target;
+        }
+
+        function getBusStatus(bus) {
+            const now = new Date();
+            const depTime = parseTimeToDate(bus.depTime);
+            const arrTime = parseTimeToDate(bus.destTime);
+            if (arrTime < depTime) arrTime.setDate(arrTime.getDate() + 1);
+            const diffHrs = (depTime - now) / (1000 * 60 * 60);
+
+            if (now < depTime) {
+                if (diffHrs <= 5) return `<div class="status-badge status-scheduled">Scheduled to depart</div>`;
+                return `<div class="status-badge status-waiting">Waiting</div>`;
+            } else if (now >= depTime && now < arrTime) {
+                let nextStop = bus.destCity;
+                if (bus.route) {
+                    for (let stop of bus.route) {
+                        const sTime = parseTimeToDate(stop.time);
+                        if (sTime < depTime) sTime.setDate(sTime.getDate() + 1);
+                        if (now < sTime) { nextStop = stop.city; break; }
+                    }
+                }
+                return `<div class="status-badge status-on-route"><span class="dot"></span> Departed: Next Stop ${nextStop}</div>`;
+            }
+            return `<div class="status-badge status-arrived">Reached Destination</div>`;
+        }
+
+        function getTargetTime(bus, cityName) {
+            if (!cityName) return parseTimeToMinutes(bus.depTime);
+            if (bus.depCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.depTime);
+            if (bus.destCity.toLowerCase() === cityName.toLowerCase()) return parseTimeToMinutes(bus.destTime);
+            const stop = bus.route?.find(r => r.city.toLowerCase() === cityName.toLowerCase());
+            return stop ? parseTimeToMinutes(stop.time) : parseTimeToMinutes(bus.depTime);
+        }
+
+        function updateCityDropdowns() {
+            const sorted = Array.from(allCities).sort();
+            const opts = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('depCityAdmin').innerHTML = `<option value="">Select Departure</option>` + opts;
+            document.getElementById('destCityAdmin').innerHTML = `<option value="">Select Destination</option>` + opts;
+            document.getElementById('fromCity').innerHTML = `<option value="">Select Boarding City</option>` + opts;
+            document.getElementById('toCity').innerHTML = `<option value="">Select Destination</option>` + opts;
+        }
+
+        function rebuildUI() {
+            const term = searchBox.value.trim().toLowerCase();
+            const from = fromCity.value, to = toCity.value, stopType = stopTypeFilter.value, sort = sortOption.value, listArea = document.getElementById('busDisplayArea'), welcome = document.getElementById('welcomeArea');
+            const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
+
+            if (!term && !from && !to) { welcome.classList.remove('hidden'); listArea.classList.add('hidden'); return; }
+            welcome.classList.add('hidden'); listArea.classList.remove('hidden');
+
+            let filtered = busDataArr.filter(b => {
+                const stopsData = [{ city: b.depCity, type: 'Boarding' }, ...(b.route || []), { city: b.destCity, type: 'Dropping' }];
+                const cityNames = stopsData.map(s => s.city.toLowerCase());
+                const matchText = b.travel.toLowerCase().includes(term) || cityNames.some(c => c.includes(term));
+                let seq = true;
+                if (from && to) {
+                    const fIdx = cityNames.indexOf(from.toLowerCase());
+                    const tIdx = cityNames.indexOf(to.toLowerCase());
+                    seq = (fIdx !== -1 && tIdx !== -1 && fIdx < tIdx);
+                } else if (from) seq = cityNames.includes(from.toLowerCase());
+                else if (to) seq = cityNames.includes(to.toLowerCase());
+                let matchT = (stopType === "All") ? true : stopsData.some(s => s.type === stopType && s.city.toLowerCase().includes((from || term).toLowerCase()));
+                return matchText && seq && matchT;
+            });
+
+            if (sort !== "none") {
+                const city = from || term;
+                filtered.sort((a, b) => getTargetTime(a, city) - getTargetTime(b, city));
+                if (sort === "late") filtered.reverse();
+            }
+
+            listArea.innerHTML = filtered.length === 0 ? "<p style='text-align:center; padding:20px;'>No routes found.</p>" : "";
+            filtered.forEach(b => {
+                const card = document.createElement("div"); card.className = "card";
+
+                // CHANGED: Removed .slice(0, 3) and moreStopsCount logic to show all stops
+                card.innerHTML = `
+            <div class="bus-header">
+                <div>
+                    <div class="travel-name">🚍 ${b.travel}</div>
+                    ${getBusStatus(b)}
+                </div>
+                <div>${isAdmin ? `<button onclick="triggerEdit('${b.id}')" style="background:#ff9f1c; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer">Edit</button> <button onclick="triggerDelete('${b.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; margin-left:8px">Delete</button>` : ''}</div>
+            </div>
+            
+            <div class="route-visual">
+                <div class="point"><span>${b.depTime}</span><b>${b.depCity}</b></div>
+                <div class="line"></div>
+                <div class="point"><span>${b.destTime}</span><b>${b.destCity}</b></div>
+            </div>
+
+            <div class="stops-preview">
+                <div style="font-size:10px; color:#999; margin-bottom:5px; text-transform:uppercase">Route Highlights</div>
+                ${(b.route || []).map(r => `
+                    <div class="timeline-item">
+                        <span style="color:var(--primary); margin-right:8px">•</span>
+                        <span style="flex:1"><b>${r.city}</b></span>
+                        <span style="color:#666; margin-right:10px">${r.time}</span>
+                        <span class="badge ${r.type.toLowerCase()}">${r.type}</span>
+                    </div>
+                `).join('')}
+            </div>
+
+            <button class="btn-main" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="openMap('${b.link}')">
+                📍 Track Live Location
+            </button>`;
+                listArea.appendChild(card);
+            });
+        }
+
+        function updateDashboard() {
+            const deps = busDataArr.map(b => ({ b, t: parseTimeToDate(b.depTime) })).filter(x => x.t).sort((a, b) => a.t - b.t);
+            const refreshBox = (type, list) => {
+                if (list.length > 0) {
+                    const next = list[0];
+                    document.getElementById(type + 'Date').innerText = next.t.toLocaleDateString('en-GB');
+                    document.getElementById(type + 'BusName').innerText = next.b.travel;
+                    document.getElementById(type + 'CityInfo').innerText = `${type === 'dep' ? next.b.depCity : next.b.destCity} (${type === 'dep' ? next.b.depTime : next.b.destTime})`;
+                    if (window[type + 'Int']) clearInterval(window[type + 'Int']);
+                    window[type + 'Int'] = setInterval(() => {
+                        const diff = Math.max(0, Math.floor((next.t - new Date()) / 1000));
+                        const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
+                        document.getElementById(type + 'Counter').innerText = `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+                    }, 1000);
+                }
+            };
+            refreshBox('dep', deps);
+            const arrs = busDataArr.map(b => {
+                let t = parseTimeToDate(b.destTime);
+                let d = parseTimeToDate(b.depTime);
+                if (t < d) t.setDate(t.getDate() + 1);
+                return { b, t };
+            }).filter(x => x.t > new Date()).sort((a, b) => a.t - b.t);
+            refreshBox('arr', arrs);
+        }
+
+        onSnapshot(collection(db, "buses"), snap => {
+            busDataArr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            allCities.clear();
+            busDataArr.forEach(b => {
+                allCities.add(b.depCity); allCities.add(b.destCity);
+                b.route?.forEach(s => allCities.add(s.city));
+            });
+            updateCityDropdowns();
+            updateDashboard();
+            rebuildUI();
+        });
+
+        window.triggerEdit = (id) => {
+            const bus = busDataArr.find(b => b.id === id);
+            document.getElementById('editingBusId').value = id;
+            document.getElementById('travel').value = bus.travel;
+            document.getElementById('depCityAdmin').value = bus.depCity;
+            document.getElementById('depTimeInput').value = bus.depTime;
+            document.getElementById('destCityAdmin').value = bus.destCity;
+            document.getElementById('destTimeInput').value = bus.destTime;
+            document.getElementById('trackLink').value = bus.link;
+            const dynamicStops = document.getElementById('dynamicStops');
+            dynamicStops.innerHTML = '';
+            if (bus.route && bus.route.length > 0) {
+                bus.route.forEach(stop => addStopField(stop.city, stop.time, stop.type));
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.triggerDelete = async (id) => { if (confirm("Delete?")) await deleteDoc(doc(db, "buses", id)); };
+        window.saveBusToFirebase = async () => {
+            const id = document.getElementById('editingBusId').value;
+            const stops = [];
+            document.querySelectorAll('.stop-entry').forEach(r => {
+                const city = r.querySelector('.s-city').value;
+                const time = r.querySelector('.s-time').value;
+                const type = r.querySelector('.s-type').value;
+                if (city && time && type) stops.push({ city, time, type });
+            });
+            const payload = { travel: travel.value, depCity: depCityAdmin.value, depTime: depTimeInput.value, destCity: destCityAdmin.value, destTime: destTimeInput.value, link: trackLink.value, route: stops };
+            id ? await updateDoc(doc(db, "buses", id), payload) : await addDoc(collection(db, "buses"), payload);
+            location.reload();
+        };
+
+        window.addNewCity = () => {
+            const c = prompt("City Name:");
+            if (c && c.trim() !== '') {
+                allCities.add(c.trim());
+                updateCityDropdowns();
+                rebuildUI();
+            }
+        };
+
+        window.addStopField = (city = '', time = '', type = 'Boarding') => {
+            const d = document.createElement("div");
+            d.className = "stop-entry";
+            d.style.display = "flex"; d.style.gap = "5px"; d.style.marginBottom = "5px";
+            const opts = Array.from(allCities).sort().map(c => `<option value="${c}" ${c === city ? 'selected' : ''}>${c}</option>`).join('');
+            d.innerHTML = `
+        <select class="s-city" style="flex:1"><option value="">City</option>${opts}</select>  
+        <input placeholder="Time" class="s-time" style="flex:1" value="${time}">  
+        <select class="s-type" style="flex:1">  
+            <option value="Boarding" ${type === 'Boarding' ? 'selected' : ''}>Boarding</option>  
+            <option value="Dropping" ${type === 'Dropping' ? 'selected' : ''}>Dropping</option>  
+        </select>  
+        <button onclick="this.parentElement.remove()" style="background:red; color:white; border:none; border-radius:5px; width:40px">X</button>  
+    `;
+            document.getElementById('dynamicStops').appendChild(d);
+        };
+
+        document.getElementById('loginBtn').onclick = () => {
+            signInWithEmailAndPassword(auth, uEmail.value.trim(), uPass.value).catch(error => alert("Login failed: " + error.message));
+        };
+        document.getElementById('logoutBtn').onclick = () => signOut(auth);
+        window.clearAllSearch = () => { searchBox.value = ""; fromCity.value = ""; toCity.value = ""; rebuildUI(); };
+        window.openMap = (u) => { if (!u) return alert("No link"); mapFrame.src = u; mapModal.style.display = 'block'; };
+        window.closeMap = () => { mapFrame.src = ''; mapModal.style.display = 'none'; };
+
+        searchBox.oninput = rebuildUI; fromCity.onchange = rebuildUI; toCity.onchange = rebuildUI; stopTypeFilter.oninput = rebuildUI; sortOption.onchange = rebuildUI;
+    </script>
 </body>
 </html>
